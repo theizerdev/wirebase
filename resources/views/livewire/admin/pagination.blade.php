@@ -1,0 +1,1 @@
+{{-- Esta vista ya no es necesaria ya que usamos la paginación personalizada de Materialize --}}
