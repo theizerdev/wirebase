@@ -26,6 +26,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'verification_code',
         'verification_code_sent_at',
+        'empresa_id',
+        'sucursal_id',
     ];
 
     /**
@@ -108,5 +110,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function activeSessions()
     {
         return $this->hasMany(ActiveSession::class);
+    }
+
+    /**
+     * Get the empresa that owns the user.
+     */
+    public function empresa()
+    {
+        return $this->belongsTo(Empresa::class);
+    }
+
+    /**
+     * Get the sucursal that belongs to the user.
+     */
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class);
     }
 }

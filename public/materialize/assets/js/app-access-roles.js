@@ -417,11 +417,11 @@ document.addEventListener('DOMContentLoaded', function (e) {
         {
           extend: 'collection',
           className: 'btn btn-outline-secondary dropdown-toggle me-4 waves-effect waves-light',
-          text: '<i class="ri-download-line ri-16px me-1"></i> <span class="d-none d-sm-inline-block">Export</span>',
+          text: '<i class="ri ri-download-line ri-16px me-1"></i> <span class="d-none d-sm-inline-block">Export</span>',
           buttons: [
             {
               extend: 'print',
-              text: '<i class="ri-printer-line me-1" ></i>Print',
+              text: '<i class="ri ri-printer-line me-1" ></i>Print',
               exportOptions: {
                 columns: [1, 2, 3, 4, 5],
                 // prevent avatar to be print
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
             },
             {
               extend: 'csv',
-              text: '<i class="ri-file-text-line me-1" ></i>Csv',
+              text: '<i class="ri ri-file-text-line me-1" ></i>Csv',
               exportOptions: {
                 columns: [1, 2, 3, 4, 5],
                 // prevent avatar to be display
@@ -480,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
             },
             {
               extend: 'excel',
-              text: '<i class="ri-file-excel-line me-1"></i>Excel',
+              text: '<i class="ri ri-file-excel-line me-1"></i>Excel',
               exportOptions: {
                 columns: [1, 2, 3, 4, 5],
                 // prevent avatar to be display
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
             },
             {
               extend: 'pdf',
-              text: '<i class="ri-file-pdf-line me-1"></i>Pdf',
+              text: '<i class="ri ri-file-pdf-line me-1"></i>Pdf',
               exportOptions: {
                 columns: [1, 2, 3, 4, 5],
                 // prevent avatar to be display
@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
             },
             {
               extend: 'copy',
-              text: '<i class="ri-file-copy-line me-1"></i>Copy',
+              text: '<i class="ri ri-file-copy-line me-1"></i>Copy',
               exportOptions: {
                 columns: [1, 2, 3, 4, 5],
                 // prevent avatar to be display

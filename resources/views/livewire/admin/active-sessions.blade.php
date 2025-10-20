@@ -24,7 +24,7 @@
             </div>
             <div>
               <button type="button" class="btn btn-primary" wire:click="loadSessions">
-                <i class="ri-refresh-line"></i> Actualizar
+                <i class="ri ri-refresh-line"></i> Actualizar
               </button>
             </div>
           </div>
@@ -60,7 +60,7 @@
 
             <div class="col-md-3 d-flex align-items-end">
               <button type="button" class="btn btn-label-secondary" wire:click="clearFilters">
-                <i class="ri-eraser-line"></i> Limpiar filtros
+                <i class="ri ri-eraser-line"></i> Limpiar filtros
               </button>
             </div>
           </div>
@@ -73,31 +73,31 @@
                 <th wire:click="sortBy('user_agent')" style="cursor: pointer;">
                   Dispositivo
                   @if($sortBy === 'user_agent')
-                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                   @endif
                 </th>
                 <th wire:click="sortBy('ip_address')" style="cursor: pointer;">
                   IP
                   @if($sortBy === 'ip_address')
-                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                   @endif
                 </th>
                 <th wire:click="sortBy('location')" style="cursor: pointer;">
                   Ubicación
                   @if($sortBy === 'location')
-                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                   @endif
                 </th>
                 <th wire:click="sortBy('last_activity')" style="cursor: pointer;">
                   Última Actividad
                   @if($sortBy === 'last_activity')
-                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                   @endif
                 </th>
                 <th wire:click="sortBy('is_active')" style="cursor: pointer;">
                   Estado
                   @if($sortBy === 'is_active')
-                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                   @endif
                 </th>
                 <th>Acciones</th>

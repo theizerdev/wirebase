@@ -36,4 +36,12 @@ Route::prefix('admin')
         Route::get('/{empresa}', \App\Livewire\Admin\Empresas\Show::class)->name('empresas.show');
         Route::get('/{empresa}/edit', \App\Livewire\Admin\Empresas\Edit::class)->name('empresas.edit');
     });
+
+    // Rutas para usuarios
+    Route::prefix('users')->group(function () {
+        Route::get('/', \App\Livewire\Admin\Users\Index::class)->name('users.index');
+        Route::get('/create', \App\Livewire\Admin\Users\Create::class)->name('users.create');
+        Route::get('/{user}', \App\Livewire\Admin\Users\Show::class)->name('users.show');
+        Route::get('/{user}/edit', \App\Livewire\Admin\Users\Edit::class)->name('users.edit');
+    });
 });
