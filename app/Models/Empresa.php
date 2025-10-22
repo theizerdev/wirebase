@@ -16,7 +16,9 @@ class Empresa extends Model
         'latitud',
         'longitud',
         'representante_legal',
-        'status'
+        'status',
+        'telefono',
+        'email'
     ];
 
     protected $casts = [

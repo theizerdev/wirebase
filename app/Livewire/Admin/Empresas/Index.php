@@ -59,7 +59,9 @@ class Index extends Component
         $empresas = Empresa::query()
             ->when($this->search, function ($query) {
                 $query->where('razon_social', 'like', '%' . $this->search . '%')
-                    ->orWhere('documento', 'like', '%' . $this->search . '%');
+                    ->orWhere('documento', 'like', '%' . $this->search . '%')
+                    ->orWhere('email', 'like', '%' . $this->search . '%')
+                    ->orWhere('telefono', 'like', '%' . $this->search . '%');
             })
             ->when($this->status, function ($query) {
                 $query->where('status', $this->status);
@@ -108,6 +110,16 @@ class Index extends Component
 
         $empresa->delete();
         session()->flash('message', 'Empresa eliminada correctamente.');
+        $this->resetPage();
+    }
+
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->status = '';
+        $this->sortBy = 'created_at';
+        $this->sortDirection = 'desc';
+        $this->perPage = 10;
         $this->resetPage();
     }
 }

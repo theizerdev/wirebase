@@ -100,10 +100,10 @@
 
                         <div class="col-md-3">
                             <label class="form-label">Estado</label>
-                            <select class="form-select" wire:model.live="status">
-                                <option value="">Todos los estados</option>
-                                <option value="active">Activa</option>
-                                <option value="inactive">Inactiva</option>
+                            <select class="form-select" wire:model.live="filters.status">
+                                <option value="">Todos</option>
+                                <option value="active">Activas</option>
+                                <option value="inactive">Inactivas</option>
                             </select>
                         </div>
 
@@ -118,7 +118,7 @@
                         </div>
 
                         <div class="col-md-3 d-flex align-items-end">
-                            <button type="button" class="btn btn-label-secondary" wire:click="clearFilters">
+                            <button type="button" class="btn btn-label-secondary" wire:click="resetFilters">
                                 <i class="ri ri-eraser-line"></i> Limpiar filtros
                             </button>
                         </div>
@@ -129,89 +129,99 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th wire:click="sortBy('razon_social')" style="cursor: pointer;">
-                                    Razón Social
-                                    @if($sortBy === 'razon_social')
-                                        <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
-                                    @endif
+                                <th wire:click="sortBy('nombre')" style="cursor: pointer;">
+                                    Nombre @if($sortBy == 'nombre') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
                                 <th wire:click="sortBy('documento')" style="cursor: pointer;">
-                                    Documento
-                                    @if($sortBy === 'documento')
-                                        <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
-                                    @endif
+                                    Documento @if($sortBy == 'documento') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th>Representante Legal</th>
-                                <th wire:click="sortBy('created_at')" style="cursor: pointer;">
-                                    Fecha de Registro
-                                    @if($sortBy === 'created_at')
-                                        <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
-                                    @endif
+                                <th wire:click="sortBy('email')" style="cursor: pointer;">
+                                    Email @if($sortBy == 'email') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th wire:click="sortBy('status')" style="cursor: pointer;">
-                                    Estado
-                                    @if($sortBy === 'status')
-                                        <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
-                                    @endif
+                                <th wire:click="sortBy('telefono')" style="cursor: pointer;">
+                                    Teléfono @if($sortBy == 'telefono') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th wire:click="sortBy('is_active')" style="cursor: pointer;">
+                                    Estado @if($sortBy == 'is_active') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($empresas as $empresa)
-                            <tr>
-                                <td>{{ $empresa->razon_social }}</td>
-                                <td>{{ $empresa->documento }}</td>
-                                <td>{{ $empresa->representante_legal ?? 'No especificado' }}</td>
-                                <td>{{ $empresa->created_at->format('d/m/Y') }}</td>
-                                <td>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox"
-                                               id="statusSwitch{{ $empresa->id }}"
-                                               {{ $empresa->status ? 'checked' : '' }}
-                                               @can('edit empresas') wire:click="toggleStatus({{ $empresa->id }})" @endcan>
-                                        <label class="form-check-label" for="statusSwitch{{ $empresa->id }}">
-
-                                        </label>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="dropdown">
-                                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                            <i class="ri ri-more-2-line"></i>
-                                        </button>
-                                        <div class="dropdown-menu">
-                                            <a class="dropdown-item" href="{{ route('admin.empresas.show', $empresa->id) }}">
-                                                <i class="ri ri-eye-line me-1"></i> Ver
-                                            </a>
-                                            @can('edit empresas')
-                                            <a class="dropdown-item" href="{{ route('admin.empresas.edit', $empresa->id) }}">
-                                                <i class="ri ri-pencil-line me-1"></i> Editar
-                                            </a>
-                                            @endcan
-                                            @can('delete empresas')
-                                            <button type="button" class="dropdown-item text-danger"
-                                                    wire:click="delete({{ $empresa->id }})"
-                                                    wire:confirm="¿Estás seguro de que deseas eliminar esta empresa?">
-                                                <i class="ri ri-delete-bin-line me-1"></i> Eliminar
-                                            </button>
-                                            @endcan
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if($empresa->logo_path)
+                                                <img src="{{ asset($empresa->logo_path) }}" alt="{{ $empresa->razon_social }}" class="rounded me-2" width="32" height="32">
+                                            @else
+                                                <div class="avatar avatar-sm me-2">
+                                                    <span class="avatar-initial rounded bg-label-primary">{{ substr($empresa->razon_social, 0, 1) }}</span>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <h6 class="mb-0">{{ $empresa->razon_social }}</h6>
+                                                <small class="text-muted">{{ $empresa->razon_social }}</small>
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td>
+                                        <strong>{{ $empresa->tipo_documento }} </strong> {{ $empresa->documento }}
+                                    </td>
+                                    <td>{{ $empresa->email }}</td>
+                                    <td>{{ $empresa->telefono }}</td>
+                                    <td>
+                                        @if($empresa->status )
+                                            <span class=" text-success"><i class="ri ri-checkbox-circle-line ri-24px"></i> Activado</span>
+                                        @else
+                                            <span class=" text-danger"><i class="ri ri-close-circle-line ri-24px"></i> Inactivo</span>
+                                        @endif
+                                    </td>
+
+
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-1" type="button" id="actionsDropdown{{ $empresa->id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i class="ri ri-more-2-fill ri-24px"></i>
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actionsDropdown{{ $empresa->id }}">
+                                                @can('view empresas')
+                                                <a class="dropdown-item" href="{{ route('admin.empresas.show', $empresa) }}">
+                                                    <i class="ri ri-eye-line me-1"></i> Ver
+                                                </a>
+                                                @endcan
+                                                @can('edit empresas')
+                                                <a class="dropdown-item" href="{{ route('admin.empresas.edit', $empresa) }}">
+                                                    <i class="ri ri-pencil-line me-1"></i> Editar
+                                                </a>
+                                                @endcan
+                                                @can('delete empresas')
+                                                <button class="dropdown-item text-danger" wire:click="delete({{ $empresa->id }})" wire:confirm="¿Estás seguro de eliminar esta empresa?">
+                                                    <i class="ri ri-delete-bin-line me-1"></i> Eliminar
+                                                </button>
+                                                @endcan
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="6" class="text-center">No se encontraron empresas que coincidan con los filtros</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="6" class="text-center">No se encontraron empresas</td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Paginación -->
                 <div class="card-footer">
-                    {{ $empresas->links('vendor.pagination.materialize') }}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            Mostrando {{ $empresas->firstItem() }} a {{ $empresas->lastItem() }} de {{ $empresas->total() }} resultados
+                        </div>
+                        <div>
+                            {{ $empresas->links('livewire.admin.pagination') }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -14,6 +14,8 @@ class Create extends Component
     public $longitud = '';
     public $representante_legal = '';
     public $status = true;
+    public $telefono = '';
+    public $email = '';
 
     protected $rules = [
         'razon_social' => 'required|string|max:255',
@@ -23,6 +25,8 @@ class Create extends Component
         'longitud' => 'nullable|numeric|between:-180,180',
         'representante_legal' => 'nullable|string|max:255',
         'status' => 'boolean',
+        'telefono' => 'nullable|string|max:20',
+        'email' => 'nullable|email|max:255',
     ];
 
     public function save()
@@ -37,6 +41,8 @@ class Create extends Component
             'longitud' => $this->longitud ?: null,
             'representante_legal' => $this->representante_legal,
             'status' => $this->status,
+            'telefono' => $this->telefono,
+            'email' => $this->email,
         ]);
 
         session()->flash('message', 'Empresa creada correctamente.');

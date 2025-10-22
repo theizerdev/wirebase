@@ -76,45 +76,12 @@
       </a>
     </li>
 
-    @can('view users')
-    <li class="menu-item {{ request()->is('admin/users*') || request()->is('admin/roles*') || request()->is('admin/active-sessions*') ? 'active open' : '' }}">
-      <a href="javascript:void(0);" class="menu-link menu-toggle">
-        <i class="menu-icon tf-icons ri ri-shield-keyhole-line"></i>
-        <div data-i18n="Seguridad">Seguridad</div>
-      </a>
-      <ul class="menu-sub">
-        @can('view users')
-        <li class="menu-item {{ request()->is('admin/users*') ? 'active' : '' }}">
-          <a href="{{ route('admin.users.index') }}" class="menu-link">
-            <div data-i18n="Usuarios">Usuarios</div>
-          </a>
-        </li>
-        @endcan
-
-        @can('view roles')
-        <li class="menu-item {{ request()->is('admin/roles*') ? 'active' : '' }}">
-          <a href="{{ route('admin.roles.index') }}" class="menu-link">
-            <div data-i18n="Roles y Permisos">Roles y Permisos</div>
-          </a>
-        </li>
-        @endcan
-
-        @can('view active sessions')
-        <li class="menu-item {{ request()->is('admin/active-sessions*') ? 'active' : '' }}">
-          <a href="{{ route('admin.active-sessions.index') }}" class="menu-link">
-            <div data-i18n="Sesiones Activas">Sesiones Activas</div>
-          </a>
-        </li>
-        @endcan
-      </ul>
-    </li>
-    @endcan
-
     <!-- Configuración -->
     <li class="menu-item {{ request()->is('admin/empresas*')
     || request()->is('admin/sucursales*')
     || request()->is('admin/school-periods*') ? 'active open' : '' }}
-    || {{ request()->is('admin/turnos*') ? 'active open' : '' }}">
+    || {{ request()->is('admin/turnos*') ? 'active open' : '' }}
+    || {{ request()->is('admin/niveles-educativos*') ? 'active open' : '' }} ">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons ri ri-cogs-line"></i>
         <div data-i18n="Configuración">Configuración</div>
@@ -151,8 +118,49 @@
           </a>
         </li>
         @endcan
+        @can('view niveles educativos')
+        <li class="menu-item {{ request()->is('admin/niveles-educativos*') ? 'active' : '' }}">
+          <a href="{{ route('admin.niveles-educativos.index') }}" class="menu-link">
+            <div data-i18n="Niveles Educativos">Niveles Educativos</div>
+          </a>
+        </li>
+        @endcan
       </ul>
     </li>
+
+    @can('view users')
+    <li class="menu-item {{ request()->is('admin/users*') || request()->is('admin/roles*') || request()->is('admin/active-sessions*') ? 'active open' : '' }}">
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons ri ri-group-line"></i>
+        <div data-i18n="Gestión de Usuarios">Gestión de Usuarios</div>
+      </a>
+      <ul class="menu-sub">
+        @can('view users')
+        <li class="menu-item {{ request()->is('admin/users*') ? 'active' : '' }}">
+          <a href="{{ route('admin.users.index') }}" class="menu-link">
+            <div data-i18n="Usuarios">Usuarios</div>
+          </a>
+        </li>
+        @endcan
+
+        @can('view roles')
+        <li class="menu-item {{ request()->is('admin/roles*') ? 'active' : '' }}">
+          <a href="{{ route('admin.roles.index') }}" class="menu-link">
+            <div data-i18n="Roles y Permisos">Roles y Permisos</div>
+          </a>
+        </li>
+        @endcan
+
+        @can('view active sessions')
+        <li class="menu-item {{ request()->is('admin/active-sessions*') ? 'active' : '' }}">
+          <a href="{{ route('admin.active-sessions.index') }}" class="menu-link">
+            <div data-i18n="Sesiones Activas">Sesiones Activas</div>
+          </a>
+        </li>
+        @endcan
+      </ul>
+    </li>
+    @endcan
 
     <li class="menu-item {{ request()->is('admin/profile*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">

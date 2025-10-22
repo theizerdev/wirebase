@@ -3,8 +3,8 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header border-bottom">
-                    <h5 class="card-title mb-1">Crear Empresa</h5>
-                    <p class="mb-0">Completa la información para registrar una nueva empresa</p>
+                    <h5 class="card-title mb-1">Editar Empresa</h5>
+                    <p class="mb-0">Modifica la información de la empresa</p>
                 </div>
                 <div class="card-body">
                     @if (session()->has('message'))
@@ -106,15 +106,13 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{{ route('admin.empresas.index') }}" class="btn btn-label-secondary">
-                                <i class="ri ri-arrow-left-line"></i> Volver
-                            </a>
-                            @can('edit empresas')
+                        <div class="col-12">
                             <button type="submit" class="btn btn-primary">
-                                <i class="ri ri-save-line"></i> Guardar Empresa
+                                <i class="ri ri-save-line me-1"></i> Guardar Cambios
                             </button>
-                            @endcan
+                            <a href="{{ route('admin.empresas.index') }}" class="btn btn-label-secondary">
+                                <i class="ri ri-arrow-left-line me-1"></i> Volver
+                            </a>
                         </div>
                     </form>
                 </div>

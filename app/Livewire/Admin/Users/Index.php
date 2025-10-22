@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\User;
 use App\Models\Empresa;
 use App\Models\Sucursal;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 
 class Index extends Component
@@ -95,6 +96,8 @@ class Index extends Component
                 $query->where('empresa_id', $this->empresa_id);
             })
             ->get();
+        
+        $roles = Role::all();
 
         // Calcular estadísticas
         $totalUsers = User::count();
@@ -102,7 +105,7 @@ class Index extends Component
         $pendingUsers = User::where('status', 'pending')->count();
         $inactiveUsers = User::where('status', 'inactive')->count();
 
-        return view('livewire.admin.users.index', compact('users', 'empresas', 'sucursales', 'totalUsers', 'activeUsers', 'pendingUsers', 'inactiveUsers'))
+        return view('livewire.admin.users.index', compact('users', 'empresas', 'sucursales', 'roles', 'totalUsers', 'activeUsers', 'pendingUsers', 'inactiveUsers'))
             ->layout('components.layouts.admin', [
                 'title' => 'Lista de Usuarios'
             ]);

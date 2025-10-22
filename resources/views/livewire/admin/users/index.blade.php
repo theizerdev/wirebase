@@ -1,279 +1,285 @@
-@php
-    $headers = [
-        ['key' => 'id', 'label' => '#', 'sortable' => true],
-        ['key' => 'name', 'label' => 'Nombre', 'sortable' => true],
-        ['key' => 'email', 'label' => 'Email', 'sortable' => true],
-        ['key' => 'email_verified_at', 'label' => 'Verificado', 'sortable' => true, 'class' => 'text-center'],
-        ['key' => 'empresa.nombre', 'label' => 'Empresa', 'sortable' => true],
-        ['key' => 'sucursal', 'label' => 'Sucursal', 'sortable' => false],
-        ['key' => 'status', 'label' => 'Estado', 'sortable' => true, 'class' => 'text-center'],
-        ['key' => 'created_at', 'label' => 'Registro', 'sortable' => true],
-        ['key' => 'actions', 'label' => 'Acciones', 'class' => 'text-center']
-    ];
-@endphp
-
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Lista de Usuarios</h5>
-        <div>
-            <button wire:click="clearFilters" class="btn btn-outline-secondary me-2">
-                <i class="ri ri-refresh-line"></i> Limpiar
-            </button>
-            @can('create users')
-            <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-                <i class="ri ri-add-line"></i> Nuevo Usuario
-            </a>
-            @endcan
+<div>
+    @if (session()->has('message'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    </div>
+    @endif
 
-    <div class="card-body">
-        <!-- Stats Cards -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card border-start border-primary border-4 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Total Usuarios</h6>
-                                <h2 class="mb-0">{{ $totalUsers }}</h2>
-                            </div>
-                            <div class="bg-primary bg-opacity-10 p-3 rounded">
-                                <i class="ri ri-group-line text-primary" style="font-size: 1.5rem;"></i>
-                            </div>
+    @if (session()->has('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-start border-primary border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Usuarios</h6>
+                            <h2 class="mb-0">{{ $totalUsers }}</h2>
                         </div>
-                        <div class="mt-3">
-                            <span class="text-success fw-semibold">
-                                <i class="ri ri-arrow-up-line"></i> {{ round(($activeUsers/$totalUsers)*100) }}% Activos
-                            </span>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-group-line text-primary" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="text-success fw-semibold">
+                            <i class="ri ri-arrow-up-line"></i> {{ round(($activeUsers/$totalUsers)*100) }}% Activos
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-success border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Usuarios Activos</h6>
+                            <h2 class="mb-0">{{ $activeUsers }}</h2>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-checkbox-circle-line text-success" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-start border-success border-4 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Usuarios Activos</h6>
-                                <h2 class="mb-0">{{ $activeUsers }}</h2>
-                            </div>
-                            <div class="bg-success bg-opacity-10 p-3 rounded">
-                                <i class="ri ri-checkbox-circle-line text-success" style="font-size: 1.5rem;"></i>
-                            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-warning border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Usuarios Pendientes</h6>
+                            <h2 class="mb-0">{{ $pendingUsers }}</h2>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-time-line text-warning" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-start border-warning border-4 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Usuarios Pendientes</h6>
-                                <h2 class="mb-0">{{ $pendingUsers }}</h2>
-                            </div>
-                            <div class="bg-warning bg-opacity-10 p-3 rounded">
-                                <i class="ri ri-time-line text-warning" style="font-size: 1.5rem;"></i>
-                            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-start border-danger border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Usuarios Inactivos</h6>
+                            <h2 class="mb-0">{{ $inactiveUsers }}</h2>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-start border-danger border-4 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Usuarios Inactivos</h6>
-                                <h2 class="mb-0">{{ $inactiveUsers }}</h2>
-                            </div>
-                            <div class="bg-danger bg-opacity-10 p-3 rounded">
-                                <i class="ri ri-close-circle-line text-danger" style="font-size: 1.5rem;"></i>
-                            </div>
+                        <div class="bg-danger bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-close-circle-line text-danger" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Filters -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label for="search" class="form-label">Buscar</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="ri ri-search-line"></i></span>
-                            <input
-                                type="text"
-                                wire:model.live="search"
-                                class="form-control"
-                                placeholder="Nombre, email..."
-                            >
-                            <div wire:loading wire:target="search" class="input-group-text">
-                                <i class="ri ri-loader-4-line spin"></i>
-                            </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-1">Lista de Usuarios</h5>
+                            <p class="mb-0">Administra los usuarios registrados en el sistema</p>
                         </div>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="status" class="form-label">Estado</label>
-                        <div wire:ignore>
-                            <select wire:model.live="status" class="form-select">
-                                <option value="">Todos los estados</option>
-                                <option value="active">Activo</option>
-                                <option value="pending">Pendiente</option>
-                                <option value="inactive">Inactivo</option>
-                            </select>
+                        @can('create users')
+                        <div>
+                            <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
+                                <i class="ri ri-add-line"></i> Nuevo Usuario
+                            </a>
                         </div>
-                        <div wire:loading wire:target="status" class="small text-muted mt-1">Filtrando...</div>
+                        @endcan
                     </div>
-                    <div class="col-md-2">
-                        <label for="empresa_id" class="form-label">Empresa</label>
-                        <div wire:ignore>
-                            <select wire:model.live="empresa_id" class="form-select">
+                </div>
+
+                <!-- Filtros -->
+                <div class="card-header border-bottom">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" class="form-control" placeholder="Nombre, email, username..." 
+                                   wire:model.live.debounce.300ms="search">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Empresa</label>
+                            <select class="form-select" wire:model.live="filters.empresa">
                                 <option value="">Todas</option>
                                 @foreach($empresas as $empresa)
-                                    <option value="{{ $empresa->id }}">{{ $empresa->razon_social }}</option>
+                                    <option value="{{ $empresa->id }}">{{ $empresa->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div wire:loading wire:target="empresa_id" class="small text-muted mt-1">Filtrando...</div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" wire:model.live="filters.status">
+                                <option value="">Todos</option>
+                                <option value="active">Activos</option>
+                                <option value="pending">Pendientes</option>
+                                <option value="inactive">Inactivos</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Rol</label>
+                            <select class="form-select" wire:model.live="filters.role">
+                                <option value="">Todos</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->name }}">{{ $role->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 d-flex align-items-end gap-2">
+                            <button type="button" class="btn btn-label-secondary" wire:click="clearFilters">
+                                <i class="ri ri-eraser-line"></i> Limpiar
+                            </button>
+                            <button type="button" class="btn btn-label-secondary" wire:click="$refresh">
+                                <i class="ri ri-refresh-line"></i> Actualizar
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Sucursal</label>
-                        <select class="form-select" wire:model.live="sucursal_id">
-                            <option value="">Todas las sucursales</option>
-                            @foreach($sucursales as $sucursal)
-                                <option value="{{ $sucursal->id }}">{{ $sucursal->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="perPage" class="form-label">Mostrar</label>
-                        <select wire:model.live="perPage" class="form-select">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button wire:click="clearFilters" class="btn btn-outline-secondary w-100">
-                            <i class="ri ri-refresh-line"></i>
-                        </button>
+                </div>
+
+                <div class="card-datatable table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th wire:click="sortBy('id')" style="cursor: pointer;">
+                                    # @if($sortBy === 'id') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th wire:click="sortBy('name')" style="cursor: pointer;">
+                                    Nombre @if($sortBy === 'name') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th wire:click="sortBy('email')" style="cursor: pointer;">
+                                    Email @if($sortBy === 'email') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th wire:click="sortBy('email_verified_at')" style="cursor: pointer;">
+                                    Verificado @if($sortBy === 'email_verified_at') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th wire:click="sortBy('empresa.nombre')" style="cursor: pointer;">
+                                    Empresa @if($sortBy === 'empresa.nombre') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th>Sucursal</th>
+                                <th wire:click="sortBy('status')" style="cursor: pointer;">
+                                    Estado @if($sortBy === 'status') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th wire:click="sortBy('created_at')" style="cursor: pointer;">
+                                    Registro @if($sortBy === 'created_at') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($users as $user)
+                                <tr>
+                                    <td>{{ $user->id }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if($user->profile_photo_path)
+                                                <img src="{{ asset($user->profile_photo_path) }}" alt="{{ $user->name }}" class="rounded-circle me-2" width="32" height="32">
+                                            @else
+                                                <div class="avatar avatar-sm me-2">
+                                                    <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($user->name, 0, 1) }}</span>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <h6 class="mb-0">{{ $user->name }}</h6>
+                                                <small class="text-muted">{{ $user->username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ $user->email }}</td>
+                                    <td class="text-center">
+                                        @if($user->email_verified_at)
+                                            <span class="badge bg-success">Verificado</span>
+                                        @else
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($user->empresa)
+                                            <span class="badge bg-primary">{{ $user->empresa->nombre }}</span>
+                                        @else
+                                            <span class="badge bg-secondary">Sin empresa</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($user->sucursal)
+                                            {{ $user->sucursal->nombre }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @switch($user->status)
+                                            @case('active')
+                                                <span class="badge bg-success">Activo</span>
+                                                @break
+                                            @case('pending')
+                                                <span class="badge bg-warning">Pendiente</span>
+                                                @break
+                                            @case('inactive')
+                                                <span class="badge bg-danger">Inactivo</span>
+                                                @break
+                                        @endswitch
+                                    </td>
+                                    <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-1" type="button" id="actionsDropdown{{ $user->id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i class="ri ri-more-2-fill ri-24px"></i>
+                                            </button>
+                                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actionsDropdown{{ $user->id }}">
+                                                @can('view users')
+                                                <a class="dropdown-item" href="{{ route('admin.users.show', $user) }}">
+                                                    <i class="ri ri-eye-line me-1"></i> Ver
+                                                </a>
+                                                @endcan
+                                                @can('edit users')
+                                                <a class="dropdown-item" href="{{ route('admin.users.edit', $user) }}">
+                                                    <i class="ri ri-pencil-line me-1"></i> Editar
+                                                </a>
+                                                @endcan
+                                                @can('delete users')
+                                                <button class="dropdown-item text-danger" wire:click="delete({{ $user->id }})" wire:confirm="¿Estás seguro de eliminar este usuario?">
+                                                    <i class="ri ri-delete-bin-line me-1"></i> Eliminar
+                                                </button>
+                                                @endcan
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="text-center">No se encontraron usuarios</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            Mostrando {{ $users->firstItem() }} a {{ $users->lastItem() }} de {{ $users->total() }} resultados
+                        </div>
+                        <div>
+                            {{ $users->links('livewire.admin.pagination') }}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Users Table -->
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        @foreach($headers as $header)
-                            <th
-                                wire:click="sortBy('{{ $header['key'] }}')"
-                                style="cursor: pointer;"
-                                @class([
-                                    'text-center' => isset($header['class']),
-                                    'text-nowrap' => true
-                                ])
-                            >
-                                {{ $header['label'] }}
-                                @if($sortBy === $header['key'])
-                                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
-                                @endif
-                            </th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($users as $user)
-                        <tr>
-                            <td>{{ $user->id }}</td>
-                            <td>{{ $user->name }}</td>
-                            <td>
-                                {{ $user->email }}
-
-                            </td>
-                            <td class="text-center">
-                                @if($user->email_verified_at)
-                                    <span class="badge bg-label-success">Sí</span>
-                                @else
-                                    <span class="badge bg-label-danger">No</span>
-                                @endif
-                            </td>
-                            <td>{{ $user->empresa->razon_social ?? 'N/A' }}</td>
-                            <td>
-                                 {{ $user->sucursal->nombre ?? 'N/A' }}
-                            </td>
-                            <td class="text-center">
-                                <div class="form-check form-switch d-flex justify-content-center">
-                                    <input
-                                        type="checkbox"
-                                        class="form-check-input"
-                                        @can('edit users') wire:change="toggleStatus({{ $user->id }})" @endcan
-                                        {{ $user->status ? 'checked' : '' }}
-                                    >
-                                </div>
-                            </td>
-                            <td>{{ $user->created_at->format('d/m/Y') }}</td>
-                            <td class="text-center">
-                                <div class="dropdown">
-                                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                            <i class="ri ri-more-2-line"></i>
-                                        </button>
-                                        <div class="dropdown-menu">
-                                             <a href="{{ route('admin.users.show', $user) }}" class="dropdown-item">
-                                                    <i class="ri ri-eye-line"></i>
-                                                    Ver datos
-
-                                                </a>
-                                                @can('edit users')
-                                                <a href="{{ route('admin.users.edit', $user) }}" class="dropdown-item">
-                                                    <i class="ri ri-edit-line"></i>
-                                                    Editar registros
-                                                </a>
-                                                @endcan
-
-                                                @can('delete users')
-                                                <button
-                                                    wire:click="delete({{ $user->id }})"
-                                                    class="dropdown-item"
-                                                    onclick="return confirm('¿Estás seguro de eliminar este usuario?')"
-                                                >
-                                                    <i class="ri ri-delete-bin-line"></i>
-                                                    Eliminar
-                                                </button>
-                                                @endcan
-                                        </div>
-                                    </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9" class="text-center">No se encontraron usuarios que coincidan con los filtros</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-             {{ $users->links('vendor.pagination.materialize') }}
-        </div>
     </div>
 </div>
-
-@if(session()->has('message'))
-    <script>
-        document.addEventListener('livewire:load', function() {
-            setTimeout(() => {
-                Livewire.emit('refreshComponent');
-            }, 3000);
-        });
-    </script>
-@endif

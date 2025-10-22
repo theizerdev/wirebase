@@ -68,4 +68,12 @@ Route::prefix('admin')
             Route::get('/{user_id}/history', \App\Livewire\Admin\Users\Profile\HistoryUser::class)->name('users.history');
         });
 
+        // Rutas para niveles educativos
+        Route::prefix('niveles-educativos')->group(function () {
+            Route::get('/', \App\Livewire\Admin\NivelesEducativos\Index::class)->name('niveles-educativos.index');
+            Route::get('/create', \App\Livewire\Admin\NivelesEducativos\Create::class)->name('niveles-educativos.create');
+            Route::get('/{nivel}', \App\Livewire\Admin\NivelesEducativos\Show::class)->name('niveles-educativos.show');
+            Route::get('/{nivel}/edit', \App\Livewire\Admin\NivelesEducativos\Edit::class)->name('niveles-educativos.edit');
+        });
+
     });

@@ -15,17 +15,17 @@
 
     <div class="row">
         <!-- Estadísticas -->
-        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-1">{{ $totalRoles }}</h4>
-                            <p class="mb-0">Total Roles</p>
+                            <h4 class="mb-1">{{ \App\Models\NivelEducativo::count() }}</h4>
+                            <p class="mb-0">Total Niveles</p>
                         </div>
                         <div class="avatar">
                             <span class="avatar-initial rounded bg-label-primary">
-                                <i class="ri ri-user-settings-line ri-24px"></i>
+                                <i class="ri ri-graduation-cap-line ri-24px"></i>
                             </span>
                         </div>
                     </div>
@@ -33,17 +33,35 @@
             </div>
         </div>
 
-        <div class="col-lg-6 col-md-6 col-sm-12 mb-4">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-1">{{ $totalPermissions }}</h4>
-                            <p class="mb-0">Total Permisos</p>
+                            <h4 class="mb-1">${{ number_format(\App\Models\NivelEducativo::avg('costo') ?? 0, 2) }}</h4>
+                            <p class="mb-0">Costo Promedio</p>
                         </div>
                         <div class="avatar">
                             <span class="avatar-initial rounded bg-label-success">
-                                <i class="ri ri-shield-keyhole-line ri-24px"></i>
+                                <i class="ri ri-money-dollar-circle-line ri-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ number_format(\App\Models\NivelEducativo::avg('cuotas') ?? 0, 1) }}</h4>
+                            <p class="mb-0">Cuotas Promedio</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-info">
+                                <i class="ri ri-list-ordered ri-24px"></i>
                             </span>
                         </div>
                     </div>
@@ -58,13 +76,13 @@
                 <div class="card-header border-bottom">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title mb-1">Lista de Roles</h5>
-                            <p class="mb-0">Administra los roles y permisos del sistema</p>
+                            <h5 class="card-title mb-1">Lista de Niveles Educativos</h5>
+                            <p class="mb-0">Administra los niveles educativos registrados en el sistema</p>
                         </div>
-                        @can('create roles')
+                        @can('create niveles educativos')
                         <div>
-                            <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
-                                <i class="ri ri-add-line"></i> Nuevo Rol
+                            <a href="{{ route('admin.niveles-educativos.create') }}" class="btn btn-primary">
+                                <i class="ri ri-add-line"></i> Nuevo Nivel
                             </a>
                         </div>
                         @endcan
@@ -76,7 +94,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Buscar</label>
-                            <input type="text" class="form-control" placeholder="Nombre del rol..." 
+                            <input type="text" class="form-control" placeholder="Nombre..." 
                                    wire:model.live.debounce.300ms="search">
                         </div>
 
@@ -91,8 +109,8 @@
                         </div>
 
                         <div class="col-md-3 d-flex align-items-end">
-                            <button type="button" class="btn btn-label-secondary" wire:click="clearFilters">
-                                <i class="ri ri-eraser-line"></i> Limpiar filtros
+                            <button type="button" class="btn btn-label-secondary" wire:click="$refresh">
+                                <i class="ri ri-refresh-line"></i> Actualizar
                             </button>
                         </div>
                     </div>
@@ -102,51 +120,51 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th wire:click="sortBy('name')" style="cursor: pointer;">
-                                    Nombre @if($sortBy == 'name') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                <th wire:click="sortBy('nombre')" style="cursor: pointer;">
+                                    Nombre @if($sortField === 'nombre') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th>Permisos</th>
-                                <th>Usuarios</th>
+                                <th wire:click="sortBy('costo')" style="cursor: pointer;">
+                                    Costo @if($sortField === 'costo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
+                                <th wire:click="sortBy('cuotas')" style="cursor: pointer;">
+                                    Cuotas @if($sortField === 'cuotas') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                </th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($roles as $role)
+                            @forelse($niveles as $nivel)
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="avatar avatar-sm me-2">
-                                                <span class="avatar-initial rounded bg-label-primary">{{ substr($role->name, 0, 1) }}</span>
+                                                <span class="avatar-initial rounded bg-label-primary">{{ substr($nivel->nombre, 0, 1) }}</span>
                                             </div>
                                             <div>
-                                                <h6 class="mb-0">{{ $role->name }}</h6>
+                                                <h6 class="mb-0">{{ $nivel->nombre }}</h6>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ $role->permissions_count }} permisos</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success">{{ $role->users_count }} usuarios</span>
-                                    </td>
+                                    <td>${{ number_format($nivel->costo, 2) }}</td>
+                                    <td>{{ $nivel->cuotas }}</td>
                                     <td>
                                         <div class="dropdown">
-                                            <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-1" type="button" id="actionsDropdown{{ $role->id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <button class="btn btn-text-secondary rounded-pill text-body-secondary border-0 p-1" type="button" id="actionsDropdown{{ $nivel->id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                 <i class="ri ri-more-2-fill ri-24px"></i>
                                             </button>
-                                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actionsDropdown{{ $role->id }}">
-                                                @can('view roles')
-                                                <a class="dropdown-item" href="{{ route('admin.roles.show', $role) }}">
+                                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="actionsDropdown{{ $nivel->id }}">
+                                                @can('view niveles educativos')
+                                                <a class="dropdown-item" href="{{ route('admin.niveles-educativos.show', $nivel) }}">
                                                     <i class="ri ri-eye-line me-1"></i> Ver
                                                 </a>
                                                 @endcan
-                                                @can('edit roles')
-                                                <a class="dropdown-item" href="{{ route('admin.roles.edit', $role) }}">
+                                                @can('edit niveles educativos')
+                                                <a class="dropdown-item" href="{{ route('admin.niveles-educativos.edit', $nivel) }}">
                                                     <i class="ri ri-pencil-line me-1"></i> Editar
                                                 </a>
                                                 @endcan
-                                                @can('delete roles')
-                                                <button class="dropdown-item text-danger" wire:click="delete({{ $role->id }})" wire:confirm="¿Estás seguro de eliminar este rol?">
+                                                @can('delete niveles educativos')
+                                                <button class="dropdown-item text-danger" wire:click="confirmDelete({{ $nivel->id }})" wire:confirm="¿Estás seguro de eliminar este nivel educativo?">
                                                     <i class="ri ri-delete-bin-line me-1"></i> Eliminar
                                                 </button>
                                                 @endcan
@@ -156,7 +174,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center">No se encontraron roles</td>
+                                    <td colspan="4" class="text-center">No se encontraron niveles educativos</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -166,10 +184,10 @@
                 <div class="card-footer">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            Mostrando {{ $roles->firstItem() }} a {{ $roles->lastItem() }} de {{ $roles->total() }} resultados
+                            Mostrando {{ $niveles->firstItem() }} a {{ $niveles->lastItem() }} de {{ $niveles->total() }} resultados
                         </div>
                         <div>
-                            {{ $roles->links('livewire.admin.pagination') }}
+                            {{ $niveles->links('livewire.admin.pagination') }}
                         </div>
                     </div>
                 </div>

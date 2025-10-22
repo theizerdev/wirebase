@@ -64,6 +64,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'show turnos',
             'delete turnos',
 
+            // Permisos para niveles educativos
+            'view niveles educativos',
+            'create niveles educativos',
+            'edit niveles educativos',
+            'delete niveles educativos',
+
             // Permisos para perfil
             'view own profile',
             'edit own profile',
@@ -114,6 +120,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'create school periods',
             'edit school periods',
             'delete school periods',
+            'view niveles educativos',
+            'create niveles educativos',
+            'edit niveles educativos',
+            'delete niveles educativos',
         ];
         $adminRole->syncPermissions($adminPermissions);
 

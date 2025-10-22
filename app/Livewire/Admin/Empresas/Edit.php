@@ -15,6 +15,8 @@ class Edit extends Component
     public $longitud = '';
     public $representante_legal = '';
     public $status = true;
+    public $telefono = '';
+    public $email = '';
 
     protected $rules = [
         'razon_social' => 'required|string|max:255',
@@ -24,6 +26,8 @@ class Edit extends Component
         'longitud' => 'nullable|numeric|between:-180,180',
         'representante_legal' => 'nullable|string|max:255',
         'status' => 'boolean',
+        'telefono' => 'nullable|string|max:20',
+        'email' => 'nullable|email|max:255',
     ];
 
     public function mount(Empresa $empresa)
@@ -36,6 +40,8 @@ class Edit extends Component
         $this->longitud = $empresa->longitud;
         $this->representante_legal = $empresa->representante_legal;
         $this->status = $empresa->status;
+        $this->telefono = $empresa->telefono;
+        $this->email = $empresa->email;
 
         // Actualizar la regla de validación para permitir el documento actual
         $this->rules['documento'] = 'required|string|unique:empresas,documento,' . $empresa->id;
@@ -53,6 +59,8 @@ class Edit extends Component
             'longitud' => $this->longitud ?: null,
             'representante_legal' => $this->representante_legal,
             'status' => $this->status,
+            'telefono' => $this->telefono,
+            'email' => $this->email,
         ]);
 
         session()->flash('message', 'Empresa actualizada correctamente.');
