@@ -51,12 +51,18 @@ class RolesAndPermissionsSeeder extends Seeder
             'view permissions',
             'edit permissions',
 
-            // Permisos para permisos
+            // Permisos para Periodo escolar
             'view school periods',
             'create school periods',
             'edit school periods',
             'show school periods',
             'delete school periods',
+            // Permisos para los turnos
+            'view turnos',
+            'create turnos',
+            'edit turnos',
+            'show turnos',
+            'delete turnos',
 
             // Permisos para perfil
             'view own profile',

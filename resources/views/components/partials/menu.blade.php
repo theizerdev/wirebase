@@ -111,7 +111,10 @@
     @endcan
 
     <!-- Configuración -->
-    <li class="menu-item {{ request()->is('admin/empresas*') || request()->is('admin/sucursales*') || request()->is('admin/school-periods*') ? 'active open' : '' }}">
+    <li class="menu-item {{ request()->is('admin/empresas*')
+    || request()->is('admin/sucursales*')
+    || request()->is('admin/school-periods*') ? 'active open' : '' }}
+    || {{ request()->is('admin/turnos*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons ri ri-cogs-line"></i>
         <div data-i18n="Configuración">Configuración</div>
@@ -137,6 +140,14 @@
         <li class="menu-item {{ request()->is('admin/school-periods*') ? 'active' : '' }}">
           <a href="{{ route('admin.school-periods.index') }}" class="menu-link">
             <div data-i18n="Periodo escolar">Periodo escolar</div>
+          </a>
+        </li>
+        @endcan
+
+        @can('view turnos')
+        <li class="menu-item {{ request()->is('admin/turnos*') ? 'active' : '' }}">
+          <a href="{{ route('admin.turnos.index') }}" class="menu-link">
+            <div data-i18n="Turnos">Turnos</div>
           </a>
         </li>
         @endcan

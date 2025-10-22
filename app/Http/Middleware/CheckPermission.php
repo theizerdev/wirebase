@@ -23,7 +23,7 @@ class CheckPermission
         }
 
         $user = Auth::user();
-        
+
         if (!$user->can($permission)) {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }

@@ -53,6 +53,14 @@ Route::prefix('admin')
             Route::get('/{schoolPeriod}', \App\Livewire\Admin\SchoolPeriods\Show::class)->name('school-periods.show');
         });
 
+        // Rutas para turnos
+        Route::prefix('turnos')->group(function () {
+            Route::get('/', \App\Livewire\Admin\Turnos\Index::class)->name('turnos.index');
+            Route::get('/create', \App\Livewire\Admin\Turnos\Create::class)->name('turnos.create');
+            Route::get('/{turno}', \App\Livewire\Admin\Turnos\Show::class)->name('turnos.show');
+            Route::get('/{turno}/edit', \App\Livewire\Admin\Turnos\Edit::class)->name('turnos.edit');
+        });
+
         // Perfil de usuario
         Route::prefix('profile')->group(function () {
             Route::get('/', \App\Livewire\Admin\Users\Profile\Index::class)->name('users.profile');
