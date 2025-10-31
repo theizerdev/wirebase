@@ -14,6 +14,7 @@ class PaymentSchedule extends Model
         'matricula_id',
         'numero_cuota',
         'monto',
+        'monto_pagado',
         'fecha_vencimiento',
         'estado',
         'empresa_id',
@@ -22,7 +23,13 @@ class PaymentSchedule extends Model
 
     protected $casts = [
         'monto' => 'decimal:2',
+        'monto_pagado' => 'decimal:2',
         'fecha_vencimiento' => 'date'
+    ];
+
+    protected $attributes = [
+        'estado' => 'pendiente',
+        'monto_pagado' => 0
     ];
 
     public function matricula()

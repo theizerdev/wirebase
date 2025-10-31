@@ -76,9 +76,7 @@ class Matricula extends Model
     // Alias para la relación schoolPeriod
     public function periodo()
     {
-        //dd($this->belongsTo(SchoolPeriod::class, 'periodo_id'));
-
-        return $this->belongsTo(SchoolPeriod::class, 'periodo_id');
+        return $this->belongsTo(SchoolPeriod::class, 'school_periods_id');
     }
 
     public function empresa()

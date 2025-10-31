@@ -108,7 +108,7 @@
                     <label class="form-label">Buscar</label>
                     <input wire:model.live.debounce.300ms="search" type="text" class="form-control" placeholder="Buscar por nombre...">
                 </div>
-                
+
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Estado</label>
                     <select wire:model.live="status" class="form-select">
@@ -117,7 +117,7 @@
                         <option value="0">Inactivo</option>
                     </select>
                 </div>
-                
+
                 <div class="col-md-2 mb-3">
                     <label class="form-label">Mostrar</label>
                     <select wire:model.live="perPage" class="form-select">
@@ -161,15 +161,15 @@
                                         <i class="ri ri-eye-line ri-20px"></i>
                                     </a>
                                     @endcan
-                                    
+
                                     @can('update', $nivel)
                                     <a href="{{ route('admin.niveles-educativos.edit', $nivel) }}" class="btn btn-sm btn-icon btn-text-secondary waves-effect">
                                         <i class="ri ri-edit-line ri-20px"></i>
                                     </a>
                                     @endcan
-                                    
+
                                     @can('delete', $nivel)
-                                    <button type="button" class="btn btn-sm btn-icon btn-text-secondary waves-effect" 
+                                    <button type="button" class="btn btn-sm btn-icon btn-text-secondary waves-effect"
                                             wire:click="delete({{ $nivel->id }})"
                                             wire:confirm="¿Estás seguro de eliminar este nivel educativo?">
                                         <i class="ri ri-delete-bin-line ri-20px text-danger"></i>

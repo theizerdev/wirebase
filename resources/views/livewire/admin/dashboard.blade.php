@@ -1,5 +1,5 @@
 <div>
-    <!-- Selector de Rango de Fechas -->
+    <!-- Selector de Rango de Fechas y Controles -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -9,25 +9,86 @@
                             <h4 class="mb-1">Panel de Control de Accesos</h4>
                             <p class="mb-0 text-muted">Monitoreo en tiempo real del sistema</p>
                         </div>
-                        <div class="btn-group" role="group">
-                            <button wire:click="$set('dateRange', 'week')" class="btn btn-sm {{ $dateRange === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">
-                                <i class="ri ri-calendar-line me-1"></i>Semana
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="btn-group" role="group">
+                                <button wire:click="$set('dateRange', 'week')" class="btn btn-sm {{ $dateRange === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                    <i class="ri ri-calendar-line me-1"></i>Semana
+                                </button>
+                                <button wire:click="$set('dateRange', 'month')" class="btn btn-sm {{ $dateRange === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                    <i class="ri ri-calendar-2-line me-1"></i>Mes
+                                </button>
+                                <button wire:click="$set('dateRange', 'quarter')" class="btn btn-sm {{ $dateRange === 'quarter' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                    <i class="ri ri-calendar-check-line me-1"></i>Trimestre
+                                </button>
+                                <button wire:click="$set('dateRange', 'year')" class="btn btn-sm {{ $dateRange === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                    <i class="ri ri-calendar-event-line me-1"></i>Año
+                                </button>
+                            </div>
+                            <button wire:click="exportDashboard" class="btn btn-sm btn-success">
+                                <i class="ri ri-download-line me-1"></i>Exportar
                             </button>
-                            <button wire:click="$set('dateRange', 'month')" class="btn btn-sm {{ $dateRange === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">
-                                <i class="ri ri-calendar-2-line me-1"></i>Mes
-                            </button>
-                            <button wire:click="$set('dateRange', 'quarter')" class="btn btn-sm {{ $dateRange === 'quarter' ? 'btn-primary' : 'btn-outline-primary' }}">
-                                <i class="ri ri-calendar-check-line me-1"></i>Trimestre
-                            </button>
-                            <button wire:click="$set('dateRange', 'year')" class="btn btn-sm {{ $dateRange === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">
-                                <i class="ri ri-calendar-event-line me-1"></i>Año
-                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="ri ri-settings-line me-1"></i>Personalizar
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="javascript:void(0);" wire:click="toggleWidget('showAlerts')">
+                                        <i class="ri ri-notification-3-line me-2"></i>Alertas
+                                        @if($showAlerts) <i class="ri ri-check-line float-end text-success"></i> @endif
+                                    </a>
+                                    <a class="dropdown-item" href="javascript:void(0);" wire:click="toggleWidget('showFinancial')">
+                                        <i class="ri ri-money-dollar-circle-line me-2"></i>Finanzas
+                                        @if($showFinancial) <i class="ri ri-check-line float-end text-success"></i> @endif
+                                    </a>
+                                    <a class="dropdown-item" href="javascript:void(0);" wire:click="toggleWidget('showAcademic')">
+                                        <i class="ri ri-graduation-cap-line me-2"></i>Académico
+                                        @if($showAcademic) <i class="ri ri-check-line float-end text-success"></i> @endif
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Alertas y Notificaciones -->
+    @if($showAlerts && $alerts['totalAlerts'] > 0)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="ri ri-notification-3-line ri-24px me-2"></i>
+                    <div>
+                        <strong>¡Alertas Pendientes!</strong> Tienes {{ $alerts['totalAlerts'] }} alertas que requieren atención.
+                    </div>
+                </div>
+                <div class="mt-2">
+                    @if($alerts['pendingPayments'] > 0)
+                    <span class="badge bg-danger me-2">
+                        <i class="ri ri-money-dollar-circle-line me-1"></i>
+                        {{ $alerts['pendingPayments'] }} pagos próximos a vencer
+                    </span>
+                    @endif
+                    @if($alerts['expiringEnrollments'] > 0)
+                    <span class="badge bg-warning me-2">
+                        <i class="ri ri-calendar-line me-1"></i>
+                        {{ $alerts['expiringEnrollments'] }} matrículas por vencer
+                    </span>
+                    @endif
+                    @if($alerts['lowAttendanceStudents'] > 0)
+                    <span class="badge bg-info">
+                        <i class="ri ri-user-line me-1"></i>
+                        {{ $alerts['lowAttendanceStudents'] }} estudiantes con baja asistencia
+                    </span>
+                    @endif
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Tarjetas de Estadísticas Principales -->
     <div class="row g-4 mb-4">
@@ -124,73 +185,182 @@
         </div>
     </div>
 
-    <!-- Gráficos Principales -->
+    <!-- Métricas Financieras -->
+    @if($showFinancial)
     <div class="row g-4 mb-4">
-        <!-- Gráfico de Accesos por Período -->
-        <div class="col-xl-8">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-1">Entradas y Salidas</h5>
-                        <p class="mb-0 text-muted">Comparativa por 
-                            @if($dateRange === 'week') día
-                            @elseif($dateRange === 'month') semana
-                            @elseif($dateRange === 'quarter') mes
-                            @else mes
-                            @endif
-                        </p>
+        <div class="col-lg-4">
+            <div class="card ">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="mb-1">Ingresos Totales</h6>
+                            <h3 class="mb-0">{{ number_format($financialStats['totalIncome'], 2, ',', '.') }} $</h3>
+                            <small class="">Período actual</small>
+                        </div>
+                        <div class="avatar avatar-lg bg-primary">
+                                <i class="ri ri-bar-chart-line ri-24px text-white"></i>
+                            </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card  text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class=" mb-1">Ingresos Pendientes</h6>
+                            <h3 class="mb-0">{{ number_format($financialStats['pendingIncome'], 2, ',', '.') }} $</h3>
+                            <small class="">Por cobrar</small>
+                        </div>
+                        <div class="avatar avatar-lg bg-warning">
+                            <i class="ri ri-time-line ri-24px text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class=" mb-1">Cambio vs Anterior</h6>
+                            <h3 class="mb-0">{{ number_format($financialStats['incomeChange'], 1) }}%</h3>
+                            <small class="">
+                                @if($financialStats['incomeChange'] >= 0)
+                                    <i class="ri ri-arrow-up-line"></i> Aumento
+                                @else
+                                    <i class="ri ri-arrow-down-line"></i> Disminución
+                                @endif
+                            </small>
+                        </div>
+                        <div class="avatar avatar-lg bg-dark">
+                            <i class="ri ri-arrow-up-line ri-24px text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Métricas Académicas -->
+    @if($showAcademic)
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Matrículas Activas</h6>
+                            <h3 class="mb-0">{{ $academicStats['activeEnrollments'] }}</h3>
+                            <small class="text-muted">Total: {{ $academicStats['totalEnrollments'] }}</small>
+                        </div>
+                        <div class="avatar avatar-lg bg-primary bg-opacity-10">
+                            <i class="ri ri-graduation-cap-line ri-24px text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Promedio General</h6>
+                            <h3 class="mb-0">{{ number_format($academicStats['averageGrade'], 1) }}</h3>
+                            <small class="text-muted">Sobre 20 puntos</small>
+                        </div>
+                        <div class="avatar avatar-lg bg-success bg-opacity-10">
+                            <i class="ri ri-award-line ri-24px text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Estudiantes Destacados</h6>
+                            <h3 class="mb-0">{{ $academicStats['topStudents'] }}</h3>
+                            <small class="text-muted">Sin implementar</small>
+                        </div>
+                        <div class="avatar avatar-lg bg-warning bg-opacity-10">
+                            <i class="ri ri-star-line ri-24px text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">Período Actual</h6>
+                            <h5 class="mb-0">{{ $currentPeriod ? $currentPeriod->nombre : 'N/A' }}</h5>
+                            <small class="text-muted">
+                                @if($currentPeriod)
+                                    {{ \Carbon\Carbon::parse($currentPeriod->fecha_inicio)->format('d/m') }} -
+                                    {{ \Carbon\Carbon::parse($currentPeriod->fecha_fin)->format('d/m') }}
+                                @endif
+                            </small>
+                        </div>
+                        <div class="avatar avatar-lg bg-info bg-opacity-10">
+                            <i class="ri ri-calendar-line ri-24px text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Gráficos de Estadísticas -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Entradas y Salidas por Período</h5>
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-text-secondary rounded-pill btn-icon" type="button" data-bs-toggle="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="ri ri-more-2-line"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ route('admin.access.students') }}"><i class="ri ri-qr-scan-2-line me-2"></i>Control de Acceso</a></li>
-                            <li><a class="dropdown-item" href="{{ route('admin.students.index') }}"><i class="ri ri-user-line me-2"></i>Ver Estudiantes</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" wire:click="exportDashboard">
+                                <i class="ri ri-download-line me-1"></i>Exportar CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);">
+                                <i class="ri ri-file-pdf-line me-1"></i>Exportar PDF
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" wire:click="$refresh">
+                                <i class="ri ri-refresh-line me-1"></i>Actualizar
+                            </a></li>
                         </ul>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div id="entriesExitsChart"></div>
+                    <div id="accessChart" style="height: 300px;"></div>
                     <script class="entries-exits-data" type="application/json">
                         @json($entriesExitsByPeriod)
                     </script>
                 </div>
             </div>
         </div>
-
-        <!-- Gráfico de Tipo de Acceso -->
-        <div class="col-xl-4">
-            <div class="card h-100">
+        <div class="col-lg-4">
+            <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-1">Distribución de Accesos</h5>
-                    <p class="mb-0 text-muted">Período seleccionado</p>
+                    <h5 class="mb-0">Distribución por Tipo de Acceso</h5>
                 </div>
                 <div class="card-body">
-                    <div id="accessTypeChart"></div>
+                    <div id="accessTypeChart" style="height: 300px;"></div>
                     <script class="access-type-data" type="application/json">
                         @json($accessByType)
                     </script>
-                    <div class="mt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar avatar-sm me-2">
-                                    <span class="avatar-initial rounded bg-label-success"><i class="ri ri-login-box-line"></i></span>
-                                </div>
-                                <span>Entradas</span>
-                            </div>
-                            <strong>{{ number_format($accessByType['entries']) }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar avatar-sm me-2">
-                                    <span class="avatar-initial rounded bg-label-danger"><i class="ri ri-logout-box-line"></i></span>
-                                </div>
-                                <span>Salidas</span>
-                            </div>
-                            <strong>{{ number_format($accessByType['exits']) }}</strong>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -386,11 +556,11 @@
 
             setTimeout(() => {
                 // Gráfico de Entradas y Salidas
-                const entriesExitsEl = document.querySelector('#entriesExitsChart');
-                if (entriesExitsEl) {
-                    entriesExitsEl.innerHTML = '';
-                    const entriesExitsData = JSON.parse(entriesExitsEl.closest('.card-body').querySelector('script.entries-exits-data').innerHTML);
-                    
+                const accessChartEl = document.querySelector('#accessChart');
+                if (accessChartEl) {
+                    accessChartEl.innerHTML = '';
+                    const entriesExitsData = JSON.parse(accessChartEl.closest('.card-body').querySelector('script.entries-exits-data').innerHTML);
+
                     const entriesExitsOptions = {
                         series: [{
                             name: 'Entradas',
@@ -413,8 +583,8 @@
                         yaxis: { min: 0 },
                         legend: { position: 'top' }
                     };
-                    window.dashboardCharts.entriesExitsChart = new ApexCharts(entriesExitsEl, entriesExitsOptions);
-                    window.dashboardCharts.entriesExitsChart.render();
+                    window.dashboardCharts.accessChart = new ApexCharts(accessChartEl, entriesExitsOptions);
+                    window.dashboardCharts.accessChart.render();
                 }
 
                 // Gráfico de Tipo de Acceso
@@ -422,11 +592,11 @@
                 if (accessTypeEl) {
                     accessTypeEl.innerHTML = '';
                     const accessTypeData = JSON.parse(accessTypeEl.closest('.card-body').querySelector('script.access-type-data').innerHTML);
-                    
+
                     const accessTypeOptions = {
                         series: [accessTypeData.entries, accessTypeData.exits],
                         chart: {
-                            height: 280,
+                            height: 300,
                             type: 'donut'
                         },
                         labels: ['Entradas', 'Salidas'],
@@ -449,7 +619,7 @@
                 if (studentsGradeEl) {
                     studentsGradeEl.innerHTML = '';
                     const studentsGradeData = JSON.parse(studentsGradeEl.closest('.card-body').querySelector('script.students-grade-data').innerHTML);
-                    
+
                     const studentsGradeOptions = {
                         series: [{
                             name: 'Estudiantes',
@@ -482,7 +652,7 @@
                 if (studentsLevelEl) {
                     studentsLevelEl.innerHTML = '';
                     const studentsLevelData = JSON.parse(studentsLevelEl.closest('.card-body').querySelector('script.students-level-data').innerHTML);
-                    
+
                     const studentsLevelOptions = {
                         series: Object.values(studentsLevelData),
                         chart: {

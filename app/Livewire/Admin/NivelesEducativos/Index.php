@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Admin\NivelesEducativos;
 
-use App\Models\NivelEducativo;
+use App\Models\EducationalLevel;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +17,9 @@ class Index extends Component
     public $perPage = 10;
     public $sortField = 'nombre';
     public $sortDirection = 'asc';
+    
+    // Controles de UI
+    public $selectedNiveles = [];
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -24,6 +27,10 @@ class Index extends Component
         'perPage',
         'sortField',
         'sortDirection'
+    ];
+
+    protected $listeners = [
+        'refreshNiveles' => '$refresh'
     ];
 
     public function updatingSearch()
@@ -47,9 +54,29 @@ class Index extends Component
         $this->sortField = $field;
     }
 
+    public function toggleAdvancedFilters()
+    {
+        $this->showAdvancedFilters = !$this->showAdvancedFilters;
+    }
+
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->status = '';
+        $this->perPage = 10;
+        $this->sortField = 'nombre';
+        $this->sortDirection = 'asc';
+        $this->resetPage();
+    }
+
+    public function updatedSelectedNiveles()
+    {
+        // Esta función se ejecuta cuando se seleccionan/deseleccionan niveles
+    }
+
     protected function getExportQuery()
     {
-        return NivelEducativo::query()
+        return EducationalLevel::query()
             ->when($this->search, function ($query) {
                 $query->where('nombre', 'like', '%' . $this->search . '%');
             })
@@ -83,7 +110,7 @@ class Index extends Component
         ];
     }
 
-    public function delete(NivelEducativo $nivel)
+    public function delete(EducationalLevel $nivel)
     {
         if (!auth()->user()->can('delete', $nivel)) {
             session()->flash('error', 'No tienes permiso para eliminar este nivel educativo.');
@@ -98,11 +125,14 @@ class Index extends Component
 
         $nivel->delete();
         session()->flash('message', 'Nivel Educativo eliminado exitosamente.');
+        
+        // Refrescar la lista
+        $this->dispatch('refreshNiveles');
     }
 
     public function render()
     {
-        $niveles = NivelEducativo::query()
+        $niveles = EducationalLevel::query()
             ->when($this->search, function ($query) {
                 $query->where('nombre', 'like', '%' . $this->search . '%');
             })
@@ -112,7 +142,13 @@ class Index extends Component
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
-        return view('livewire.admin.niveles-educativos.index', compact('niveles'))
+        // Estadísticas
+        $totalNiveles = EducationalLevel::count();
+        $nivelesActivos = EducationalLevel::where('status', 1)->count();
+        $totalProgramas = \App\Models\Programa::count();
+        $totalEstudiantes = \App\Models\Student::count();
+
+        return view('livewire.admin.niveles-educativos.index', compact('niveles', 'totalNiveles', 'nivelesActivos', 'totalProgramas', 'totalEstudiantes'))
             ->layout('components.layouts.admin', [
                 'title' => 'Niveles Educativos',
                 'breadcrumb' => [
