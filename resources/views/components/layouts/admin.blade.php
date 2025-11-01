@@ -67,6 +67,9 @@
 
      <!-- Cropper.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    
+    <!-- Chat y Biblioteca CSS -->
+    <link rel="stylesheet" href="{{ asset('css/chat-biblioteca.css') }}">
 
   <style>
     .photo-preview-card {

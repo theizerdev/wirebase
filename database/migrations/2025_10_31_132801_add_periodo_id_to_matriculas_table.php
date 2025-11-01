@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::table('matriculas', function (Blueprint $table) {
             // Primero hacemos nullable el campo
-            DB::statement('ALTER TABLE matriculas MODIFY school_periods_id BIGINT UNSIGNED NULL');
+            //DB::statement('ALTER TABLE matriculas MODIFY school_periods_id BIGINT UNSIGNED NULL');
             // Luego agregamos la restricción de clave foránea
-            $table->foreign('school_periods_id')->references('id')->on('school_periods');
+            //$table->foreign('school_periods_id')->references('id')->on('school_periods');
         });
     }
 

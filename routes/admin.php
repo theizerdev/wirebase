@@ -38,6 +38,7 @@ use App\Livewire\Admin\Students\Create as StudentsCreate;
 use App\Livewire\Admin\Students\Edit as StudentsEdit;
 use App\Livewire\Admin\Students\Show as StudentsShow;
 use App\Livewire\Admin\Students\Import as StudentsImport;
+use App\Livewire\Admin\Students\ImportNew as StudentsImportNew;
 use App\Livewire\Admin\Students\QrAccess;
 use App\Livewire\Admin\ActiveSessions;
 // Componentes para matrículas
@@ -107,12 +108,11 @@ Route::get('/turnos/{turno}/editar', TurnosEdit::class)->name('turnos.edit');
 // Estudiantes
 Route::get('/students', StudentsIndex::class)->name('students.index');
 Route::get('/students/crear', StudentsCreate::class)->name('students.create');
+Route::get('/students/import', StudentsImportNew::class)->name('students.import');
 Route::get('/students/{student}/editar', StudentsEdit::class)->name('students.edit');
 Route::get('/students/{student}', StudentsShow::class)->name('students.show');
 Route::get('/students/qr-access', QrAccess::class)->name('students.qr-access');
 Route::get('/access/students', QrAccess::class)->name('access.students');
-// Importación de estudiantes
-Route::get('/students/import', StudentsImport::class)->name('students.import');
 
 
 // Sesiones activas
@@ -161,3 +161,9 @@ Route::prefix('reportes')->as('reportes.')->group(function () {
 
 // Registro de Actividad
 Route::get('/activity-log', \App\Livewire\Admin\ActivityLog::class)->name('activity-log');
+
+// Sistema de Mensajería Interna
+Route::get('/mensajeria', \App\Livewire\Admin\Mensajeria\ChatIndex::class)->name('mensajeria.index');
+
+// Biblioteca Digital
+Route::get('/biblioteca', \App\Livewire\Admin\Biblioteca\BibliotecaIndex::class)->name('biblioteca.index');

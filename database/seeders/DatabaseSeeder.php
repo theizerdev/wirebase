@@ -22,10 +22,13 @@ class DatabaseSeeder extends Seeder
             ShiftSeeder::class,
             EducationalLevelSeeder::class,
             SchoolPeriodSeeder::class,
-            StudentSeeder::class,
+            //StudentSeeder::class,
             ProgramaSeeder::class,
             ConceptoPagoSeeder::class,
-            MatriculaSeeder::class,
+            BibliotecaCategoriasSeeder::class,
+            BibliotecaArchivosSeeder::class,
+            MensajeriaSeeder::class,
+            //MatriculaSeeder::class,
            //PagoSeeder::class,
         ]);
     }

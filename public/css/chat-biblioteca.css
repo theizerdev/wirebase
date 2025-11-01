@@ -1,0 +1,98 @@
+/* Chat Styles */
+.app-chat {
+    height: calc(100vh - 200px);
+    min-height: 600px;
+}
+
+.chat-contact-list-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background 0.3s, border-left 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.chat-contact-list-item:hover {
+    background: #f8f9fa;
+}
+
+.chat-contact-list-item.active {
+    background: #e7f3ff;
+    border-left: 3px solid #0d6efd;
+}
+
+.chat-message {
+    margin-bottom: 1rem;
+}
+
+.chat-message-text {
+    padding: 10px 15px;
+    border-radius: 8px;
+    max-width: 70%;
+    word-wrap: break-word;
+}
+
+.app-chat-history {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Biblioteca Styles */
+.biblioteca-sidebar li {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.biblioteca-sidebar li:hover {
+    background: #f8f9fa;
+}
+
+.biblioteca-sidebar li.active {
+    background: #e7f3ff;
+    color: #0d6efd;
+}
+
+.archivo-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.archivo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.dropzone {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.dropzone:hover {
+    border-color: #0d6efd;
+    background: #f8f9fa;
+}
+
+.dropzone-label {
+    cursor: pointer;
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .app-chat-contacts {
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .app-chat {
+        height: auto;
+    }
+}

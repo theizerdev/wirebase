@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('documento_identidad')->unique();
             $table->string('grado');
             $table->string('seccion');
-            $table->foreignId('nivel_educativo_id')->constrained('niveles_educativos');
+            $table->foreignId('nivel_educativo_id')->nullable()->constrained('niveles_educativos');
             $table->foreignId('turno_id')->constrained('turnos');
             $table->foreignId('school_periods_id')->constrained('school_periods');
             $table->string('foto')->nullable();
