@@ -81,6 +81,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'delete students',
                 'access student control',
                 'export students',
+                'import students',
             ],
             'active_sessions' => [
                 'view active sessions',
@@ -152,6 +153,27 @@ class RolesAndPermissionsSeeder extends Seeder
                 'delete activity log',
                 'export activity log',
             ],
+            // Módulo de mensajería interna
+            'mensajeria' => [
+                'access mensajeria',
+                'create mensajeria',
+                'edit mensajeria',
+                'delete mensajeria',
+                'send mensajeria',
+                'receive mensajeria',
+                'manage mensajeria templates',
+            ],
+            // Módulo de biblioteca digital
+            'biblioteca' => [
+                'access biblioteca',
+                'create biblioteca',
+                'edit biblioteca',
+                'delete biblioteca',
+                'upload biblioteca',
+                'download biblioteca',
+                'share biblioteca',
+                'manage biblioteca categories',
+            ],
         ];
 
         // Crear permisos organizados por módulos
@@ -187,5 +209,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'pagos'
         ])->get();
         $recepcionistaRole->syncPermissions($recepcionistaPermissions);
+
+        // Asignar permisos de mensajería y biblioteca a Administradores y Super Administradores
+        $mensajeriaBibliotecaPermissions = Permission::whereIn('module', [
+            'mensajeria',
+            'biblioteca'
+        ])->get();
+        
+        $superAdminRole->givePermissionTo($mensajeriaBibliotecaPermissions);
+        $adminRole->givePermissionTo($mensajeriaBibliotecaPermissions);
     }
 }

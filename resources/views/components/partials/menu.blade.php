@@ -216,6 +216,13 @@
           </a>
         </li>
         @endcan
+        @can('import students')
+        <li class="menu-item {{ request()->routeIs('admin.students.import') ? 'active' : '' }}">
+          <a href="{{ route('admin.students.import') }}" class="menu-link">
+            <div>Importar Estudiantes</div>
+          </a>
+        </li>
+        @endcan
         <li class="menu-item {{ request()->routeIs('admin.access.students') ? 'active' : '' }}">
           <a href="{{ route('admin.access.students') }}" class="menu-link">
             <div>Control de Acceso</div>
@@ -502,6 +509,26 @@
         </li>
         @endcan
       </ul>
+    </li>
+    @endcan
+
+    @can('access mensajeria')
+    <!-- Sistema de Mensajería -->
+    <li class="menu-item {{ request()->routeIs('admin.mensajeria.*') ? 'active' : '' }}">
+      <a href="{{ route('admin.mensajeria.index') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-mail-line"></i>
+        <div>Mensajería</div>
+      </a>
+    </li>
+    @endcan
+
+    @can('access biblioteca')
+    <!-- Biblioteca Digital -->
+    <li class="menu-item {{ request()->routeIs('admin.biblioteca.*') ? 'active' : '' }}">
+      <a href="{{ route('admin.biblioteca.index') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-book-2-line"></i>
+        <div>Biblioteca Digital</div>
+      </a>
     </li>
     @endcan
   </ul>

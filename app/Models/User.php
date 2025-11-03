@@ -169,6 +169,42 @@ class User extends Authenticatable implements MustVerifyEmail
         return [];
     }
 
+    /**
+     * Get the messages sent by the user.
+     */
+    public function mensajesEnviados()
+    {
+        return $this->hasMany(Mensaje::class, 'remitente_id');
+    }
+
+    /**
+     * Get the messages received by the user.
+     */
+    public function mensajesRecibidos()
+    {
+        return $this->belongsToMany(Mensaje::class, 'mensaje_destinatarios', 'user_id', 'mensaje_id')
+            ->withPivot('leido', 'leido_en', 'archivado', 'archivado_en')
+            ->withTimestamps()
+            ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the digital library files uploaded by the user.
+     */
+    public function archivosBiblioteca()
+    {
+        return $this->hasMany(BibliotecaArchivo::class, 'usuario_subida_id');
+    }
+
+    /**
+     * Get the digital library files the user is authorized to access.
+     */
+    public function archivosBibliotecaAutorizados()
+    {
+        return $this->belongsToMany(BibliotecaArchivo::class, 'biblioteca_archivo_usuario', 'user_id', 'archivo_id')
+            ->withTimestamps();
+    }
+
     public function scopeForUser($query)
     {
         if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {

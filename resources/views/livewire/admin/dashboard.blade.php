@@ -280,22 +280,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <h6 class="text-muted mb-1">Estudiantes Destacados</h6>
-                            <h3 class="mb-0">{{ $academicStats['topStudents'] }}</h3>
-                            <small class="text-muted">Sin implementar</small>
-                        </div>
-                        <div class="avatar avatar-lg bg-warning bg-opacity-10">
-                            <i class="ri ri-star-line ri-24px text-warning"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
         <div class="col-lg-3">
             <div class="card">
                 <div class="card-body">

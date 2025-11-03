@@ -294,8 +294,8 @@ class Dashboard extends Component
         }
 
         // Estadísticas de matrículas
-        $totalEnrollments = Matricula::where('school_periods_id', $currentPeriod->id)->count();
-        $activeEnrollments = Matricula::where('school_periods_id', $currentPeriod->id)
+        $totalEnrollments = Matricula::where('periodo_id', $currentPeriod->id)->count();
+        $activeEnrollments = Matricula::where('periodo_id', $currentPeriod->id)
             ->where('estado', 'activo')
             ->count();
 

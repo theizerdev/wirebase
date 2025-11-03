@@ -52,7 +52,7 @@ class Student extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'fecha_nacimiento' => 'date',
+        'fecha_nacimiento' => 'date:Y-m-d',
         'status' => 'boolean',
         'representante_telefonos' => 'array',
     ];
@@ -94,7 +94,15 @@ class Student extends Model
      */
     public function getEdadAttribute()
     {
-        return $this->fecha_nacimiento ? $this->fecha_nacimiento->age : null;
+        if (!$this->fecha_nacimiento) {
+            return null;
+        }
+        
+        try {
+            return Carbon::parse($this->fecha_nacimiento)->age;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**
@@ -106,26 +114,30 @@ class Student extends Model
             return 'Fecha no especificada';
         }
 
-        $now = Carbon::now();
-        $birthday = $this->fecha_nacimiento;
+        try {
+            $now = Carbon::now();
+            $birthday = Carbon::parse($this->fecha_nacimiento);
 
-        // Asegurarse de que la fecha de nacimiento no sea futura
-        if ($birthday->isFuture()) {
+            // Asegurarse de que la fecha de nacimiento no sea futura
+            if ($birthday->isFuture()) {
+                return 'Fecha inválida';
+            }
+
+            // Calcular diferencia usando Carbon de forma precisa
+            $years = $now->diff($birthday)->y;
+            $months = $now->diff($birthday)->m;
+
+            if ($years < 10) {
+                if ($months == 0) {
+                    return "$years año" . ($years != 1 ? 's' : '');
+                }
+                return "$years año" . ($years != 1 ? 's' : '') . " y $months mes" . ($months != 1 ? 'es' : '');
+            }
+
+            return "$years años";
+        } catch (\Exception $e) {
             return 'Fecha inválida';
         }
-
-        // Calcular diferencia usando Carbon de forma precisa
-        $years = $now->diff($birthday)->y;
-        $months = $now->diff($birthday)->m;
-
-        if ($years < 10) {
-            if ($months == 0) {
-                return "$years año" . ($years != 1 ? 's' : '');
-            }
-            return "$years año" . ($years != 1 ? 's' : '') . " y $months mes" . ($months != 1 ? 'es' : '');
-        }
-
-        return "$years años";
     }
 
     /**
@@ -133,7 +145,15 @@ class Student extends Model
      */
     public function getEsMenorDeEdadAttribute()
     {
-        return $this->fecha_nacimiento ? $this->fecha_nacimiento->age < 18 : false;
+        if (!$this->fecha_nacimiento) {
+            return false;
+        }
+        
+        try {
+            return Carbon::parse($this->fecha_nacimiento)->age < 18;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**
