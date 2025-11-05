@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Users\Profile;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\User;
 use PragmaRX\Google2FA\Google2FA;
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\Hash;
 
 class TwoFactorAuth extends Component
 {
+    use HasDynamicLayout;
+
+
     public User $user;
     public $enabled;
     public $showQrCode = false;
@@ -103,6 +107,14 @@ class TwoFactorAuth extends Component
 
     public function render()
     {
-        return view('livewire.admin.users.profile.two-factor-auth');
+        return view('livewire.admin.users.profile.two-factor-auth', [
+            'user' => $this->user ?? null,
+            'sessions' => $sessions ?? null
+        ])->layout($this->getLayout(), [
+            'title' => 'Detalles del Usuario'
+        ]);
     }
 }
+
+
+

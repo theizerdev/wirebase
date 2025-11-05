@@ -413,7 +413,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (window.templateCustomizer.settings.semiDark) {
-      document.querySelector('#layout-menu').setAttribute('data-bs-theme', 'dark');
+      const layoutMenu = document.querySelector('#layout-menu');
+      if (layoutMenu) {
+        layoutMenu.setAttribute('data-bs-theme', 'dark');
+      }
     }
   }
 

@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use App\Traits\Multitenantable;
 
 class BibliotecaArchivo extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, Multitenantable;
 
     protected $table = 'biblioteca_archivos';
 
@@ -90,15 +91,15 @@ class BibliotecaArchivo extends Model
     public function getTamañoFormateadoAttribute(): string
     {
         $bytes = $this->tamaño;
-        
+
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $i = 0;
-        
+
         while ($bytes >= 1024 && $i < count($units) - 1) {
             $bytes /= 1024;
             $i++;
         }
-        
+
         return round($bytes, 2) . ' ' . $units[$i];
     }
 

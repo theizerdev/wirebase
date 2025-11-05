@@ -35,89 +35,113 @@
         </div>
     </div>
 
-    <!-- Métricas principales mejoradas -->
+    <!-- Métricas principales estilo card-statistics -->
     <div class="row g-4 mb-4">
-        <div class="col-xl-4 col-sm-6">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-start border-primary border-4 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="avatar">
-                            <div class="avatar-initial bg-primary bg-opacity-10 text-primary rounded">
-                                <i class="ri ri-user-line ri-24px"></i>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-1 text-primary fw-bold">{{ number_format($stats['total']) }}</h2>
+                            <p class="text-muted mb-2 fw-medium">Total Estudiantes</p>
+                            <div class="d-flex align-items-center">
+                                <i class="ri ri-arrow-up-line text-success me-1"></i>
+                                <small class="text-success fw-medium">Base total</small>
                             </div>
                         </div>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="ri ri-more-2-line"></i>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#"><i class="ri ri-user-add-line me-2"></i>Nuevo estudiante</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="ri ri-file-list-line me-2"></i>Ver todos</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="mb-1 text-primary">{{ number_format($stats['total']) }}</h3>
-                        <p class="text-muted mb-3">Total de Estudiantes</p>
-                        <div class="d-flex align-items-center">
-                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                                <div class="progress-bar bg-primary" style="width: 100%"></div>
-                            </div>
-                            <small class="text-success fw-medium">100%</small>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-graduation-cap-line text-primary" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-sm-6">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-start border-success border-4 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="avatar">
-                            <div class="avatar-initial bg-success bg-opacity-10 text-success rounded">
-                                <i class="ri ri-user-smile-line ri-24px"></i>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-1 text-success fw-bold">{{ number_format($stats['activos']) }}</h2>
+                            <p class="text-muted mb-2 fw-medium">Estudiantes Activos</p>
+                            <div class="d-flex align-items-center">
+                                <i class="ri ri-arrow-up-line text-success me-1"></i>
+                                <small class="text-success fw-medium">{{ $stats['total'] > 0 ? round(($stats['activos'] / $stats['total']) * 100, 1) : 0 }}% del total</small>
                             </div>
                         </div>
-                        <span class="badge bg-success bg-opacity-10 text-success">
-                            {{ $stats['total'] > 0 ? round(($stats['activos'] / $stats['total']) * 100, 1) : 0 }}%
-                        </span>
-                    </div>
-                    <div>
-                        <h3 class="mb-1 text-success">{{ number_format($stats['activos']) }}</h3>
-                        <p class="text-muted mb-3">Estudiantes Activos</p>
-                        <div class="d-flex align-items-center">
-                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                                <div class="progress-bar bg-success" style="width: {{ $stats['total'] > 0 ? ($stats['activos'] / $stats['total']) * 100 : 0 }}%"></div>
-                            </div>
-                            <small class="text-success fw-medium">Activo</small>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-user-smile-line text-success" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-sm-6">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-start border-info border-4 shadow-sm h-100">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="avatar">
-                            <div class="avatar-initial bg-danger bg-opacity-10 text-danger rounded">
-                                <i class="ri ri-user-unfollow-line ri-24px"></i>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-1 text-info fw-bold">{{ number_format($stats['nuevos_mes']) }}</h2>
+                            <p class="text-muted mb-2 fw-medium">Nuevos este Mes</p>
+                            <div class="d-flex align-items-center">
+                                <i class="ri ri-calendar-line text-info me-1"></i>
+                                <small class="text-info fw-medium">{{ now()->format('M Y') }}</small>
                             </div>
                         </div>
-                        <span class="badge bg-danger bg-opacity-10 text-danger">
-                            {{ $stats['total'] > 0 ? round(($stats['inactivos'] / $stats['total']) * 100, 1) : 0 }}%
-                        </span>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-user-add-line text-info" style="font-size: 1.5rem;"></i>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="mb-1 text-danger">{{ number_format($stats['inactivos']) }}</h3>
-                        <p class="text-muted mb-3">Estudiantes Inactivos</p>
-                        <div class="d-flex align-items-center">
-                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
-                                <div class="progress-bar bg-danger" style="width: {{ $stats['total'] > 0 ? ($stats['inactivos'] / $stats['total']) * 100 : 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="card border-start border-warning border-4 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-1 text-warning fw-bold">{{ number_format($stats['inactivos']) }}</h2>
+                            <p class="text-muted mb-2 fw-medium">Estudiantes Inactivos</p>
+                            <div class="d-flex align-items-center">
+                                <i class="ri ri-arrow-down-line text-danger me-1"></i>
+                                <small class="text-danger fw-medium">{{ $stats['total'] > 0 ? round(($stats['inactivos'] / $stats['total']) * 100, 1) : 0 }}% del total</small>
                             </div>
-                            <small class="text-danger fw-medium">Inactivo</small>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-user-unfollow-line text-warning" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas adicionales -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3">Resumen Rápido</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="text-muted">Tasa de Actividad</span>
+                                <span class="fw-bold text-success">{{ $stats['total'] > 0 ? round(($stats['activos'] / $stats['total']) * 100, 1) : 0 }}%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="text-muted">Crecimiento Mensual</span>
+                                <span class="fw-bold text-info">+{{ $stats['nuevos_mes'] }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="text-muted">Promedio por Grado</span>
+                                <span class="fw-bold text-primary">{{ $byGrade->count() > 0 ? round($stats['activos'] / $byGrade->count(), 1) : 0 }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -299,39 +323,39 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($recent as $index => $student)
-                                <tr class="{{ $index % 2 == 0 ? 'bg-light bg-opacity-50' : '' }}">
+                                @forelse($recent as $index => $student)
+                                <tr class="border-bottom">
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar avatar-xs me-2">
                                                 <div class="avatar-initial bg-primary bg-opacity-10 text-primary rounded">
-                                                    <i class="ri ri-user-line ri-12px"></i>
+                                                    <i class="ri ri-hashtag ri-12px"></i>
                                                 </div>
                                             </div>
-                                            <code class="text-primary fw-medium">{{ $student->codigo }}</code>
+                                            <code class="text-primary fw-medium">{{ $student->codigo ?? 'N/A' }}</code>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="avatar avatar-sm me-2">
-                                                <div class="avatar-initial bg-success bg-opacity-10 text-success rounded">
+                                                <div class="avatar-initial bg-primary text-white rounded">
                                                     {{ substr($student->nombres, 0, 1) }}{{ substr($student->apellidos, 0, 1) }}
                                                 </div>
                                             </div>
                                             <div>
                                                 <h6 class="mb-0">{{ $student->nombres }} {{ $student->apellidos }}</h6>
-                                                <small class="text-muted">Estudiante</small>
+                                                <small class="text-muted">{{ $student->documento_identidad ?? 'Sin documento' }}</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <span class="badge bg-info bg-opacity-10 text-info">
-                                            <i class="ri ri-numbers-line me-1"></i>{{ $student->grado }}°
+                                            <i class="ri ri-numbers-line me-1"></i>{{ $student->grado ?? 'N/A' }}°
                                         </span>
                                     </td>
                                     <td>
                                         <span class="badge bg-warning bg-opacity-10 text-warning">
-                                            <i class="ri ri-group-line me-1"></i>{{ $student->seccion }}
+                                            <i class="ri ri-group-line me-1"></i>{{ $student->seccion ?? 'N/A' }}
                                         </span>
                                     </td>
                                     <td>
@@ -339,23 +363,33 @@
                                             <i class="ri ri-time-line text-muted me-2"></i>
                                             <div>
                                                 <div class="fw-medium">{{ $student->created_at->format('d/m/Y') }}</div>
-                                                <small class="text-muted">{{ $student->created_at->format('H:i') }}</small>
+                                                <small class="text-muted">{{ $student->created_at->diffForHumans() }}</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="pe-4">
                                         @if($student->status)
-                                        <span class="badge bg-success bg-opacity-10 text-success">
+                                        <span class="badge bg-success">
                                             <i class="ri ri-checkbox-circle-line me-1"></i>Activo
                                         </span>
                                         @else
-                                        <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        <span class="badge bg-danger">
                                             <i class="ri ri-close-circle-line me-1"></i>Inactivo
                                         </span>
                                         @endif
                                     </td>
                                 </tr>
-                                @endforeach
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="ri ri-user-line ri-48px text-muted mb-2"></i>
+                                            <h6 class="text-muted">No hay estudiantes registrados</h6>
+                                            <small class="text-muted">Los nuevos registros aparecerán aquí</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>

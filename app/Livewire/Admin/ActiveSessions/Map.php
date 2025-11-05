@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Admin\ActiveSessions;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\ActiveSession;
 use Illuminate\Support\Facades\DB;
 
 class Map extends Component
 {
+    use DynamicLayout;
+
     public $sessions = [];
 
     public function mount()
@@ -52,6 +55,10 @@ class Map extends Component
 
     public function render()
     {
-        return view('livewire.admin.active-sessions.map');
+        return view('livewire.admin.active-sessions.map')->layout($this->getLayout());
     }
 }
+
+
+
+

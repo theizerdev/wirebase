@@ -331,6 +331,11 @@
                                             <i class="ri ri-eye-line me-1"></i> Ver
                                         </a>
                                         @endcan
+                                        @can('view student historico')
+                                        <a class="dropdown-item" href="{{ route('admin.students.historico', $student) }}">
+                                            <i class="ri ri-history-line me-1"></i> Histórico
+                                        </a>
+                                        @endcan
                                         @can('edit students')
                                         <a class="dropdown-item" href="{{ route('admin.students.edit', $student) }}">
                                             <i class="ri ri-pencil-line me-1"></i> Editar

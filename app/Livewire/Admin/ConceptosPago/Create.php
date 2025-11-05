@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\ConceptosPago;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\ConceptoPago;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $nombre;
     public $descripcion;
     public $activo = true;
@@ -46,10 +50,9 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.conceptos-pago.create')
-            ->layout('components.layouts.admin', [
-                'title' => 'Crear Concepto de Pago',
-                'description' => 'Registrar un nuevo concepto de pago'
-            ]);
+        return view('livewire.admin.conceptos-pago.create')->layout($this->getLayout());
     }
 }
+
+
+

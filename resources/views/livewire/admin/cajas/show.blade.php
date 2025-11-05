@@ -31,6 +31,9 @@
                             </p>
                         </div>
                         <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success" wire:click="exportarExcel">
+                                <i class="ri ri-file-excel-2-line"></i> Exportar Excel
+                            </button>
                             @if($caja->estado === 'abierta')
                                 @can('edit cajas')
                                 <button type="button" class="btn btn-warning" wire:click="abrirModalCerrar">

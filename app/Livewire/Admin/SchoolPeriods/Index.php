@@ -4,6 +4,8 @@ namespace App\Livewire\Admin\SchoolPeriods;
 
 use App\Models\SchoolPeriod;
 use App\Exports\SchoolPeriodsExport;
+use App\Traits\HasDynamicLayout;
+
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Carbon;
@@ -12,7 +14,10 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
+
+
     use WithPagination, Exportable;
+    use HasDynamicLayout;
 
     public $search = '';
     public $sortField = 'created_at';
@@ -93,13 +98,7 @@ class Index extends Component
 
     public function render()
     {
-        $query = $this->getBaseQuery()
-            ->orderBy($this->sortField, $this->sortDirection);
-
-        $schoolPeriods = $query->paginate($this->perPage);
-
-        return view('livewire.admin.school-periods.index', compact('schoolPeriods'))
-            ->layout('components.layouts.admin');
+        return view('livewire.admin.school-periods.index')->layout($this->getLayout());
     }
 
     public function resetFilters()
@@ -134,10 +133,10 @@ class Index extends Component
     {
         // Desactivar el periodo escolar actual
         SchoolPeriod::where('is_current', true)->update(['is_current' => false]);
-        
+
         // Establecer el nuevo periodo escolar como actual
         $schoolPeriod->update(['is_current' => true]);
-        
+
         session()->flash('message', 'Periodo escolar actualizado exitosamente.');
         $this->dispatch('schoolPeriodDeleted');
     }
@@ -154,3 +153,6 @@ class Index extends Component
         session()->flash('message', 'Estado actualizado exitosamente.');
     }
 }
+
+
+

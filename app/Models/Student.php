@@ -44,6 +44,7 @@ class Student extends Model
         'representante_documento_identidad',
         'representante_telefonos',
         'representante_correo',
+        'representante_direccion',
     ];
 
     /**
@@ -97,7 +98,7 @@ class Student extends Model
         if (!$this->fecha_nacimiento) {
             return null;
         }
-        
+
         try {
             return Carbon::parse($this->fecha_nacimiento)->age;
         } catch (\Exception $e) {
@@ -148,7 +149,7 @@ class Student extends Model
         if (!$this->fecha_nacimiento) {
             return false;
         }
-        
+
         try {
             return Carbon::parse($this->fecha_nacimiento)->age < 18;
         } catch (\Exception $e) {
@@ -250,7 +251,7 @@ class Student extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
-    
+
     /**
      * Scope a query to only include active students.
      */
@@ -258,7 +259,7 @@ class Student extends Model
     {
         return $query->where('status', 1);
     }
-    
+
     /**
      * Scope a query to only include students by educational level.
      */
@@ -266,7 +267,7 @@ class Student extends Model
     {
         return $query->where('nivel_educativo_id', $levelId);
     }
-    
+
     /**
      * Scope a query to only include students by grade.
      */
@@ -274,7 +275,7 @@ class Student extends Model
     {
         return $query->where('grado', $grade);
     }
-    
+
     /**
      * Scope a query to only include students by section.
      */

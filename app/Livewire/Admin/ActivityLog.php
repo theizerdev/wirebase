@@ -2,14 +2,19 @@
 
 namespace App\Livewire\Admin;
 
+
 use Livewire\Component;
+use App\Traits\HasDynamicLayout;
 use Spatie\Activitylog\Models\Activity;
 use Livewire\WithPagination;
 use App\Models\User;
 
 class ActivityLog extends Component
 {
+
+
     use WithPagination;
+    use HasDynamicLayout;
 
     public $search = '';
     public $userFilter = '';
@@ -58,7 +63,7 @@ class ActivityLog extends Component
         $this->userFilter = '';
         $this->dateRange = '';
     }
-    
+
     public function getActionColor($action)
     {
         return match($action) {
@@ -121,18 +126,22 @@ class ActivityLog extends Component
 
         return response()->streamDownload(function () use ($headers, $data) {
             $file = fopen('php://output', 'w');
-            
+
             // Escribir encabezados
             fputcsv($file, $headers);
-            
+
             // Escribir datos
             foreach ($data as $row) {
                 fputcsv($file, $row);
             }
-            
+
             fclose($file);
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 }
+
+
+
+

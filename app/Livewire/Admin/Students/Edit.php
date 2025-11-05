@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Students;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Student;
@@ -14,7 +15,9 @@ use Carbon\Carbon;
 
 class Edit extends Component
 {
-    use WithFileUploads;
+
+
+    use WithFileUploads, HasDynamicLayout;
 
     public $student;
     public $nombres = '';
@@ -40,6 +43,7 @@ class Edit extends Component
     public $representante_documento_identidad = '';
     public $representante_telefonos = ''; // Se manejará como string separado por comas
     public $representante_correo = '';
+    public $representante_direccion = ''; // Campo no obligatorio para dirección del domicilio
 
     protected $rules = [
         'nombres' => 'required|string|max:255',
@@ -61,6 +65,7 @@ class Edit extends Component
         'representante_documento_identidad' => 'nullable|string',
         'representante_telefonos' => 'nullable|string|max:255',
         'representante_correo' => 'nullable|email|max:255',
+        'representante_direccion' => 'nullable|string|max:500',
     ];
 
     protected $messages = [
@@ -97,6 +102,7 @@ class Edit extends Component
         $this->representante_documento_identidad = $student->representante_documento_identidad;
         $this->representante_telefonos = is_array($student->representante_telefonos) ? implode(',', $student->representante_telefonos) : $student->representante_telefonos;
         $this->representante_correo = $student->representante_correo;
+        $this->representante_direccion = $student->representante_direccion;
 
         // Actualizar las reglas para permitir el código y documento actual
         $this->rules['codigo'] = 'required|string|size:8|unique:students,codigo,' . $student->id;
@@ -190,6 +196,7 @@ class Edit extends Component
             'representante_documento_identidad' => $this->representante_documento_identidad,
             'representante_telefonos' => $this->representante_telefonos,
             'representante_correo' => $this->representante_correo,
+            'representante_direccion' => $this->representante_direccion,
         ]);
 
         session()->flash('message', 'Estudiante actualizado correctamente.');
@@ -198,11 +205,12 @@ class Edit extends Component
 
     public function render()
     {
-        $nivelesEducativos = EducationalLevel::where('status', 1)->get();
-        $turnos = Turno::where('status', 1)->get();
-        $schoolPeriods = SchoolPeriod::where('is_active', 1)->get();
-
-        return view('livewire.admin.students.edit', compact('nivelesEducativos', 'turnos', 'schoolPeriods'))
-            ->layout('components.layouts.admin');
+        return $this->renderWithLayout('livewire.admin.students.edit', [
+            'nivelesEducativos' => EducationalLevel::all(),
+            'turnos' => Turno::all(),
+            'schoolPeriods' => SchoolPeriod::all(),
+        ], [
+            'description' => 'Gestión de ',
+        ]);
     }
 }

@@ -67,3 +67,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     require __DIR__.'/admin.php';
 });
 
+Route::get('/admin/template-customization', \App\Livewire\Admin\TemplateCustomization\Index::class)
+    ->middleware(['auth'])
+    ->name('admin.template-customization');

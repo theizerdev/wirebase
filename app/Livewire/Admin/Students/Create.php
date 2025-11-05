@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Students;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Student;
@@ -18,7 +19,9 @@ use App\Models\Notification;
 
 class Create extends Component
 {
-    use WithFileUploads;
+
+
+    use WithFileUploads,HasDynamicLayout;
 
     public $nombres = '';
     public $apellidos = '';
@@ -42,6 +45,7 @@ class Create extends Component
     public $representante_documento_identidad = '';
     public $representante_telefonos = ''; // Se manejará como string separado por comas
     public $representante_correo = '';
+    public $representante_direccion = ''; // Campo no obligatorio para dirección del domicilio
 
     protected $rules = [
         'nombres' => 'required|string|max:255',
@@ -63,6 +67,7 @@ class Create extends Component
         'representante_documento_identidad' => 'nullable|string',
         'representante_telefonos' => 'nullable|string|max:255',
         'representante_correo' => 'nullable|email|max:255',
+        'representante_direccion' => 'nullable|string|max:500',
     ];
 
     protected $messages = [
@@ -169,6 +174,7 @@ class Create extends Component
             'representante_documento_identidad' => $this->representante_documento_identidad,
             'representante_telefonos' => $this->representante_telefonos,
             'representante_correo' => $this->representante_correo,
+            'representante_direccion' => $this->representante_direccion,
         ]);
 
         // Enviar correo de bienvenida si el estudiante es mayor de edad y tiene correo
@@ -211,11 +217,12 @@ class Create extends Component
 
     public function render()
     {
-        $nivelesEducativos = EducationalLevel::query()->where('status', 1)->get();
-        $turnos = Turno::query()->where('status', 1)->get();
-        $schoolPeriods = SchoolPeriod::query()->where('is_active', 1)->get();
-
-        return view('livewire.admin.students.create', compact('nivelesEducativos', 'turnos', 'schoolPeriods'))
-            ->layout('components.layouts.admin');
+        return $this->renderWithLayout('livewire.admin.students.create', [
+            'nivelesEducativos' => EducationalLevel::all(),
+            'turnos' => Turno::all(),
+            'schoolPeriods' => SchoolPeriod::all(),
+        ], [
+            'description' => 'Gestión de ',
+        ]);
     }
 }

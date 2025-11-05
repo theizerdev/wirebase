@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Mensajeria;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Mensaje;
 use App\Models\User;
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 
 class ChatIndex extends Component
 {
+    use HasDynamicLayout;
+
+
     public $conversacionActiva = null;
     public $mensajes = [];
     public $nuevoMensaje = '';
@@ -36,7 +40,7 @@ class ChatIndex extends Component
         if (!$this->conversacionActiva) return;
 
         $userId = Auth::id();
-        
+
         $this->mensajes = Mensaje::where('empresa_id', Auth::user()->empresa_id)
             ->where(function($q) use ($userId) {
                 $q->where('remitente_id', $userId)
@@ -118,12 +122,16 @@ class ChatIndex extends Component
 
     public function render()
     {
+        $conversaciones = $this->getConversacionesProperty();
+        $usuarioActivo = $this->getUsuarioActivoProperty();
+        
         return view('livewire.admin.mensajeria.chat-index', [
-            'conversaciones' => $this->getConversacionesProperty(),
-            'usuarioActivo' => $this->getUsuarioActivoProperty(),
-        ])->layout('components.layouts.admin', [
-            'title' => 'Mensajería',
-            'description' => 'Chat en tiempo real'
-        ]);
+            'conversaciones' => $conversaciones,
+            'usuarioActivo' => $usuarioActivo
+        ])->layout($this->getLayout());
     }
 }
+
+
+
+

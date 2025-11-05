@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Permissions;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Auth;
@@ -9,6 +10,9 @@ use Illuminate\Validation\Rule;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public Permission $permission;
     public $name;
     public $module;
@@ -73,9 +77,10 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.permissions.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Permiso'
-            ]);
+        return view('livewire.admin.permissions.edit')->layout($this->getLayout());
     }
 }
+
+
+
+

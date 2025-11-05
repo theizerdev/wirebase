@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\Admin\Series;
+use App\Traits\HasDynamicLayout;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -8,7 +9,7 @@ use App\Models\Serie;
 
 class Index extends Component
 {
-    use WithPagination;
+    use WithPagination, HasDynamicLayout;
 
     public $search = '';
     public $tipo_documento = '';
@@ -42,9 +43,11 @@ class Index extends Component
             ->orderBy('serie')
             ->paginate(15);
 
-        return view('livewire.admin.series.index', [
+        return $this->renderWithLayout('livewire.admin.series.index', [
             'series' => $series,
             'tipos' => Serie::getTiposDocumento()
-        ])->layout('components.layouts.admin');
+        ], [
+            'description' => 'Gestión de ',
+        ]);
     }
 }

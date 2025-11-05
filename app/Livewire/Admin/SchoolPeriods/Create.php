@@ -3,10 +3,14 @@
 namespace App\Livewire\Admin\SchoolPeriods;
 
 use App\Models\SchoolPeriod;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $name;
     public $start_date;
     public $end_date;
@@ -31,8 +35,7 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.school-periods.create')
-            ->layout('components.layouts.admin');
+        return view('livewire.admin.school-periods.create')->layout($this->getLayout());
     }
 
     public function store()
@@ -67,3 +70,6 @@ class Create extends Component
         return redirect()->route('admin.school-periods.index');
     }
 }
+
+
+

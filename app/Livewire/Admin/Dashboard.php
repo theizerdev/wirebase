@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use Livewire\Component;
+use App\Traits\HasDynamicLayout;
 use App\Models\Student;
 use App\Models\StudentAccessLog;
 use App\Models\Pago;
@@ -15,6 +16,10 @@ use Illuminate\Support\Facades\DB;
 
 class Dashboard extends Component
 {
+
+
+    use HasDynamicLayout;
+
     public $dateRange = 'month';
     public $showAlerts = true;
     public $showFinancial = true;
@@ -64,14 +69,14 @@ class Dashboard extends Component
             $pendingPayments = \App\Models\PaymentSchedule::where('estado', 'pendiente')
                 ->where('fecha_vencimiento', '<', now())
                 ->count();
-            
+
             $alerts = [
                 'pendingPayments' => $pendingPayments,
                 'expiringEnrollments' => 0, // Simplificado por ahora
                 'lowAttendanceStudents' => 0, // Simplificado por ahora
                 'totalAlerts' => $pendingPayments
             ];
-            
+
             $financialStats = $this->getFinancialStats();
             $academicStats = $this->getAcademicStats();
             $currentPeriod = \App\Models\SchoolPeriod::where('is_active', true)->first();
@@ -276,7 +281,8 @@ class Dashboard extends Component
             'academicStats' => $academicStats,
             'currentPeriod' => $currentPeriod,
             'exportData' => $this->getExportData(),
-        ]))->layout('components.layouts.admin', ['title' => 'Dashboard']);
+            'proximasReuniones' => $this->getProximasReuniones(),
+        ]))->layout($this->getLayout());
     }
 
     private function getDateRangeConditions()
@@ -682,4 +688,28 @@ class Dashboard extends Component
             'students' => ['current' => $currentStudents, 'change' => round($studentsChange, 2)],
         ];
     }
+
+    private function getProximasReuniones()
+    {
+        if (!class_exists('\App\Models\Reunion')) {
+            return collect();
+        }
+
+        $query = \App\Models\Reunion::with('creador')
+            ->where('fecha_inicio', '>=', now())
+            ->where('estado', 'programada');
+
+        if (!auth()->user()->hasRole('Super Administrador')) {
+            $query->where('empresa_id', auth()->user()->empresa_id)
+                  ->where('sucursal_id', auth()->user()->sucursal_id);
+        }
+
+        return $query->orderBy('fecha_inicio')
+            ->take(5)
+            ->get();
+    }
+
 }
+
+
+

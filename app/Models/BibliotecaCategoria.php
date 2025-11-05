@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use App\Traits\Multitenantable;
 
 class BibliotecaCategoria extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory, LogsActivity, Multitenantable;
 
     protected $table = 'biblioteca_categorias';
 
@@ -76,11 +77,11 @@ class BibliotecaCategoria extends Model
     public function getHijosRecursivos()
     {
         $hijos = $this->hijos;
-        
+
         foreach ($this->hijos as $hijo) {
             $hijos = $hijos->merge($hijo->getHijosRecursivos());
         }
-        
+
         return $hijos;
     }
 

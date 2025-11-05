@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Admin\Programas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Programa;
 use App\Models\NivelEducativo;
 
 class Edit extends Component
 {
+
+    use HasDynamicLayout;
     public $programa;
     public $nombre;
     public $descripcion;
@@ -66,12 +69,15 @@ class Edit extends Component
 
     public function render()
     {
-        $nivelesEducativos = NivelEducativo::where('status', true)->get();
-
-        return view('livewire.admin.programas.edit', compact('nivelesEducativos'))
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Programa',
-                'description' => 'Actualizar información del programa académico'
-            ]);
+        return $this->renderWithLayout('livewire.admin.programas.edit', [
+            'nivelesEducativos' => NivelEducativo::where('status', true)->get()
+        ], [
+            'title' => 'Editar Programa',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.programas.index' => 'Programas',
+                'admin.programas.edit' => 'Editar'
+            ]
+        ]);
     }
 }

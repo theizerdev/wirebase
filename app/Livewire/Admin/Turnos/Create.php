@@ -3,11 +3,15 @@
 namespace App\Livewire\Admin\Turnos;
 
 use App\Models\Turno;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Illuminate\Support\Facades\Gate;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $nombre;
     public $descripcion;
     public $hora_inicio;
@@ -54,7 +58,9 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.turnos.create')
-            ->layout('components.layouts.admin');
+        return view('livewire.admin.turnos.create')->layout($this->getLayout());
     }
 }
+
+
+

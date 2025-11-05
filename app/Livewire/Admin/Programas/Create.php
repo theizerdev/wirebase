@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Programas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Programa;
 use App\Models\NivelEducativo;
@@ -9,6 +10,8 @@ use App\Traits\Multitenantable;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
     public $nombre;
     public $descripcion;
     public $nivel_educativo_id;
@@ -59,10 +62,14 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.programas.create')
-            ->layout('components.layouts.admin', [
-                'title' => 'Crear Programa',
-                'description' => 'Registrar un nuevo programa académico'
-            ]);
+        return $this->renderWithLayout('livewire.admin.programas.create', [], [
+            'title' => 'Crear Programa',
+            'description' => 'Crear nuevo programa educativo',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.programas.index' => 'Programas',
+                'admin.programas.create' => 'Crear'
+            ]
+        ]);
     }
 }

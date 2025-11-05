@@ -22,10 +22,11 @@ use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
 use Carbon\Carbon;
+use App\Traits\HasDynamicLayout;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable,HasDynamicLayout;
 
     public $search = '';
     public $status = '';
@@ -162,7 +163,7 @@ class Index extends Component
         $activeStudents = Student::query()->where('status', 1)->count();
         $inactiveStudents = Student::query()->where('status', 0)->count();
 
-        return view('livewire.admin.students.index', compact(
+        return $this->renderWithLayout('livewire.admin.students.index', compact(
             'students',
             'empresas',
             'sucursales',
@@ -174,9 +175,13 @@ class Index extends Component
             'totalStudents',
             'activeStudents',
             'inactiveStudents'
-        ))
-        ->layout('components.layouts.admin', [
-            'title' => 'Lista de Estudiantes'
+        ), [
+            'title' => 'Estudiantes',
+            'description' => 'Gestión de estudiantes del sistema',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.students.index' => 'Estudiantes'
+            ]
         ]);
     }
 
@@ -240,19 +245,19 @@ class Index extends Component
     protected function getExportHeaders()
     {
         return [
-            'Código', 
-            'Nombres', 
-            'Apellidos', 
-            'Documento', 
+            'Código',
+            'Nombres',
+            'Apellidos',
+            'Documento',
             'Fecha Nacimiento',
             'Edad',
-            'Grado', 
-            'Sección', 
-            'Nivel Educativo', 
-            'Turno', 
+            'Grado',
+            'Sección',
+            'Nivel Educativo',
+            'Turno',
             'Período Escolar',
-            'Empresa', 
-            'Sucursal', 
+            'Empresa',
+            'Sucursal',
             'Estado',
             'Correo Electrónico',
             'Representante',
@@ -270,7 +275,7 @@ class Index extends Component
     {
         // Obtener información de morosidad
         $debtInfo = $this->getStudentDebtInfo($student);
-        
+
         // Formatear teléfonos del representante
         $telefonos = '';
         if ($student->representante_telefonos) {
@@ -280,7 +285,7 @@ class Index extends Component
                 $telefonos = $student->representante_telefonos;
             }
         }
-        
+
         return [
             $student->codigo,
             $student->nombres,

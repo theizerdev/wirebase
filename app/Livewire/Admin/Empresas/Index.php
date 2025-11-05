@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\Admin\Empresas;
+use App\Traits\HasDynamicLayout;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -10,7 +11,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $status = '';

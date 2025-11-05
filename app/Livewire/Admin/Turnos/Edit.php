@@ -3,11 +3,15 @@
 namespace App\Livewire\Admin\Turnos;
 
 use App\Models\Turno;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Illuminate\Support\Facades\Gate;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public Turno $turno;
     public $nombre;
     public $descripcion;
@@ -62,7 +66,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.turnos.edit')
-            ->layout('components.layouts.admin');
+        return view('livewire.admin.turnos.edit')->layout($this->getLayout());
     }
 }
+
+
+

@@ -5,10 +5,11 @@ namespace App\Livewire\Admin\ConceptosPago;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\ConceptoPago;
+use App\Traits\HasDynamicLayout;
 
 class Index extends Component
 {
-    use WithPagination;
+    use WithPagination, HasDynamicLayout;
 
     public $search = '';
     public $status = '';
@@ -103,10 +104,13 @@ class Index extends Component
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
 
-        return view('livewire.admin.conceptos-pago.index', compact('conceptos'))
-            ->layout('components.layouts.admin', [
-                'title' => 'Lista de Conceptos de Pago',
-                'description' => 'Gestión de conceptos de pago'
-            ]);
+        return $this->renderWithLayout('livewire.admin.conceptos-pago.index', compact('conceptos'), [
+            'title' => 'Lista de Conceptos de Pago',
+            'description' => 'Gestión de conceptos de pago',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.conceptos-pago.index' => 'Conceptos de Pago'
+            ]
+        ]);
     }
 }

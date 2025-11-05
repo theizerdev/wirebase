@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Mensajeria;
 
 use App\Models\Mensaje;
 use App\Models\User;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 
 class MensajeriaIndex extends Component
 {
+    use HasDynamicLayout;
+
+
     use WithPagination;
 
     public $selectedMessage = null;
@@ -69,7 +73,7 @@ class MensajeriaIndex extends Component
     public function seleccionarMensaje($mensajeId)
     {
         $this->selectedMessage = Mensaje::findOrFail($mensajeId);
-        
+
         // Marcar como leído si es destinatario
         if ($this->selectedMessage->esDestinatario(auth()->id())) {
             $this->selectedMessage->marcarComoLeido(auth()->id());
@@ -170,7 +174,9 @@ class MensajeriaIndex extends Component
 
     public function render()
     {
-        return view('livewire.admin.mensajeria.mensajeria-index')
-            ->layout('components.layouts.mensajeria');
+        return view('livewire.admin.mensajeria.mensajeria-index')->layout($this->getLayout());
     }
 }
+
+
+

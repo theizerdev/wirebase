@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reportes;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\SchoolPeriod;
@@ -15,6 +16,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ResumenPagos extends Component
 {
+    use HasDynamicLayout;
+
+
     public $periodos;
     public $periodo_id;
     public $fecha_inicio;
@@ -138,20 +142,20 @@ class ResumenPagos extends Component
 
             // === INFORMACIÓN DEL REPORTE ===
             $sheet->setCellValue('A3', 'Período:');
-            $periodoTexto = ($this->fecha_inicio ? \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('d/m/Y') : 'N/A') . 
-                           ' al ' . 
+            $periodoTexto = ($this->fecha_inicio ? \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('d/m/Y') : 'N/A') .
+                           ' al ' .
                            ($this->fecha_fin ? \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('d/m/Y') : 'N/A');
             $sheet->setCellValue('B3', $periodoTexto);
-            
+
             $sheet->setCellValue('A4', 'Fecha de generación:');
             $sheet->setCellValue('B4', now()->format('d/m/Y H:i:s'));
-            
+
             $sheet->setCellValue('A5', 'Total de pagos:');
             $sheet->setCellValue('B5', count($this->pagos));
-            
+
             $sheet->setCellValue('D3', 'Total ingresos:');
             $sheet->setCellValue('E3', '$' . number_format($this->pagos->sum('total'), 2));
-            
+
             $sheet->setCellValue('D4', 'Conceptos únicos:');
             $sheet->setCellValue('E4', $this->totales->count());
 
@@ -175,7 +179,7 @@ class ResumenPagos extends Component
                 $column = chr(65 + $index); // A, B, C, D, E
                 $sheet->setCellValue($column . '9', $header);
             }
-            
+
             $sheet->getStyle('A9:E9')->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '495057']],
@@ -201,7 +205,7 @@ class ResumenPagos extends Component
             $sheet->setCellValue('C' . $row, $totalGeneral);
             $sheet->setCellValue('D' . $row, 1); // 100%
             $sheet->setCellValue('E' . $row, $this->totales->sum('cantidad') > 0 ? ($totalGeneral / $this->totales->sum('cantidad')) : 0);
-            
+
             $sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray([
                 'font' => ['bold' => true],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => 'F8F9FA']],
@@ -231,7 +235,7 @@ class ResumenPagos extends Component
                 $column = chr(65 + $index);
                 $sheet->setCellValue($column . ($startDetailRow + 1), $header);
             }
-            
+
             $sheet->getStyle('A' . ($startDetailRow + 1) . ':G' . ($startDetailRow + 1))->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'color' => ['rgb' => '495057']],
@@ -244,7 +248,7 @@ class ResumenPagos extends Component
             foreach ($this->pagos as $pago) {
                 $conceptos = $pago->detalles->pluck('conceptoPago.nombre')->filter()->implode(', ');
                 $estudiante = ($pago->matricula?->student?->nombres ?? '') . ' ' . ($pago->matricula?->student?->apellidos ?? '');
-                
+
                 $sheet->setCellValue('A' . $detailRow, $pago->fecha->format('d/m/Y'));
                 $sheet->setCellValue('B' . $detailRow, trim($estudiante) ?: 'N/A');
                 $sheet->setCellValue('C' . $detailRow, $pago->matricula?->student?->documento_identidad ?? 'N/A');
@@ -278,10 +282,10 @@ class ResumenPagos extends Component
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
             ]);
 
-            $filename = 'resumen_pagos_' . 
-                       ($this->fecha_inicio ? \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('Y-m-d') : 'sin_fecha') . 
-                       '_al_' . 
-                       ($this->fecha_fin ? \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('Y-m-d') : 'sin_fecha') . 
+            $filename = 'resumen_pagos_' .
+                       ($this->fecha_inicio ? \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('Y-m-d') : 'sin_fecha') .
+                       '_al_' .
+                       ($this->fecha_fin ? \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('Y-m-d') : 'sin_fecha') .
                        '.xlsx';
 
             // Mensaje de éxito antes de la descarga
@@ -312,16 +316,16 @@ class ResumenPagos extends Component
             session()->flash('error', 'No hay datos para exportar.');
             return;
         }
-        
+
         session()->flash('info', 'Funcionalidad de exportación a PDF en desarrollo.');
     }
 
     public function render()
     {
-        return view('livewire.admin.reportes.resumen-pagos')
-            ->layout('components.layouts.admin', [
-                'title' => 'Resumen de Pagos',
-                'description' => 'Resumen de pagos por período'
-            ]);
+        return view('livewire.admin.reportes.resumen-pagos')->layout($this->getLayout());
     }
 }
+
+
+
+

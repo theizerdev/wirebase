@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html
   lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-  class="layout-navbar-fixed layout-menu-fixed layout-compact"
-  dir="ltr"
-  data-skin="default"
-  data-bs-theme="light"
+  class="layout-navbar-fixed layout-menu-fixed{{ isset($templateSettings) && $templateSettings->menu_collapsed ? ' layout-menu-collapsed' : '' }}{{ isset($templateSettings) ? ($templateSettings->content_layout === 'wide' ? ' layout-wide' : ' layout-compact') : ' layout-compact' }}{{ isset($templateSettings) && $templateSettings->footer_fixed ? ' layout-footer-fixed' : '' }}"
+  dir="{{ isset($templateSettings) ? $templateSettings->text_direction : 'ltr' }}"
+  data-skin="{{ isset($templateSettings) ? ($templateSettings->skin == 1 ? 'bordered' : 'default') : 'default' }}"
+  data-bs-theme="{{ isset($templateSettings) ? $templateSettings->theme : 'light' }}"
   data-assets-path="{{ asset('materialize/assets/') }}/"
-  data-template="vertical-menu-template">
+  data-template="{{ isset($templateSettings) && $templateSettings->layout_type === 'horizontal' ? 'horizontal-menu-template' : 'vertical-menu-template' }}">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -64,12 +64,23 @@
     <!--? Config: Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file. -->
 
     <script src="/materialize/assets/js/config.js"></script>
+    
+    @include('components.template-config')
 
      <!-- Cropper.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
     
     <!-- Chat y Biblioteca CSS -->
     <link rel="stylesheet" href="{{ asset('css/chat-biblioteca.css') }}">
+    
+    @if(isset($templateSettings) && $templateSettings->primary_color)
+    <style>
+      :root {
+        --bs-primary: {{ $templateSettings->primary_color }};
+        --bs-primary-rgb: {{ implode(',', sscanf($templateSettings->primary_color, '#%02x%02x%02x')) }};
+      }
+    </style>
+    @endif
 
   <style>
     .photo-preview-card {

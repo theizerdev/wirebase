@@ -3,11 +3,15 @@
 namespace App\Livewire\Admin\NivelesEducativos;
 
 use App\Models\NivelEducativo;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Illuminate\Support\Facades\Gate;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
+
     public NivelEducativo $nivel;
 
     public function mount(NivelEducativo $nivel)
@@ -18,8 +22,10 @@ class Show extends Component
 
     public function render()
     {
-        return view('livewire.admin.niveles-educativos.show', [
-            'nivel' => $this->nivel
-        ])->layout('components.layouts.admin');
+        return view('livewire.admin.niveles-educativos.show')->layout($this->getLayout());
     }
 }
+
+
+
+

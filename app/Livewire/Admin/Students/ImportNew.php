@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Students;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Student;
@@ -16,7 +17,9 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportNew extends Component
 {
-    use WithFileUploads;
+
+
+    use WithFileUploads, HasDynamicLayout;
 
     public $file;
     public $headers = [];
@@ -24,11 +27,11 @@ class ImportNew extends Component
     public $totalRows = 0;
     public $selectedRows = [];
     public $selectAll = true;
-    
+
     public $columnMapping = [];
     public $updateExisting = true;
     public $fillMissingWithNA = true;
-    
+
     public $step = 1; // 1: Upload, 2: Preview, 3: Mapping, 4: Import
     public $importing = false;
     public $importedCount = 0;
@@ -48,8 +51,7 @@ class ImportNew extends Component
 
     public function render()
     {
-        return view('livewire.admin.students.import-new')
-            ->layout('components.layouts.admin');
+        return view('livewire.admin.students.import-new')->layout($this->getLayout());
     }
 
     private function initializeColumnMapping()
@@ -60,7 +62,7 @@ class ImportNew extends Component
             'correo_electronico', 'representante_nombres', 'representante_apellidos',
             'representante_documento_identidad', 'representante_telefonos', 'representante_correo'
         ];
-        
+
         foreach ($fields as $field) {
             $this->columnMapping[$field] = '';
         }
@@ -96,36 +98,36 @@ class ImportNew extends Component
     {
         $spreadsheet = IOFactory::load($path);
         $worksheet = $spreadsheet->getActiveSheet();
-        
+
         // Leer encabezados
         $highestColumn = $worksheet->getHighestColumn();
         $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
-        
+
         for ($col = 1; $col <= $highestColumnIndex; $col++) {
             $this->headers[] = $worksheet->getCellByColumnAndRow($col, 1)->getValue() ?? "Columna {$col}";
         }
-        
+
         // Leer datos (máximo 500 filas para preview)
         $highestRow = min($worksheet->getHighestRow(), 501);
         $this->totalRows = $highestRow - 1;
-        
+
         for ($row = 2; $row <= min($highestRow, 102); $row++) {
             $rowData = [];
             for ($col = 1; $col <= $highestColumnIndex; $col++) {
                 $cell = $worksheet->getCellByColumnAndRow($col, $row);
                 $value = $cell->getValue();
-                
+
                 // Convertir fechas de Excel
-                if ($cell->getDataType() === \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC && 
+                if ($cell->getDataType() === \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC &&
                     \PhpOffice\PhpSpreadsheet\Shared\Date::isDateTime($cell)) {
                     $value = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
                 }
-                
+
                 $rowData[] = $value;
             }
             $this->previewData[] = $rowData;
         }
-        
+
         // Seleccionar todas las filas por defecto
         $this->selectedRows = range(0, count($this->previewData) - 1);
     }
@@ -133,25 +135,25 @@ class ImportNew extends Component
     private function readCsv($path)
     {
         $file = fopen($path, 'r');
-        
+
         // Leer encabezados
         $this->headers = fgetcsv($file, 0, ',') ?: [];
-        
+
         // Leer datos (máximo 100 filas para preview)
         $rowCount = 0;
         while (($data = fgetcsv($file, 0, ',')) !== false && $rowCount < 100) {
             $this->previewData[] = $data;
             $rowCount++;
         }
-        
+
         // Contar total de filas
         while (fgetcsv($file, 0, ',') !== false) {
             $rowCount++;
         }
-        
+
         $this->totalRows = $rowCount;
         fclose($file);
-        
+
         // Seleccionar todas las filas por defecto
         $this->selectedRows = range(0, count($this->previewData) - 1);
     }
@@ -282,7 +284,7 @@ class ImportNew extends Component
         try {
             for ($row = 2; $row <= $highestRow; $row++) {
                 $rowIndex = $row - 2;
-                
+
                 if (!in_array($rowIndex, $this->selectedRows)) {
                     continue;
                 }
@@ -291,21 +293,21 @@ class ImportNew extends Component
                 for ($col = 1; $col <= $highestColumnIndex; $col++) {
                     $cell = $worksheet->getCellByColumnAndRow($col, $row);
                     $value = $cell->getValue();
-                    
-                    if ($cell->getDataType() === \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC && 
+
+                    if ($cell->getDataType() === \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC &&
                         \PhpOffice\PhpSpreadsheet\Shared\Date::isDateTime($cell)) {
                         $value = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
                     }
-                    
+
                     $rowData[] = $value;
                 }
 
                 $this->processRow($rowData, $row);
-                
+
                 $processed++;
                 $this->progress = round(($processed / $totalToProcess) * 100);
             }
-            
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -331,12 +333,12 @@ class ImportNew extends Component
                 }
 
                 $this->processRow($data, $rowIndex + 2);
-                
+
                 $processed++;
                 $this->progress = round(($processed / $totalToProcess) * 100);
                 $rowIndex++;
             }
-            
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -350,7 +352,7 @@ class ImportNew extends Component
     {
         try {
             $data = $this->mapRowData($rowData);
-            
+
             // Validar datos mínimos
             if (empty($data['nombres']) && empty($data['apellidos']) && empty($data['documento_identidad'])) {
                 $this->failedCount++;
@@ -363,26 +365,26 @@ class ImportNew extends Component
             $data['empresa_id'] = auth()->user()->empresa_id;
             $data['sucursal_id'] = auth()->user()->sucursal_id;
             $data['status'] = true;
-            
+
             // Asegurar que school_periods_id tenga un valor
             if (empty($data['school_periods_id'])) {
                 $defaultPeriod = SchoolPeriod::where('empresa_id', auth()->user()->empresa_id)
                     ->where('is_active', true)
                     ->first();
-                
+
                 if (!$defaultPeriod) {
                     $defaultPeriod = SchoolPeriod::where('empresa_id', auth()->user()->empresa_id)
                         ->orderBy('id', 'desc')
                         ->first();
                 }
-                
+
                 if ($defaultPeriod) {
                     $data['school_periods_id'] = $defaultPeriod->id;
                 } else {
                     throw new \Exception('No hay períodos escolares disponibles. Por favor crea uno primero.');
                 }
             }
-            
+
             // Buscar estudiante existente solo si updateExisting está activado
             $student = null;
             if ($this->updateExisting && !empty($data['documento_identidad'])) {
@@ -416,7 +418,7 @@ class ImportNew extends Component
             }
 
             $value = trim($rowData[$columnIndex]);
-            
+
             // Filtrar valores inválidos
             if (in_array(strtolower($value), ['n/a', 'na', 'null', '', 'undefined'])) {
                 $value = $this->fillMissingWithNA ? 'n/a' : null;
@@ -427,7 +429,7 @@ class ImportNew extends Component
                 case 'fecha_nacimiento':
                     $data[$field] = $this->parseDate($value);
                     break;
-                    
+
                 case 'representante_telefonos':
                     if ($value && $value !== 'n/a') {
                         // Limpiar y convertir a array
@@ -437,7 +439,7 @@ class ImportNew extends Component
                         $data[$field] = null;
                     }
                     break;
-                    
+
                 case 'nivel_educativo':
                     if ($value && $value !== 'n/a') {
                         $nivel = EducationalLevel::where('nombre', 'like', "%{$value}%")
@@ -448,7 +450,7 @@ class ImportNew extends Component
                         }
                     }
                     break;
-                    
+
                 case 'turno':
                     if ($value && $value !== 'n/a') {
                         $turno = Turno::where('nombre', 'like', "%{$value}%")
@@ -459,7 +461,7 @@ class ImportNew extends Component
                         }
                     }
                     break;
-                    
+
                 case 'school_period':
                     if ($value && $value !== 'n/a') {
                         $period = SchoolPeriod::where('name', 'like', "%{$value}%")
@@ -470,7 +472,7 @@ class ImportNew extends Component
                         }
                     }
                     break;
-                    
+
                 default:
                     $data[$field] = $value;
                     break;
@@ -511,3 +513,7 @@ class ImportNew extends Component
         $this->fillMissingWithNA = true;
     }
 }
+
+
+
+

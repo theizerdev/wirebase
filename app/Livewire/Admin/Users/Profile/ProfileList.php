@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Users\Profile;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\User;
 use App\Models\ActiveSession;
@@ -9,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 
 class ProfileList extends Component
 {
+    use HasDynamicLayout;
+
+
     public $user;
     public $sessions;
     public $stats;
@@ -39,9 +43,14 @@ class ProfileList extends Component
 
     public function render()
     {
-        return view('livewire.admin.users.profile.index')
-            ->layout('components.layouts.admin', [
-                'title' => 'Perfil de Usuario'
-            ]);
+        return view('livewire.admin.users.profile.index', [
+            'user' => $this->user ?? null,
+            'sessions' => $sessions ?? null
+        ])->layout($this->getLayout(), [
+            'title' => 'Detalles del Usuario'
+        ]);
     }
 }
+
+
+

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Users\Profile;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\User;
@@ -9,6 +10,9 @@ use Illuminate\Support\Facades\Storage;
 
 class AvatarUpload extends Component
 {
+    use HasDynamicLayout;
+
+
     use WithFileUploads;
 
     public $user;
@@ -55,6 +59,15 @@ class AvatarUpload extends Component
 
     public function render()
     {
-        return view('livewire.admin.users.profile.avatar-upload');
+        return view('livewire.admin.users.profile.avatar-upload', [
+            'user' => $this->user ?? null,
+            'sessions' => $sessions ?? null
+        ])->layout($this->getLayout(), [
+            'title' => 'Detalles del Usuario'
+        ]);
     }
 }
+
+
+
+

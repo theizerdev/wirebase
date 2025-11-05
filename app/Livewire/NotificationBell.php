@@ -13,14 +13,29 @@ class NotificationBell extends Component
         $notification = Notification::where('user_id', auth()->id())->find($notificationId);
         if ($notification) {
             $notification->markAsRead();
+
+            // Emitir evento para actualizar el contador
+            $this->dispatch('notification-read');
         }
+        // No re-render to maintain dropdown state
+        $this->skipRender();
     }
 
     public function markAllAsRead()
     {
-        Notification::where('user_id', auth()->id())
+        $updated = Notification::where('user_id', auth()->id())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
+
+        if ($updated > 0) {
+            // Emitir evento para actualizar el contador
+            $this->dispatch('notification-read');
+        }
+    }
+
+    public function viewAllNotifications()
+    {
+        return redirect()->route('admin.notifications.index');
     }
 
     #[On('notification-created')]
@@ -29,31 +44,21 @@ class NotificationBell extends Component
         // Livewire automáticamente re-renderiza
     }
 
+    #[On('notification-read')]
+    public function refreshAfterRead()
+    {
+        // Livewire automáticamente re-renderiza
+    }
+
     public function render()
     {
-        // Mostrar solo notificaciones no leídas o las 10 más recientes si hay menos de 10 no leídas
-        $unreadNotifications = Notification::where('user_id', auth()->id())
-            ->whereNull('read_at')
+        // Obtener las últimas 10 notificaciones (tanto leídas como no leídas)
+        $notifications = Notification::where('user_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get();
 
-        $totalNotifications = $unreadNotifications->count();
-        
-        // Si hay menos de 10 notificaciones no leídas, añadir algunas leídas recientes
-        $notifications = $unreadNotifications;
-        if ($totalNotifications < 10) {
-            $readNotifications = Notification::where('user_id', auth()->id())
-                ->whereNotNull('read_at')
-                ->orderBy('created_at', 'desc')
-                ->take(10 - $totalNotifications)
-                ->get();
-            
-            $notifications = $unreadNotifications->merge($readNotifications)
-                ->sortByDesc('created_at')
-                ->values();
-        }
-
+        // Contar solo las no leídas
         $unreadCount = Notification::where('user_id', auth()->id())
             ->whereNull('read_at')
             ->count();

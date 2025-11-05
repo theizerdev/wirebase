@@ -82,6 +82,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'access student control',
                 'export students',
                 'import students',
+                'view student historico',
             ],
             'active_sessions' => [
                 'view active sessions',
@@ -116,6 +117,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'edit matriculas',
                 'delete matriculas',
                 'view matriculas',
+                'cambiar cuotas matriculas',
             ],
             // Módulo de pagos
             'pagos' => [
@@ -194,6 +196,27 @@ class RolesAndPermissionsSeeder extends Seeder
                 'delete cajas',
                 'view cajas',
             ],
+            // Módulo de tasas de cambio
+            'exchange_rates' => [
+                'view exchange-rates',
+                'fetch exchange-rates',
+                'manage exchange-rates',
+            ],
+            // Módulo de reuniones
+            'reuniones' => [
+                'access reuniones',
+                'create reuniones',
+                'edit reuniones',
+                'delete reuniones',
+                'view reuniones',
+            ],
+            // Módulo de reglas de morosidad
+            'late_payment_rules' => [
+                'access late payment rules',
+                'create late payment rules',
+                'edit late payment rules',
+                'delete late payment rules',
+            ],
         ];
 
         // Crear permisos organizados por módulos
@@ -234,12 +257,13 @@ class RolesAndPermissionsSeeder extends Seeder
         ])->get();
         $recepcionistaRole->syncPermissions($recepcionistaPermissions);
 
-        // Asignar permisos de mensajería, biblioteca, series y cajas a Administradores y Super Administradores
+        // Asignar permisos de mensajería, biblioteca, series, cajas y reuniones a Administradores y Super Administradores
         $mensajeriaBibliotecaSeriesCajasPermissions = Permission::whereIn('module', [
             'mensajeria',
             'biblioteca',
             'series',
-            'cajas'
+            'cajas',
+            'reuniones'
         ])->get();
         
         $superAdminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPermissions);

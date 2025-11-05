@@ -144,6 +144,13 @@
           </a>
         </li>
         @endcan
+        @can('cambiar cuotas matriculas')
+        <li class="menu-item {{ request()->routeIs('admin.matriculas.cambiar-cuotas') ? 'active' : '' }}">
+          <a href="{{ route('admin.matriculas.cambiar-cuotas') }}" class="menu-link">
+            <div>Cambiar Cuotas</div>
+          </a>
+        </li>
+        @endcan
         @endcan
       </ul>
     </li>
@@ -187,6 +194,13 @@
         <li class="menu-item {{ request()->routeIs('admin.cajas.index') ? 'active' : '' }}">
           <a href="{{ route('admin.cajas.index') }}" class="menu-link">
             <div>Caja Chica</div>
+          </a>
+        </li>
+        @endcan
+        @can('access late payment rules')
+        <li class="menu-item {{ request()->routeIs('admin.late-payment-rules.index') ? 'active' : '' }}">
+          <a href="{{ route('admin.late-payment-rules.index') }}" class="menu-link">
+            <div>Reglas de Morosidad</div>
           </a>
         </li>
         @endcan
@@ -303,6 +317,24 @@
     </li>
     @endcan
 
+    @can('view exchange-rates')
+    <!-- Tasas de Cambio -->
+    <li class="menu-item {{ request()->routeIs('admin.exchange-rates') ? 'active' : '' }}">
+      <a href="{{ route('admin.exchange-rates') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-exchange-dollar-line"></i>
+        <div>Tasas de Cambio BCV</div>
+      </a>
+    </li>
+    @endcan
+
+    <!-- Personalización de Plantilla -->
+    <li class="menu-item {{ request()->routeIs('admin.template-customization') ? 'active' : '' }}">
+      <a href="{{ route('admin.template-customization') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-palette-line"></i>
+        <div>Personalización</div>
+      </a>
+    </li>
+
     <!-- === HERRAMIENTAS === -->
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">Herramientas</span>
@@ -324,6 +356,16 @@
       <a href="{{ route('admin.biblioteca.index') }}" class="menu-link">
         <i class="menu-icon tf-icons ri ri-book-2-line"></i>
         <div>Biblioteca Digital</div>
+      </a>
+    </li>
+    @endcan
+
+    @can('access reuniones')
+    <!-- Reuniones -->
+    <li class="menu-item {{ request()->routeIs('admin.reuniones.*') ? 'active' : '' }}">
+      <a href="{{ route('admin.reuniones.index') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-calendar-event-line"></i>
+        <div>Calendario de Reuniones</div>
       </a>
     </li>
     @endcan

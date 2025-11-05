@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Programas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Programa;
@@ -10,7 +11,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $nivel_educativo_id = '';
@@ -160,13 +161,13 @@ class Index extends Component
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
 
-        return view('livewire.admin.programas.index', compact('programas', 'nivelesEducativos'))
-            ->layout('components.layouts.admin', [
-                'title' => 'Programas',
-                'breadcrumb' => [
-                    'admin.dashboard' => 'Dashboard',
-                    'admin.programas.index' => 'Programas'
-                ]
-            ]);
+        return $this->renderWithLayout('livewire.admin.programas.index', compact('programas', 'nivelesEducativos'), [
+            'title' => 'Programas',
+            'description' => 'Gestión de programas educativos',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.programas.index' => 'Programas'
+            ]
+        ]);
     }
 }

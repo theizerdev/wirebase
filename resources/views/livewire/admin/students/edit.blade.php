@@ -177,6 +177,13 @@
                                         <input type="email" id="representante_correo" class="form-control @error('representante_correo') is-invalid @enderror" wire:model="representante_correo">
                                         @error('representante_correo') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                     </div>
+
+                                    <div class="col-md-12 mb-3">
+                                        <label for="representante_direccion" class="form-label">Dirección de Domicilio del Representante</label>
+                                        <textarea id="representante_direccion" class="form-control @error('representante_direccion') is-invalid @enderror" wire:model="representante_direccion" rows="2" placeholder="Ingrese la dirección del domicilio del representante"></textarea>
+                                        <div class="form-text">Dirección del domicilio del representante (opcional)</div>
+                                        @error('representante_direccion') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    </div>
                                 </div>
                             </div>
                         </div>

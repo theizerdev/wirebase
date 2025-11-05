@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Admin\Empresas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use App\Models\Empresa;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public $empresa;
     public $razon_social = '';
     public $documento = '';
@@ -83,9 +87,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.empresas.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Empresa'
-            ]);
+        return $this->renderWithLayout('livewire.admin.empresas.edit', [], [
+            'title' => 'Editar Empresa',
+            'description' => 'Modificar empresa del sistema'
+        ]);
     }
 }

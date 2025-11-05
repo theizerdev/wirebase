@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\Admin\Matriculas;
+use App\Traits\HasDynamicLayout;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -9,7 +10,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $status = '';
@@ -100,9 +101,9 @@ class Index extends Component
                 });
             })
             ->when($this->status !== '', function ($query) {
-                $query->where('matriculas.estado', $this->status);
+                $query->where('estado', $this->status);
             })
-            ->orderBy('matriculas.' . $this->sortBy, $this->sortDirection);
+            ->orderBy($this->sortBy, $this->sortDirection);
     }
 
     protected function getExportHeaders(): array
@@ -148,9 +149,9 @@ class Index extends Component
                 });
             })
             ->when($this->status !== '', function ($query) {
-                $query->where('matriculas.estado', $this->status);
+                $query->where('estado', $this->status);
             })
-            ->orderBy('matriculas.' . $this->sortBy, $this->sortDirection)
+            ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
 
         // Estadísticas
@@ -163,13 +164,10 @@ class Index extends Component
         return view('livewire.admin.matriculas.index', compact(
             'matriculas',
             'totalMatriculas',
-            'matriculasActivas', 
+            'matriculasActivas',
             'matriculasInactivas',
             'matriculasGraduadas',
             'ingresosTotales'
-        ))->layout('components.layouts.admin', [
-            'title' => 'Lista de Matrículas',
-            'description' => 'Gestión de matrículas de estudiantes'
-        ]);
+        ))->layout($this->getLayout());
     }
 }

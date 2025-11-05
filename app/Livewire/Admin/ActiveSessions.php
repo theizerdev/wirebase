@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use Livewire\Component;
+use App\Traits\HasDynamicLayout;
 use Livewire\WithPagination;
 use App\Models\ActiveSession;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +12,10 @@ use Illuminate\Support\Str;
 
 class ActiveSessions extends Component
 {
+
+
     use WithPagination;
+    use HasDynamicLayout;
     protected $paginationTheme = 'bootstrap';
 
     public $search = '';
@@ -113,7 +117,7 @@ class ActiveSessions extends Component
 
         session()->flash('status', 'Sesión terminada correctamente.');
     }
-    
+
     public function clearFilters()
     {
         $this->search = '';
@@ -124,3 +128,7 @@ class ActiveSessions extends Component
         $this->resetPage();
     }
 }
+
+
+
+

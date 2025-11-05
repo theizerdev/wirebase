@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Biblioteca;
 
 use App\Models\BibliotecaArchivo;
 use App\Models\BibliotecaCategoria;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -12,14 +13,16 @@ use Illuminate\Support\Facades\Storage;
 
 class BibliotecaIndex extends Component
 {
-    use WithPagination, WithFileUploads;
+
+
+    use WithPagination, WithFileUploads, HasDynamicLayout;
 
     public $search = '';
     public $categoriaSeleccionada = null;
     public $vistaActiva = 'grid';
     public $mostrarFormulario = false;
     public $filtroActivo = 'todos';
-    
+
     // Propiedades para nuevo archivo
     public $nuevoArchivo;
     public $titulo = '';
@@ -74,7 +77,7 @@ class BibliotecaIndex extends Component
 
         // Subir archivo
         $path = $this->nuevoArchivo->store('biblioteca/' . auth()->user()->empresa_id . '/' . auth()->user()->sucursal_id, 'public');
-        
+
         // Crear registro
         $archivo = BibliotecaArchivo::create([
             'titulo' => $this->titulo,
@@ -103,7 +106,7 @@ class BibliotecaIndex extends Component
     public function descargarArchivo($archivoId)
     {
         $archivo = BibliotecaArchivo::findOrFail($archivoId);
-        
+
         // Verificar permisos
         if (!$this->puedeAccederArchivo($archivo)) {
             session()->flash('error', 'No tienes permisos para descargar este archivo.');
@@ -126,7 +129,7 @@ class BibliotecaIndex extends Component
     public function eliminarArchivo($archivoId)
     {
         $archivo = BibliotecaArchivo::findOrFail($archivoId);
-        
+
         // Verificar permisos
         if (auth()->id() !== $archivo->usuario_subida_id && !auth()->user()->can('delete biblioteca')) {
             session()->flash('error', 'No tienes permisos para eliminar este archivo.');
@@ -135,7 +138,7 @@ class BibliotecaIndex extends Component
 
         // Eliminar archivo físico
         Storage::disk('public')->delete($archivo->ruta_archivo);
-        
+
         // Eliminar registro
         $archivo->delete();
 
@@ -235,10 +238,20 @@ class BibliotecaIndex extends Component
 
     public function render()
     {
-        return view('livewire.admin.biblioteca.biblioteca-index')
-            ->layout('components.layouts.admin', [
-                'title' => 'Biblioteca Digital',
-                'description' => 'Gestión de archivos y documentos'
-            ]);
+        return $this->renderWithLayout('livewire.admin.biblioteca.biblioteca-index', [
+            'archivos' => $this->archivos,
+            'totalArchivos' => $this->totalArchivos,
+            'categorias' => $this->categorias,
+            'usuarios' => $this->usuarios,
+            'vistaActiva' => $this->vistaActiva,
+            'filtroActivo' => $this->filtroActivo,
+            'categoriaSeleccionada' => $this->categoriaSeleccionada,
+           'mostrarFormulario' => $this->mostrarFormulario,
+        ], [
+            'description' => 'Gestión de ',
+        ]);
     }
 }
+
+
+

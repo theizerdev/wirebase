@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reportes;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Student;
 use App\Models\Matricula;
@@ -15,6 +16,9 @@ use App\Mail\DebtNotification;
 
 class Morosidad extends Component
 {
+    use HasDynamicLayout;
+
+
     public $nivelesEducativos;
     public $programas;
     public $nivel_educativo_id;
@@ -44,7 +48,7 @@ class Morosidad extends Component
         } else {
             $this->programas = collect();
         }
-        
+
         $this->programa_id = '';
         $this->morosos = [];
         // Reinicializar totales cuando cambian los filtros
@@ -76,7 +80,7 @@ class Morosidad extends Component
             $totalPagado = Pago::where('matricula_id', $matricula->id)
                 ->where('estado', 'aprobado')
                 ->sum('total');
-            
+
             $costoTotal = $matricula->costo ?? 0;
             $saldoPendiente = $costoTotal - $totalPagado;
 
@@ -107,21 +111,21 @@ class Morosidad extends Component
     {
         // Obtener la matrícula con cronograma de pagos y pagos realizados
         $matricula = Matricula::with([
-            'student', 
-            'programa.nivelEducativo', 
+            'student',
+            'programa.nivelEducativo',
             'cronogramaPagos',
             'pagos.detalles.conceptoPago'
         ])->find($matriculaId);
-            
+
         if (!$matricula) {
             return;
         }
-        
+
         $this->estudianteSeleccionado = $matricula;
         // Mostrar solo cuotas pendientes
         $this->detalleDeuda = $matricula->cronogramaPagos->where('estado', 'pendiente');
         $this->mostrarModal = true;
-        
+
         // Emitir evento para mostrar la modal
         $this->dispatch('mostrarModal');
     }
@@ -134,14 +138,14 @@ class Morosidad extends Component
         }
 
         $estudiante = $this->estudianteSeleccionado->student;
-        
+
         // Verificar si el estudiante es mayor de edad
-        $esMayorDeEdad = $estudiante->fecha_nacimiento && 
+        $esMayorDeEdad = $estudiante->fecha_nacimiento &&
                          $estudiante->fecha_nacimiento->age >= 18;
-        
+
         $correoDestino = null;
         $nombreDestino = null;
-        
+
         if ($esMayorDeEdad && $estudiante->correo_electronico) {
             // Enviar al correo del estudiante si es mayor de edad
             $correoDestino = $estudiante->correo_electronico;
@@ -151,7 +155,7 @@ class Morosidad extends Component
             $correoDestino = $estudiante->representante_correo;
             $nombreDestino = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
         }
-        
+
         // Agregar información de depuración
         Log::info('Verificación de correo para notificación', [
             'es_mayor_de_edad' => $esMayorDeEdad,
@@ -159,7 +163,7 @@ class Morosidad extends Component
             'representante_email' => $estudiante->representante_correo,
             'correo_destino' => $correoDestino
         ]);
-        
+
         if (!$correoDestino) {
             // Mensaje más detallado para diagnosticar el problema
             if (!$esMayorDeEdad && !$estudiante->representante_correo) {
@@ -169,27 +173,27 @@ class Morosidad extends Component
             }
             return;
         }
-        
+
         try {
             // Preparar datos para el correo
             $pendingAmount = ($this->estudianteSeleccionado->costo ?? 0) - $this->estudianteSeleccionado->pagos->sum('total');
-            
+
             // Enviar correo real
             Mail::to($correoDestino)->send(new DebtNotification($estudiante, $this->detalleDeuda, $pendingAmount));
-            
+
             Log::info('Notificación de deuda enviada', [
                 'destinatario' => $correoDestino,
                 'estudiante' => $estudiante->nombres . ' ' . $estudiante->apellidos,
                 'saldo_pendiente' => $pendingAmount
             ]);
-            
+
             session()->flash('message', 'Notificación enviada correctamente a ' . $nombreDestino . ' (' . $correoDestino . ')');
         } catch (\Exception $e) {
             Log::error('Error al enviar notificación de deuda', [
                 'error' => $e->getMessage(),
                 'estudiante_id' => $estudiante->id
             ]);
-            
+
             session()->flash('error', 'Error al enviar la notificación. Por favor, inténtelo de nuevo.');
         }
     }
@@ -242,7 +246,7 @@ class Morosidad extends Component
                 $column = chr(65 + $index);
                 $sheet->setCellValue($column . '6', $header);
             }
-            
+
             $sheet->getStyle('A6:H6')->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'color' => ['rgb' => 'DC3545']],
@@ -255,7 +259,7 @@ class Morosidad extends Component
             foreach ($this->morosos as $moroso) {
                 $matricula = $moroso['matricula'];
                 $estudiante = $matricula->student;
-                
+
                 $sheet->setCellValue('A' . $row, ($estudiante->nombres ?? '') . ' ' . ($estudiante->apellidos ?? ''));
                 $sheet->setCellValue('B' . $row, $estudiante->documento_identidad ?? 'N/A');
                 $sheet->setCellValue('C' . $row, $matricula->programa->nombre ?? 'N/A');
@@ -324,14 +328,14 @@ class Morosidad extends Component
 
         foreach ($this->morosos as $moroso) {
             $estudiante = $moroso['matricula']->student;
-            
+
             // Verificar si el estudiante es mayor de edad
-            $esMayorDeEdad = $estudiante->fecha_nacimiento && 
+            $esMayorDeEdad = $estudiante->fecha_nacimiento &&
                              $estudiante->fecha_nacimiento->age >= 18;
-            
+
             $correoDestino = null;
             $nombreDestino = null;
-            
+
             if ($esMayorDeEdad && $estudiante->correo_electronico) {
                 // Enviar al correo del estudiante si es mayor de edad
                 $correoDestino = $estudiante->correo_electronico;
@@ -341,20 +345,20 @@ class Morosidad extends Component
                 $correoDestino = $estudiante->representante_correo;
                 $nombreDestino = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
             }
-            
+
             if ($correoDestino) {
                 try {
                     // Preparar datos para el correo
                     $pendingAmount = $moroso['saldo_pendiente'];
-                    
+
                     // Obtener cronograma de pagos pendientes
                     $cronogramaPendiente = $moroso['matricula']->cronogramaPagos
                         ->where('estado', 'pendiente');
-                    
+
                     // Enviar correo real
                     \Mail::to($correoDestino)->send(new \App\Mail\DebtNotification($estudiante, $cronogramaPendiente, $pendingAmount));
                     $notificacionesEnviadas++;
-                    
+
                     \Log::info('Notificación de morosidad enviada', [
                         'destinatario' => $correoDestino,
                         'estudiante' => $estudiante->nombres . ' ' . $estudiante->apellidos,
@@ -375,7 +379,7 @@ class Morosidad extends Component
         if ($notificacionesEnviadas > 0) {
             session()->flash('success', "Se enviaron {$notificacionesEnviadas} notificaciones correctamente (mayores de edad al estudiante, menores al representante).");
         }
-        
+
         if (count($errores) > 0) {
             session()->flash('error', 'No se pueden notificar a: ' . implode(', ', array_slice($errores, 0, 3)) . (count($errores) > 3 ? ' y ' . (count($errores) - 3) . ' más.' : '.'));
         }
@@ -383,10 +387,9 @@ class Morosidad extends Component
 
     public function render()
     {
-        return view('livewire.admin.reportes.morosidad')
-            ->layout('components.layouts.admin', [
-                'title' => 'Reporte de Morosidad',
-                'description' => 'Morosidad por nivel/programa'
-            ]);
+        return view('livewire.admin.reportes.morosidad')->layout($this->getLayout());
     }
 }
+
+
+

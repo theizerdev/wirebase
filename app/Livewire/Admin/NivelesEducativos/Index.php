@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\Admin\NivelesEducativos;
+use App\Traits\HasDynamicLayout;
 
 use App\Models\EducationalLevel;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $status = '';

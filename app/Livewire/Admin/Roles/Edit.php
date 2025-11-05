@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Roles;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -10,6 +11,9 @@ use Illuminate\Validation\Rule;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public $role;
     public $name;
     public $selectedPermissions = [];
@@ -223,9 +227,10 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.roles.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Rol'
-            ]);
+        return view('livewire.admin.roles.edit')->layout($this->getLayout());
     }
 }
+
+
+
+

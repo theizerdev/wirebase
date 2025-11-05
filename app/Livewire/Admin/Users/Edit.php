@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Users;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\User;
 use App\Models\Empresa;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Hash;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public User $user;
     public $name;
     public $email;
@@ -93,7 +97,7 @@ class Edit extends Component
         $user->sucursal_id = $this->sucursal_id;
         $user->status = $this->status;
         $user->save();
-        
+
         // Sincronizar rol del usuario
         $user->syncRoles([$this->role]);
 
@@ -104,14 +108,14 @@ class Edit extends Component
 
     public function render()
     {
-        $empresas = Empresa::forUser()->where('status', true)->get();
-        $roles = Role::all();
-
         return view('livewire.admin.users.edit', [
-            'empresas' => $empresas,
-            'roles' => $roles
-        ])->layout('components.layouts.admin', [
-            'title' => 'Editar Usuario'
+            'user' => $this->user ?? null,
+            'sessions' => $sessions ?? null
+        ])->layout($this->getLayout(), [
+            'title' => 'Detalles del Usuario'
         ]);
     }
 }
+
+
+

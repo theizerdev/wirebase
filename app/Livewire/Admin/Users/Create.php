@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Users;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\User;
 use App\Models\Empresa;
@@ -14,6 +15,9 @@ use Illuminate\Validation\Rules;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $name;
     public $email;
     public $password;
@@ -69,7 +73,7 @@ class Create extends Component
         $user->sucursal_id = $this->sucursal_id;
         $user->status = $this->status;
         $user->save();
-        
+
         $user->assignRole($this->role);
 
         // Enviar correo de bienvenida
@@ -86,14 +90,14 @@ class Create extends Component
 
     public function render()
     {
-        $empresas = Empresa::forUser()->where('status', true)->get();
-        $roles = Role::all();
-
         return view('livewire.admin.users.create', [
-            'empresas' => $empresas,
-            'roles' => $roles
-        ])->layout('components.layouts.admin', [
-            'title' => 'Crear Usuario'
+            'user' => $this->user ?? null,
+            'sessions' => $sessions ?? null
+        ])->layout($this->getLayout(), [
+            'title' => 'Detalles del Usuario'
         ]);
     }
 }
+
+
+

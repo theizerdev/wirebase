@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Admin\Empresas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use App\Models\Empresa;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
     public $razon_social = '';
     public $documento = '';
     public $direccion = '';
@@ -64,9 +67,9 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.empresas.create')
-            ->layout('components.layouts.admin', [
-                'title' => 'Crear Empresa'
-            ]);
+        return $this->renderWithLayout('livewire.admin.empresas.create', [], [
+            'title' => 'Crear Empresa',
+            'description' => 'Nueva empresa del sistema'
+        ]);
     }
 }

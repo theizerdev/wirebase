@@ -14,7 +14,8 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Commands\SendAccessNotificationJob::class,
-        Commands\SendAutomaticNotificationsCommand::class, // Nuevo comando
+        Commands\SendAutomaticNotificationsCommand::class,
+        Commands\FetchExchangeRates::class,
     ];
 
     /**
@@ -25,8 +26,16 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
-        $schedule->command('notifications:send-automatic')->dailyAt('08:00'); // Ejecutar diariamente a las 8:00 AM
+        $schedule->command('notifications:send-automatic')->dailyAt('08:00');
+        
+        // Obtener tasas de cambio del BCV dos veces al día
+        $schedule->command('exchange:fetch')
+            ->dailyAt('10:00')
+            ->timezone('America/Caracas');
+            
+        $schedule->command('exchange:fetch')
+            ->dailyAt('14:00')
+            ->timezone('America/Caracas');
     }
 
     /**

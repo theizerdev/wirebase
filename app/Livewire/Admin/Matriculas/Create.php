@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Matriculas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Matricula;
 use App\Models\Student;
@@ -11,6 +12,9 @@ use App\Models\PaymentSchedule;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $student_id;
     public $programa_id;
     public $periodo_id;
@@ -25,7 +29,7 @@ class Create extends Component
     public $students = [];
     public $programas = [];
     public $periodos = [];
-    
+
     // Tabla de amortización
     public $paymentSchedule = [];
     public $showSchedule = false;
@@ -55,7 +59,7 @@ class Create extends Component
             ->orderBy('nombres')
             ->orderBy('apellidos')
             ->get();
-            
+
         $this->programas = Programa::where('activo', true)->orderBy('nombre')->get();
         $this->periodos = SchoolPeriod::orderBy('name')->get();
     }
@@ -70,27 +74,27 @@ class Create extends Component
                 $this->cuota_inicial = $student->nivelEducativo->cuota_inicial;
                 $this->numero_cuotas = $student->nivelEducativo->numero_cuotas;
             }
-            
+
             // Generar tabla de amortización cuando se selecciona un estudiante
             $this->generatePaymentSchedule();
         }
     }
-    
+
     public function updatedCosto()
     {
         $this->generatePaymentSchedule();
     }
-    
+
     public function updatedCuotaInicial()
     {
         $this->generatePaymentSchedule();
     }
-    
+
     public function updatedNumeroCuotas()
     {
         $this->generatePaymentSchedule();
     }
-    
+
     public function updatedPeriodoId()
     {
         $this->generatePaymentSchedule();
@@ -114,7 +118,7 @@ class Create extends Component
 
         // Calcular monto restante después de la cuota inicial
         $montoRestante = $this->costo - $this->cuota_inicial;
-        
+
         // Si no hay cuotas, todo se cobra en la cuota inicial
         if ($this->numero_cuotas <= 0) {
             $this->paymentSchedule = [
@@ -131,10 +135,10 @@ class Create extends Component
 
         // Calcular monto por cuota
         $montoCuota = $montoRestante / $this->numero_cuotas;
-        
+
         // Generar cuotas mensuales
         $this->paymentSchedule = [];
-        
+
         // Agregar cuota inicial
         if ($this->cuota_inicial > 0) {
             $this->paymentSchedule[] = [
@@ -144,18 +148,18 @@ class Create extends Component
                 'fecha_vencimiento' => $periodo->start_date
             ];
         }
-        
+
         // Agregar cuotas distribuidas uniformemente a lo largo del período escolar
         $startDate = new \DateTime($periodo->start_date);
         $endDate = new \DateTime($periodo->end_date);
-        
+
         // Calcular intervalo total en días
         $totalDays = $startDate->diff($endDate)->days;
-        
+
         // Para cada cuota, calcular la fecha de vencimiento distribuida uniformemente
         for ($i = 1; $i <= $this->numero_cuotas; $i++) {
             $dueDate = clone $startDate;
-            
+
             // Calcular días entre cuotas (distribución uniforme)
             if ($this->numero_cuotas > 1) {
                 $daysBetweenPayments = floor($totalDays / ($this->numero_cuotas - 1));
@@ -165,12 +169,12 @@ class Create extends Component
                 $daysBetweenPayments = floor($totalDays / 2);
                 $dueDate->modify('+' . $daysBetweenPayments . ' days');
             }
-            
+
             // Asegurarse de que la fecha no exceda la fecha final
             if ($dueDate > $endDate) {
                 $dueDate = clone $endDate;
             }
-            
+
             $this->paymentSchedule[] = [
                 'numero_cuota' => $i,
                 'descripcion' => 'Cuota ' . $i,
@@ -178,7 +182,7 @@ class Create extends Component
                 'fecha_vencimiento' => $dueDate->format('Y-m-d')
             ];
         }
-        
+
         $this->showSchedule = true;
     }
 
@@ -218,7 +222,7 @@ class Create extends Component
             \Log::error('Error creating matricula: ' . $e->getMessage());
         }
     }
-    
+
     private function createPaymentSchedule($matricula)
     {
         try {
@@ -240,10 +244,9 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.matriculas.create')
-            ->layout('components.layouts.admin', [
-                'title' => 'Crear Matrícula',
-                'description' => 'Registrar una nueva matrícula de estudiante'
-            ]);
+        return view('livewire.admin.matriculas.create')->layout($this->getLayout());
     }
 }
+
+
+

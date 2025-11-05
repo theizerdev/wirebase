@@ -4,12 +4,13 @@ namespace App\Livewire\Admin\Cajas;
 
 use App\Models\Caja;
 use App\Traits\Exportable;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $status = '';
@@ -45,7 +46,7 @@ class Index extends Component
     public function cerrarCaja($cajaId)
     {
         $caja = Caja::findOrFail($cajaId);
-        
+
         if ($caja->cerrar()) {
             session()->flash('message', 'Caja cerrada exitosamente.');
         } else {
@@ -125,8 +126,8 @@ class Index extends Component
     public function render()
     {
         $cajas = $this->getExportQuery()->paginate($this->perPage);
-        return view('livewire.admin.cajas.index', compact('cajas'))->layout('components.layouts.admin', [
-            'title' => 'Cajas'
+        return $this->renderWithLayout('livewire.admin.cajas.index', compact('cajas'), [
+            'description' => 'Gestión de ',
         ]);
     }
 }

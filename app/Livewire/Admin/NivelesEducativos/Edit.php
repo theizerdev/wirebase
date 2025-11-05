@@ -3,11 +3,15 @@
 namespace App\Livewire\Admin\NivelesEducativos;
 
 use App\Models\NivelEducativo;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Illuminate\Support\Facades\Gate;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public NivelEducativo $nivel;
     public $nombre = '';
     public $descripcion = '';
@@ -45,14 +49,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.niveles-educativos.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Nivel Educativo',
-                'breadcrumb' => [
-                    'admin.dashboard' => 'Dashboard',
-                    'admin.niveles-educativos.index' => 'Niveles Educativos',
-                    'admin.niveles-educativos.edit' => 'Editar'
-                ]
-            ]);
+        return view('livewire.admin.niveles-educativos.edit')->layout($this->getLayout());
     }
 }
+
+
+

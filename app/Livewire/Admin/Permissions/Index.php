@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\Admin\Permissions;
+use App\Traits\HasDynamicLayout;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Index extends Component
 {
-    use WithPagination;
+    use WithPagination, HasDynamicLayout;
 
     public $search = '';
     public $module = '';

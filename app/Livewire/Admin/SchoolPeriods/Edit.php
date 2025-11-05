@@ -3,10 +3,14 @@
 namespace App\Livewire\Admin\SchoolPeriods;
 
 use App\Models\SchoolPeriod;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public $schoolPeriod;
     public $name;
     public $start_date;
@@ -42,8 +46,7 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.school-periods.edit')
-            ->layout('components.layouts.admin');
+        return view('livewire.admin.school-periods.edit')->layout($this->getLayout());
     }
 
     public function update()
@@ -82,3 +85,6 @@ class Edit extends Component
         return redirect()->route('admin.school-periods.index');
     }
 }
+
+
+

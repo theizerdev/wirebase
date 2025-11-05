@@ -73,6 +73,26 @@ class PaymentSchedule extends Model
         return $this->monto - $this->monto_pagado;
     }
 
+    public function getRecargoMorosidadAttribute()
+    {
+        if ($this->estado !== 'pendiente' || $this->fecha_vencimiento >= now()) {
+            return 0;
+        }
+
+        $rule = \App\Models\LatePaymentRule::getActiveRule();
+        if (!$rule) {
+            return 0;
+        }
+
+        $diasVencido = $this->fecha_vencimiento->diffInDays(now());
+        return $rule->calcularRecargo($this->saldo_pendiente, $diasVencido);
+    }
+
+    public function getMontoConRecargoAttribute()
+    {
+        return $this->saldo_pendiente + $this->recargo_morosidad;
+    }
+
     public function getEstaPagadoAttribute()
     {
         return $this->monto_pagado >= $this->monto;

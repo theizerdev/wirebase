@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Matriculas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Matricula;
 use App\Models\Student;
@@ -11,13 +12,16 @@ use App\Models\PaymentSchedule;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public $matricula;
     public $student_id;
     public $programa_id;
     public $periodo_id;
     public $fecha_matricula;
     public $estado;
-    
+
     // Campos de costos
     public $costo;
     public $cuota_inicial;
@@ -26,7 +30,7 @@ class Edit extends Component
     public $students = [];
     public $programas = [];
     public $periodos = [];
-    
+
     // Tabla de amortización
     public $paymentSchedule = [];
     public $showSchedule = false;
@@ -44,65 +48,92 @@ class Edit extends Component
 
     public function mount(Matricula $matricula)
     {
-        $this->matricula = $matricula;
-        $this->student_id = $matricula->estudiante_id;
+        $this->matricula = $matricula->load(['student', 'programa', 'schoolPeriod']);
+        $this->student_id = $matricula->student_id;
         $this->programa_id = $matricula->programa_id;
-        $this->periodo_id = $matricula->periodo_id;
-        $this->fecha_matricula = $matricula->fecha_matricula->format('Y-m-d');
-        $this->estado = $matricula->estado;
-        $this->costo = $matricula->costo;
-        $this->cuota_inicial = $matricula->cuota_inicial;
-        $this->numero_cuotas = $matricula->numero_cuotas;
-        
+        $this->periodo_id = $matricula->school_period_id;
+        $this->fecha_matricula = $matricula->fecha_matricula ? $matricula->fecha_matricula->format('Y-m-d') : now()->format('Y-m-d');
+        $this->estado = $matricula->estado ?? 'activo';
+        $this->costo = $matricula->costo ?? 0;
+        $this->cuota_inicial = $matricula->cuota_inicial ?? 0;
+        $this->numero_cuotas = $matricula->numero_cuotas ?? 0;
+
         $this->loadData();
         $this->loadPaymentSchedule();
     }
 
     public function loadData()
     {
-        // Cargar solo estudiantes que no tienen matrícula, excluyendo el estudiante actual
-        $this->students = Student::where(function($query) {
-                $query->whereDoesntHave('matriculas')
-                      ->orWhere('id', $this->student_id);
+        $query = Student::query();
+
+        if (!auth()->user()->hasRole('Super Administrador')) {
+            $query->where('empresa_id', auth()->user()->empresa_id)
+                  ->where('sucursal_id', auth()->user()->sucursal_id);
+        }
+
+        // Cargar estudiantes disponibles más el estudiante actual
+        $this->students = $query->where(function($q) {
+                $q->whereDoesntHave('matriculas')
+                  ->orWhere('id', $this->student_id);
             })
             ->orderBy('nombres')
             ->orderBy('apellidos')
             ->get();
-            
-        $this->programas = Programa::where('activo', true)->orderBy('nombre')->get();
+
+        $programaQuery = Programa::where('activo', true);
+        if (!auth()->user()->hasRole('Super Administrador')) {
+            $programaQuery->where('empresa_id', auth()->user()->empresa_id)
+                         ->where('sucursal_id', auth()->user()->sucursal_id);
+        }
+        $this->programas = $programaQuery->orderBy('nombre')->get();
+
         $this->periodos = SchoolPeriod::orderBy('name')->get();
     }
-    
+
     public function loadPaymentSchedule()
     {
-        $this->paymentSchedule = $this->matricula->cronogramaPagos()
-            ->where('estado', '!=', 'pagado') // Mostrar solo cuotas no pagadas (pendientes o parcialmente pagadas)
-            ->orderBy('numero_cuota')
-            ->get()
-            ->map(function ($schedule) {
-                return [
-                    'numero_cuota' => $schedule->numero_cuota,
-                    'descripcion' => $schedule->numero_cuota == 0 ? 'Cuota inicial' : 'Cuota ' . $schedule->numero_cuota,
-                    'monto' => $schedule->monto,
-                    'fecha_vencimiento' => $schedule->fecha_vencimiento
-                ];
-            })
-            ->toArray();
-            
+        if (class_exists('\App\Models\PaymentSchedule')) {
+            $this->paymentSchedule = $this->matricula->paymentSchedules()
+                ->orderBy('numero_cuota')
+                ->get()
+                ->map(function ($schedule) {
+                    return [
+                        'numero_cuota' => $schedule->numero_cuota,
+                        'descripcion' => $schedule->numero_cuota == 0 ? 'Cuota inicial' : 'Cuota ' . $schedule->numero_cuota,
+                        'monto' => $schedule->monto,
+                        'fecha_vencimiento' => $schedule->fecha_vencimiento,
+                        'estado' => $schedule->estado ?? 'pendiente'
+                    ];
+                })
+                ->toArray();
+        } else {
+            $this->paymentSchedule = [];
+        }
+
         $this->showSchedule = count($this->paymentSchedule) > 0;
+
+        // Si no hay cronograma existente, generar uno nuevo
+        if (count($this->paymentSchedule) == 0) {
+            $this->generatePaymentSchedule();
+        }
     }
 
     public function updatedCosto()
     {
         $this->generatePaymentSchedule();
     }
-    
+
     public function updatedCuotaInicial()
     {
         $this->generatePaymentSchedule();
     }
-    
+
     public function updatedNumeroCuotas()
+    {
+        $this->generatePaymentSchedule();
+    }
+
+    public function updatedPeriodoId()
     {
         $this->generatePaymentSchedule();
     }
@@ -125,7 +156,7 @@ class Edit extends Component
 
         // Calcular monto restante después de la cuota inicial
         $montoRestante = $this->costo - $this->cuota_inicial;
-        
+
         // Si no hay cuotas, todo se cobra en la cuota inicial
         if ($this->numero_cuotas <= 0) {
             $this->paymentSchedule = [
@@ -142,10 +173,10 @@ class Edit extends Component
 
         // Calcular monto por cuota
         $montoCuota = $montoRestante / $this->numero_cuotas;
-        
+
         // Generar cuotas mensuales
         $this->paymentSchedule = [];
-        
+
         // Agregar cuota inicial
         if ($this->cuota_inicial > 0) {
             $this->paymentSchedule[] = [
@@ -155,18 +186,18 @@ class Edit extends Component
                 'fecha_vencimiento' => $periodo->start_date
             ];
         }
-        
+
         // Agregar cuotas distribuidas uniformemente a lo largo del período escolar
         $startDate = new \DateTime($periodo->start_date);
         $endDate = new \DateTime($periodo->end_date);
-        
+
         // Calcular intervalo total en días
         $totalDays = $startDate->diff($endDate)->days;
-        
+
         // Para cada cuota, calcular la fecha de vencimiento distribuida uniformemente
         for ($i = 1; $i <= $this->numero_cuotas; $i++) {
             $dueDate = clone $startDate;
-            
+
             // Calcular días entre cuotas (distribución uniforme)
             if ($this->numero_cuotas > 1) {
                 $daysBetweenPayments = floor($totalDays / ($this->numero_cuotas - 1));
@@ -176,12 +207,12 @@ class Edit extends Component
                 $daysBetweenPayments = floor($totalDays / 2);
                 $dueDate->modify('+' . $daysBetweenPayments . ' days');
             }
-            
+
             // Asegurarse de que la fecha no exceda la fecha final
             if ($dueDate > $endDate) {
                 $dueDate = clone $endDate;
             }
-            
+
             $this->paymentSchedule[] = [
                 'numero_cuota' => $i,
                 'descripcion' => 'Cuota ' . $i,
@@ -189,7 +220,7 @@ class Edit extends Component
                 'fecha_vencimiento' => $dueDate->format('Y-m-d')
             ];
         }
-        
+
         $this->showSchedule = true;
     }
 
@@ -205,9 +236,9 @@ class Edit extends Component
 
         try {
             $this->matricula->update([
-                'estudiante_id' => $this->student_id,
+                'student_id' => $this->student_id,
                 'programa_id' => $this->programa_id,
-                'periodo_id' => $this->periodo_id,
+                'school_period_id' => $this->periodo_id,
                 'fecha_matricula' => $this->fecha_matricula,
                 'estado' => $this->estado,
                 'costo' => $this->costo,
@@ -224,32 +255,41 @@ class Edit extends Component
             session()->flash('error', 'Error al actualizar la matrícula: ' . $e->getMessage());
         }
     }
-    
+
     private function updatePaymentSchedule()
     {
-        // Eliminar cronograma existente
-        $this->matricula->cronogramaPagos()->delete();
-        
-        // Crear nuevo cronograma
-        foreach ($this->paymentSchedule as $schedule) {
-            PaymentSchedule::create([
-                'matricula_id' => $this->matricula->id,
-                'numero_cuota' => $schedule['numero_cuota'],
-                'monto' => $schedule['monto'],
-                'fecha_vencimiento' => $schedule['fecha_vencimiento'],
-                'estado' => 'pendiente',
-                'empresa_id' => auth()->user()->empresa_id,
-                'sucursal_id' => auth()->user()->sucursal_id,
-            ]);
+        if (!class_exists('\App\Models\PaymentSchedule')) {
+            return;
+        }
+
+        // Solo eliminar cronograma si no hay pagos registrados
+        $existingSchedules = $this->matricula->paymentSchedules();
+        $hasPayments = $existingSchedules->where('monto_pagado', '>', 0)->exists();
+
+        if (!$hasPayments) {
+            // Eliminar cronograma existente solo si no hay pagos
+            $existingSchedules->delete();
+
+            // Crear nuevo cronograma
+            foreach ($this->paymentSchedule as $schedule) {
+                PaymentSchedule::create([
+                    'matricula_id' => $this->matricula->id,
+                    'numero_cuota' => $schedule['numero_cuota'],
+                    'monto' => $schedule['monto'],
+                    'fecha_vencimiento' => $schedule['fecha_vencimiento'],
+                    'estado' => 'pendiente',
+                    'empresa_id' => auth()->user()->empresa_id ?? 1,
+                    'sucursal_id' => auth()->user()->sucursal_id ?? 1,
+                ]);
+            }
         }
     }
 
     public function render()
     {
-        return view('livewire.admin.matriculas.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Matrícula',
-                'description' => 'Actualizar datos de matrícula de estudiante'
-            ]);
+        return view('livewire.admin.matriculas.edit')->layout($this->getLayout());
     }
 }
+
+
+

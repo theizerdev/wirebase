@@ -91,16 +91,18 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Método de Pago</label>
-                            <select wire:model="metodo_pago" class="form-select @error('metodo_pago') is-invalid @enderror">
-                                <option value="efectivo">Efectivo</option>
-                                <option value="transferencia">Transferencia</option>
-                                <option value="tarjeta">Tarjeta</option>
+                            <select wire:model.change="metodo_pago" class="form-select @error('metodo_pago') is-invalid @enderror">
+                                <option value="efectivo Bs.">Efectivo Bs.</option>
+                                <option value="efectivo Divisas.">Efectivo Divisas</option>
+                                <option value="transferencia">Transferencia Bancaria</option>
+                                <option value="pago mixto">Pago Mixto</option>
+                                <option value="pago movil">Pago Movil</option>
                             </select>
                             @error('metodo_pago') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Referencia</label>
-                            <input type="text" wire:model="referencia" class="form-control @error('referencia') is-invalid @enderror" placeholder="Opcional">
+                            <input type="text" wire:model="referencia" class="form-control @error('referencia') is-invalid @enderror" placeholder="Opcional" @if($es_pago_mixto) disabled @endif>
                             @error('referencia') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
@@ -108,6 +110,87 @@
             </div>
         </div>
     </div>
+
+    <!-- Configuración de Pago Mixto -->
+    @if($es_pago_mixto)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Configuración de Pago Mixto</h5>
+                    <button type="button" wire:click="agregarMetodoPago" class="btn btn-sm btn-primary">
+                        <i class="ri ri-add-line me-1"></i> Agregar Método
+                    </button>
+                </div>
+                <div class="card-body">
+                    @foreach($metodos_pago_mixto as $index => $metodo)
+                    <div class="row mb-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Método de Pago</label>
+                            <select wire:model="metodos_pago_mixto.{{ $index }}.metodo" class="form-select">
+                                <option value="efectivo_dolares">Efectivo Dólares</option>
+                                <option value="efectivo_bolivares">Efectivo Bolívares</option>
+                                <option value="transferencia">Transferencia</option>
+                                <option value="pago_movil">Pago Móvil</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Monto ($)</label>
+                            <input type="number" step="0.01" wire:model.live="metodos_pago_mixto.{{ $index }}.monto" class="form-control" placeholder="0.00">
+                             @if(in_array($metodo['metodo'], ['transferencia', 'pago_movil', 'efectivo_bolivares']) && $metodo['monto'] > 0 && $tasa_cambio)
+
+                            @endif
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Referencia</label>
+                            <input type="text" wire:model="metodos_pago_mixto.{{ $index }}.referencia" class="form-control" placeholder="Número de referencia">
+                        </div>
+                        <div class="col-md-2">
+                            @if(count($metodos_pago_mixto) > 1)
+                            <button type="button" wire:click="eliminarMetodoPago({{ $index }})" class="btn btn-danger btn-sm">
+                                <i class="ri ri-delete-bin-line"></i>
+                            </button>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="alert alert-info">
+                                <strong>Total Configurado:</strong> ${{ number_format($this->totalPagoMixto, 2) }}
+                                 @if(in_array($metodo['metodo'], ['transferencia', 'pago_movil', 'efectivo_bolivares']) && $metodo['monto'] > 0 && $tasa_cambio)
+                                <small class="text-success mt-1 d-block">
+                                   <strong>Total en Bolívares:</strong> <strong>Bs. {{ number_format($metodo['monto'] * $tasa_cambio, 2) }}</strong>
+                                </small>
+                            @endif
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert {{ $this->totalPagoMixto == $this->total ? 'alert-success' : 'alert-warning' }}">
+                                <strong>Total a Pagar:</strong> ${{ number_format($this->total, 2) }}
+                                @if($this->totalPagoMixto != $this->total)
+                                    <br><small>Los montos no coinciden</small>
+                                 @else
+                                    <br><small class="text-success">Los montos coinciden</small>
+                                @endif
+
+                            </div>
+                        </div>
+                        @if($tasa_cambio)
+                        <div class="col-md-4">
+                            <div class="alert alert-secondary">
+                                <strong>Tasa del día:</strong> {{ number_format($tasa_cambio, 4) }} Bs/$
+                                <br><small class="text-muted">Para transferencias y pago móvil</small>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <div class="row">
         <!-- Selección de matrícula y cuotas -->
@@ -182,7 +265,7 @@
                     <h6 class="mb-0">Cuotas Pendientes</h6>
                 </div>
                 <div class="card-body p-0">
-                    <div class="cuotas-scroll" style="max-height: 350px; overflow-y: auto;">
+                    <div class="cuotas-scroll" style="max-height: 21.875rem; overflow-y: auto;">
                         <div class="p-3">
                             @foreach($cuotasPendientes as $cuota)
                             <div class="border rounded p-3 mb-3">
@@ -196,8 +279,12 @@
                                     </div>
                                     <div class="text-end">
                                         <div class="fw-bold text-primary">${{ number_format($cuota->saldo_pendiente, 2) }}</div>
+                                        @if($cuota->recargo_morosidad > 0)
+                                            <div class="text-danger small">+ Recargo: ${{ number_format($cuota->recargo_morosidad, 2) }}</div>
+                                            <div class="fw-bold text-success">Total: ${{ number_format($cuota->monto_con_recargo, 2) }}</div>
+                                        @endif
                                         @if($cuota->saldo_pendiente != $cuota->monto)
-                                            <small class="text-muted">Total: ${{ number_format($cuota->monto, 2) }}</small>
+                                            <small class="text-muted">Original: ${{ number_format($cuota->monto, 2) }}</small>
                                         @endif
                                     </div>
                                 </div>
@@ -310,13 +397,49 @@
                                         @endif
                                         <hr>
                                         <div class="d-flex justify-content-between fw-bold fs-5">
-                                            <span>Total:</span>
+                                            <span>Total USD:</span>
                                             <span class="text-primary">${{ number_format($this->total, 2) }}</span>
                                         </div>
+                                        @if($tasa_cambio)
+                                        <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+                                            <span>Total Bs:</span>
+                                            <span class="text-success">{{ number_format($this->totalBolivares, 2) }} Bs</span>
+                                        </div>
+                                        @endif
+                                        @if($mostrar_bolivares && $tasa_cambio && !$es_pago_mixto)
+                                        <div class="mt-2 pt-2 border-top">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <small class="text-muted">Tasa del día:</small>
+                                                <small class="text-muted">{{ number_format($tasa_cambio, 4) }} Bs.</small>
+                                            </div>
+                                            <div class="d-flex justify-content-between fw-bold text-success">
+                                                <span>Total Bolívares:</span>
+                                                <span>{{ number_format($this->totalBolivares, 2) }} Bs.</span>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        @if($es_pago_mixto)
+                                        <div class="mt-2 pt-2 border-top">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <small class="text-muted">Configurado:</small>
+                                                <small class="text-muted">${{ number_format($this->totalPagoMixto, 2) }}</small>
+                                            </div>
+                                            <div class="d-flex justify-content-between fw-bold {{ $this->totalPagoMixto == $this->total ? 'text-success' : 'text-warning' }}">
+                                                <span>Estado:</span>
+                                                <span>{{ $this->totalPagoMixto == $this->total ? 'Completo' : 'Pendiente' }}</span>
+                                            </div>
+                                        </div>
+                                        @endif
                                     </div>
 
-                                    <button wire:click="guardar" class="btn btn-success w-100 mt-3" @if($this->total <= 0 || !$matricula_id || !$this->serie_actual) disabled @endif>
-                                        <i class="ri ri-save-line me-1"></i> Registrar Pago
+                                    <button wire:click="guardar" class="btn btn-success w-100 mt-3" @if($this->total <= 0 || !$matricula_id || !$this->serie_actual || ($es_pago_mixto && $this->totalPagoMixto != $this->total)) disabled @endif>
+                                        <i class="ri ri-save-line me-1"></i>
+                                        @if($es_pago_mixto && $this->totalPagoMixto != $this->total)
+                                            Ajustar Montos
+                                        @else
+                                            Registrar Pago
+                                        @endif
                                     </button>
                                 </div>
                             </div>
@@ -342,17 +465,17 @@
 }
 
 .cuotas-scroll::-webkit-scrollbar {
-    width: 8px;
+    width: .5rem;
 }
 
 .cuotas-scroll::-webkit-scrollbar-track {
     background: #f8f9fa;
-    border-radius: 4px;
+    border-radius: .25rem;
 }
 
 .cuotas-scroll::-webkit-scrollbar-thumb {
     background: #6c757d;
-    border-radius: 4px;
+    border-radius: .25rem;
 }
 
 .cuotas-scroll::-webkit-scrollbar-thumb:hover {

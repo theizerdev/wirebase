@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\ConceptosPago;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\ConceptoPago;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public $concepto;
     public $nombre;
     public $descripcion;
@@ -61,10 +65,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.conceptos-pago.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Concepto de Pago',
-                'description' => 'Actualizar información del concepto de pago'
-            ]);
+        return view('livewire.admin.conceptos-pago.edit')->layout($this->getLayout());
     }
 }
+
+
+

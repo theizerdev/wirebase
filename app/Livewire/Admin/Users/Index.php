@@ -10,10 +10,11 @@ use App\Models\Sucursal;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\Exportable;
+use App\Traits\HasDynamicLayout;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $status = '';
@@ -134,10 +135,13 @@ class Index extends Component
         $pendingUsers = 0;
         $inactiveUsers = User::forUser()->where('status', 0)->count();
 
-        return view('livewire.admin.users.index', compact('users', 'empresas', 'sucursales', 'roles', 'totalUsers', 'activeUsers', 'pendingUsers', 'inactiveUsers'))
-            ->layout('components.layouts.admin', [
-                'title' => 'Lista de Usuarios'
-            ]);
+        return $this->renderWithLayout('livewire.admin.users.index', compact('users', 'empresas', 'sucursales', 'roles', 'totalUsers', 'activeUsers', 'pendingUsers', 'inactiveUsers'), [
+            'title' => 'Lista de Usuarios',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.users.index' => 'Usuarios'
+            ]
+        ]);
     }
 
     public function toggleStatus(User $user)

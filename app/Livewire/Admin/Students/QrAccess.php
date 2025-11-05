@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Students;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Student;
@@ -13,7 +14,11 @@ use App\Models\Notification;
 
 class QrAccess extends Component
 {
-    use WithPagination;
+
+
+    use WithPagination,HasDynamicLayout;
+
+
 
     public $search = '';
     public $selectedStudent = null;
@@ -30,6 +35,9 @@ class QrAccess extends Component
         'total' => 0,
         'activeStudents' => 0
     ];
+    public $processing = false;
+    public $lastProcessedCode = null;
+    public $lastProcessedTime = null;
 
     protected $listeners = ['qr-scanned' => 'processQrScan'];
 
@@ -39,7 +47,7 @@ class QrAccess extends Component
         if (!Auth::user()->can('access students')) {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
-        
+
         // Cargar estadísticas iniciales
         $this->loadStats();
         $this->loadTodayLogs();
@@ -48,17 +56,17 @@ class QrAccess extends Component
     public function loadStats()
     {
         $today = Carbon::today();
-        
+
         $this->stats['entries'] = StudentAccessLog::whereDate('access_time', $today)
             ->where('type', 'entrada')
             ->count();
-            
+
         $this->stats['exits'] = StudentAccessLog::whereDate('access_time', $today)
             ->where('type', 'salida')
             ->count();
-            
+
         $this->stats['total'] = $this->stats['entries'] + $this->stats['exits'];
-        
+
         $this->stats['activeStudents'] = Student::where('status', 1)->count();
     }
 
@@ -92,7 +100,7 @@ class QrAccess extends Component
     {
         // Extraer el código del estudiante del QR
         $code = $this->extractStudentCode($qrData);
-        
+
         if ($code) {
             $this->findStudentByCode($code);
         } else {
@@ -116,39 +124,133 @@ class QrAccess extends Component
             $this->dispatch('show-error', 'Por favor ingrese un código');
             return;
         }
-        
+
         $this->findStudentByCode($this->manualCode);
+        $this->manualCode = ''; // Limpiar el campo después de procesar
     }
 
     public function findStudentByCode($code)
     {
+        // Prevenir procesamiento múltiple rápido
+        if ($this->processing) {
+            return;
+        }
+
+        // Prevenir el mismo código en menos de 3 segundos
+        if ($this->lastProcessedCode === $code &&
+            $this->lastProcessedTime &&
+            now()->diffInSeconds($this->lastProcessedTime) < 3) {
+            $this->dispatch('show-error', 'Espere 3 segundos antes de volver a escanear el mismo código');
+            return;
+        }
+
+        $this->processing = true;
+
         $student = Student::with(['nivelEducativo', 'turno'])
             ->where('codigo', $code)
             ->where('status', 1)
             ->first();
-            
+
         if (!$student) {
             $this->dispatch('show-error', 'Estudiante no encontrado o inactivo');
             $this->playSound('error');
+            $this->processing = false;
             return;
         }
-        
+
         $this->selectedStudent = $student;
         $this->determineAccessType($student);
-        $this->showStudentInfo = true;
-        $this->playSound('success');
+
+        // Registrar acceso directamente sin mostrar información
+        $this->registerAccessDirect();
+
+        // Guardar último código procesado
+        $this->lastProcessedCode = $code;
+        $this->lastProcessedTime = now();
+
+        $this->processing = false;
+    }
+
+    public function registerAccessDirect()
+    {
+        if (!$this->selectedStudent) {
+            return;
+        }
+
+        $accessLog = StudentAccessLog::create([
+            'student_id' => $this->selectedStudent->id,
+            'type' => $this->accessType,
+            'access_time' => now(),
+            'registered_by' => auth()->id(),
+            'notes' => ''
+        ]);
+
+        $this->sendAccessNotification($accessLog);
+
+        // Crear notificación
+        Notification::create([
+            'user_id' => auth()->id(),
+            'type' => $this->accessType === 'entrada' ? 'info' : 'warning',
+            'title' => ucfirst($this->accessType) . ' registrada',
+            'message' => "{$this->selectedStudent->nombres} {$this->selectedStudent->apellidos} - " . ucfirst($this->accessType) . " registrada a las " . now()->format('H:i'),
+            'data' => ['student_id' => $this->selectedStudent->id, 'access_log_id' => $accessLog->id]
+        ]);
+
+        $this->dispatch('notification-created');
+        $this->dispatch('show-success', ucfirst($this->accessType) . ' registrada: ' . $this->selectedStudent->nombres . ' ' . $this->selectedStudent->apellidos);
+        $this->playSound('notification');
+        $this->resetForm();
+        $this->loadStats();
+        $this->loadTodayLogs();
     }
 
     public function determineAccessType($student)
     {
         $today = Carbon::today();
-        
-        // Obtener el último acceso del día
+
+        // Verificar si hay entradas sin salida de días anteriores
+        $incompleteEntry = StudentAccessLog::where('student_id', $student->id)
+            ->whereDate('access_time', '<', $today)
+            ->where('type', 'entrada')
+            ->whereNotExists(function($query) use ($student) {
+                $query->select('id')
+                    ->from('student_access_logs as sal')
+                    ->whereColumn('sal.student_id', 'student_access_logs.student_id')
+                    ->whereColumn('sal.access_time', '>', 'student_access_logs.access_time')
+                    ->whereRaw('DATE(sal.access_time) = DATE(student_access_logs.access_time)')
+                    ->where('sal.type', 'salida');
+            })
+            ->orderBy('access_time', 'desc')
+            ->first();
+
+        if ($incompleteEntry) {
+            // Registrar salida automática del día anterior
+            $exitTime = Carbon::parse($incompleteEntry->access_time)->endOfDay()->subMinutes(30);
+
+            StudentAccessLog::create([
+                'student_id' => $student->id,
+                'type' => 'salida',
+                'access_time' => $exitTime,
+                'registered_by' => auth()->id(),
+                'notes' => 'Salida automática - entrada sin salida detectada del ' . $incompleteEntry->access_time->format('d/m/Y')
+            ]);
+
+            // Crear notificación sobre la corrección
+            Notification::create([
+                'user_id' => auth()->id(),
+                'type' => 'warning',
+                'title' => 'Salida automática registrada',
+                'message' => "Se registró salida automática para {$student->nombres} {$student->apellidos} del día {$incompleteEntry->access_time->format('d/m/Y')}",
+                'data' => ['student_id' => $student->id, 'auto_exit' => true]
+            ]);
+        }
+
+        // Obtener el último acceso del día actual
         $lastAccess = StudentAccessLog::where('student_id', $student->id)
             ->whereDate('access_time', $today)
             ->orderBy('access_time', 'desc')
             ->first();
-        
+
         // Si no hay accesos hoy o el último fue salida, sugerir entrada
         // Si el último fue entrada, sugerir salida
         if (!$lastAccess || $lastAccess->type === 'salida') {
@@ -164,7 +266,7 @@ class QrAccess extends Component
             $this->dispatch('show-error', 'No hay estudiante seleccionado');
             return;
         }
-        
+
         $accessLog = StudentAccessLog::create([
             'student_id' => $this->selectedStudent->id,
             'type' => $this->accessType,
@@ -172,9 +274,9 @@ class QrAccess extends Component
             'registered_by' => Auth::id(),
             'notes' => $this->notes
         ]);
-        
+
         $this->sendAccessNotification($accessLog);
-        
+
         // Crear notificación
         Notification::create([
             'user_id' => auth()->id(),
@@ -183,7 +285,7 @@ class QrAccess extends Component
             'message' => "{$this->selectedStudent->nombres} {$this->selectedStudent->apellidos} - " . ucfirst($this->accessType) . " registrada a las " . now()->format('H:i'),
             'data' => ['student_id' => $this->selectedStudent->id, 'access_log_id' => $accessLog->id]
         ]);
-        
+
         $this->dispatch('notification-created');
         $this->dispatch('show-success', $this->accessType . ' registrada correctamente');
         $this->playSound('notification');
@@ -201,22 +303,22 @@ class QrAccess extends Component
         try {
             $student = Student::with(['nivelEducativo', 'turno'])->find($this->selectedStudent->id);
             $timeInSchool = null;
-            
+
             if ($accessLog->type === 'salida') {
                 $entryLog = StudentAccessLog::where('student_id', $student->id)
                     ->whereDate('access_time', Carbon::today())
                     ->where('type', 'entrada')
                     ->orderBy('access_time', 'desc')
                     ->first();
-                    
+
                 if ($entryLog) {
                     $entryTime = Carbon::parse($entryLog->access_time);
                     $exitTime = Carbon::parse($accessLog->access_time);
                     $diff = $entryTime->diff($exitTime);
-                    
+
                     $hours = $diff->h;
                     $minutes = $diff->i;
-                    
+
                     if ($hours > 0) {
                         $timeInSchool = "{$hours} hora" . ($hours != 1 ? 's' : '') . " y {$minutes} minuto" . ($minutes != 1 ? 's' : '');
                     } else {
@@ -227,7 +329,7 @@ class QrAccess extends Component
 
             \Mail::to($student->representante_correo)
                 ->send(new \App\Mail\StudentAccessNotificationMail($student, $accessLog, $timeInSchool));
-                
+
         } catch (\Exception $e) {
             \Log::error('Error enviando notificación: ' . $e->getMessage());
         }
@@ -240,6 +342,7 @@ class QrAccess extends Component
         $this->notes = '';
         $this->manualCode = '';
         $this->showStudentInfo = false;
+        $this->processing = false;
     }
 
     public function toggleSound()
@@ -250,7 +353,7 @@ class QrAccess extends Component
     public function playSound($type)
     {
         if (!$this->soundEnabled) return;
-        
+
         $this->dispatch('play-sound', $type);
     }
 
@@ -261,7 +364,7 @@ class QrAccess extends Component
             $this->dispatch('show-error', 'No tienes permiso para eliminar registros');
             return;
         }
-        
+
         $log = StudentAccessLog::find($logId);
         if ($log) {
             $log->delete();
@@ -273,9 +376,13 @@ class QrAccess extends Component
 
     public function render()
     {
-        return view('livewire.admin.students.qr-access')
-            ->layout('components.layouts.admin', [
-                'title' => 'Control de Acceso con QR'
-            ]);
+        return $this->renderWithLayout('livewire.admin.students.qr-access', [], [
+            'title' => 'Control de Acceso QR',
+            'description' => 'Control de entrada y salida de estudiantes',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.students.qr-access' => 'Control QR'
+            ]
+        ]);
     }
 }

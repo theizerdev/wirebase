@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Admin\Students;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Student;
 use Illuminate\Support\Facades\Auth;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
+
     public $student;
 
     public function mount(Student $student)
@@ -22,7 +26,9 @@ class Show extends Component
 
     public function render()
     {
-        return view('livewire.admin.students.show')
-            ->layout('components.layouts.admin');
+        return view('livewire.admin.students.show')->layout($this->getLayout());
     }
 }
+
+
+

@@ -3,10 +3,20 @@
 namespace App\Livewire\Admin\Cajas;
 
 use App\Models\Caja;
+use App\Models\ExchangeRate;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
+
     public Caja $caja;
     public $observaciones_cierre = '';
     public $showCerrarModal = false;
@@ -26,7 +36,7 @@ class Show extends Component
             session()->flash('error', 'La caja ya está cerrada.');
             return;
         }
-        
+
         $this->caja->calcularTotales();
         $this->showCerrarModal = true;
     }
@@ -79,10 +89,16 @@ class Show extends Component
             });
     }
 
+    public function exportarExcel()
+    {
+        return redirect()->route('admin.cajas.export', $this->caja->id);
+    }
+
     public function render()
     {
-        return view('livewire.admin.cajas.show')->layout('components.layouts.admin', [
-            'title' => 'Detalle de Caja'
-        ]);
+        return view('livewire.admin.cajas.show')->layout($this->getLayout());
     }
 }
+
+
+

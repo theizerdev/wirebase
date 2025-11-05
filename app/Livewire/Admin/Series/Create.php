@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Series;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Serie;
 use App\Models\Empresa;
@@ -9,6 +10,9 @@ use App\Models\Sucursal;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $tipo_documento = 'recibo';
     public $serie = '';
     public $correlativo_actual = 0;
@@ -70,7 +74,7 @@ class Create extends Component
         ];
 
         $prefijo = $prefijos[$this->tipo_documento] ?? 'R';
-        
+
         $ultimaSerie = Serie::where('tipo_documento', $this->tipo_documento)
             ->where('serie', 'like', "$prefijo%")
             ->orderBy('serie', 'desc')
@@ -116,8 +120,10 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.series.create', [
-            'tipos' => Serie::getTiposDocumento()
-        ])->layout('components.layouts.admin');
+        return view('livewire.admin.series.create')->layout($this->getLayout());
     }
 }
+
+
+
+

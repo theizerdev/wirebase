@@ -22,6 +22,7 @@ class Pago extends Model
 
     protected $fillable = [
         'caja_id',
+        'serie_id',
         'serie',
         'numero',
         'tipo_pago',
@@ -31,8 +32,12 @@ class Pago extends Model
         'subtotal',
         'descuento',
         'total',
+        'tasa_cambio',
+        'total_bolivares',
         'metodo_pago',
         'referencia',
+        'es_pago_mixto',
+        'detalles_pago_mixto',
         'estado',
         'observaciones',
         'empresa_id',
@@ -43,7 +48,11 @@ class Pago extends Model
         'fecha' => 'date',
         'subtotal' => 'decimal:2',
         'descuento' => 'decimal:2',
-        'total' => 'decimal:2'
+        'total' => 'decimal:2',
+        'tasa_cambio' => 'decimal:4',
+        'total_bolivares' => 'decimal:2',
+        'es_pago_mixto' => 'boolean',
+        'detalles_pago_mixto' => 'array'
     ];
 
     protected $attributes = [
@@ -205,10 +214,17 @@ class Pago extends Model
     {
         $subtotal = $this->detalles()->sum('subtotal');
         $total = $subtotal - $this->descuento;
+        
+        // Calcular total en bolívares si hay tasa de cambio
+        $totalBolivares = null;
+        if ($this->tasa_cambio) {
+            $totalBolivares = $total * $this->tasa_cambio;
+        }
 
         $this->updateQuietly([
             'subtotal' => $subtotal,
-            'total' => $total
+            'total' => $total,
+            'total_bolivares' => $totalBolivares
         ]);
     }
 }

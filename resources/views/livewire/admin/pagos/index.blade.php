@@ -174,13 +174,20 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar avatar-sm me-2">
-                                                <span class="avatar-initial rounded bg-label-primary">{{ substr($pago->matricula->student->nombres ?? '', 0, 1) }}</span>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0">{{ $pago->matricula->student->nombres ?? '' }} {{ $pago->matricula->student->apellidos ?? '' }}</h6>
-                                                <small class="text-muted">{{ $pago->matricula->student->documento_identidad ?? '' }}</small>
-                                            </div>
+                                            @if($pago->matricula && $pago->matricula->student)
+                                                <div class="avatar avatar-sm me-2">
+                                                    <span class="avatar-initial rounded bg-label-primary">{{ substr($pago->matricula->student->nombres ?? '', 0, 1) }}</span>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ $pago->matricula->student->nombres ?? '' }} {{ $pago->matricula->student->apellidos ?? '' }}</h6>
+                                                    <small class="text-muted">{{ $pago->matricula->student->documento_identidad ?? '' }}</small>
+                                                </div>
+                                            @else
+                                                <div class="text-muted">
+                                                    <i class="ri ri-user-unfollow-line me-2"></i>
+                                                    <small>Estudiante no disponible</small>
+                                                </div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td>

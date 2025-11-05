@@ -111,6 +111,7 @@ Route::get('/students/crear', StudentsCreate::class)->name('students.create');
 Route::get('/students/import', StudentsImportNew::class)->name('students.import');
 Route::get('/students/{student}/editar', StudentsEdit::class)->name('students.edit');
 Route::get('/students/{student}', StudentsShow::class)->name('students.show');
+Route::get('/students/{student}/historico', \App\Livewire\Admin\Students\Historico::class)->name('students.historico');
 Route::get('/students/qr-access', QrAccess::class)->name('students.qr-access');
 Route::get('/access/students', QrAccess::class)->name('access.students');
 
@@ -125,6 +126,9 @@ Route::prefix('monitoreo')->as('monitoreo.')->group(function () {
     Route::get('/estudiantes', \App\Livewire\Admin\Monitoreo\Estudiantes::class)->name('estudiantes');
     Route::get('/accesos', \App\Livewire\Admin\Monitoreo\Accesos::class)->name('accesos');
 });
+
+// Tasas de Cambio
+Route::get('/tasas-cambio', \App\Livewire\Admin\ExchangeRates::class)->name('exchange-rates');
 
 // Programas
 Route::get('/programas', ProgramasIndex::class)->name('programas.index');
@@ -145,6 +149,7 @@ Route::get('/series/{serie}/editar', \App\Livewire\Admin\Series\Edit::class)->na
 // Matrículas
 Route::get('/matriculas', \App\Livewire\Admin\Matriculas\Index::class)->name('matriculas.index');
 Route::get('/matriculas/crear', \App\Livewire\Admin\Matriculas\Create::class)->name('matriculas.create');
+Route::get('/matriculas/cambiar-cuotas', \App\Livewire\Admin\Matriculas\CambiarCuotas::class)->name('matriculas.cambiar-cuotas');
 Route::get('/matriculas/{matricula}/editar', \App\Livewire\Admin\Matriculas\Edit::class)->name('matriculas.edit');
 Route::get('/matriculas/{matricula}', \App\Livewire\Admin\Matriculas\Show::class)->name('matriculas.show');
 
@@ -173,7 +178,17 @@ Route::get('/mensajeria', \App\Livewire\Admin\Mensajeria\ChatIndex::class)->name
 // Biblioteca Digital
 Route::get('/biblioteca', \App\Livewire\Admin\Biblioteca\BibliotecaIndex::class)->name('biblioteca.index');
 
+// Reuniones
+Route::get('/reuniones', \App\Livewire\Admin\Reuniones\Index::class)->name('reuniones.index');
+
 // Cajas
 Route::get('/cajas', \App\Livewire\Admin\Cajas\Index::class)->name('cajas.index');
 Route::get('/cajas/crear', \App\Livewire\Admin\Cajas\Create::class)->name('cajas.create');
 Route::get('/cajas/{caja}', \App\Livewire\Admin\Cajas\Show::class)->name('cajas.show');
+Route::get('/cajas/{caja}/export', [\App\Http\Controllers\Admin\CajaExportController::class, 'export'])->name('cajas.export');
+
+// Reglas de Morosidad
+Route::get('/reglas-morosidad', \App\Livewire\Admin\LatePaymentRules\Index::class)->name('late-payment-rules.index');
+
+// Notificaciones
+Route::get('/notifications', \App\Livewire\Admin\Notifications\Index::class)->name('notifications.index');

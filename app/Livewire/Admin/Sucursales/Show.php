@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Admin\Sucursales;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Sucursal;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
     public $sucursal;
 
     public function mount(Sucursal $sucursal)
@@ -16,9 +19,9 @@ class Show extends Component
 
     public function render()
     {
-        return view('livewire.admin.sucursales.show')
-            ->layout('components.layouts.admin', [
-                'title' => 'Detalles de Sucursal'
-            ]);
+        return view('livewire.admin.sucursales.show')->layout($this->getLayout());
     }
 }
+
+
+

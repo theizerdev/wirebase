@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\Pagos;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Pago;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
+
     public $pago;
 
     public function mount(Pago $pago)
@@ -16,10 +20,9 @@ class Show extends Component
 
     public function render()
     {
-        return view('livewire.admin.pagos.show')
-            ->layout('components.layouts.admin', [
-                'title' => 'Ver Pago',
-                'description' => 'Detalles del pago realizado'
-            ]);
+        return view('livewire.admin.pagos.show')->layout($this->getLayout());
     }
 }
+
+
+

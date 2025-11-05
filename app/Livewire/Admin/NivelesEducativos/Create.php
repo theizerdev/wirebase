@@ -3,11 +3,15 @@
 namespace App\Livewire\Admin\NivelesEducativos;
 
 use App\Models\NivelEducativo;
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Illuminate\Support\Facades\Gate;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $nombre = '';
     public $descripcion = '';
     public $status = true;
@@ -41,14 +45,9 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.niveles-educativos.create')
-            ->layout('components.layouts.admin', [
-                'title' => 'Crear Nivel Educativo',
-                'breadcrumb' => [
-                    'admin.dashboard' => 'Dashboard',
-                    'admin.niveles-educativos.index' => 'Niveles Educativos',
-                    'admin.niveles-educativos.create' => 'Crear'
-                ]
-            ]);
+        return view('livewire.admin.niveles-educativos.create')->layout($this->getLayout());
     }
 }
+
+
+

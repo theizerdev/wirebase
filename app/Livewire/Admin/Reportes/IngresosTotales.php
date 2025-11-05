@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reportes;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\ConceptoPago;
@@ -9,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class IngresosTotales extends Component
 {
+    use HasDynamicLayout;
+
+
     public $fecha_inicio;
     public $fecha_fin;
     public $ingresos = [];
@@ -73,9 +77,9 @@ class IngresosTotales extends Component
 
             // Información del reporte
             $sheet->setCellValue('A3', 'Período:');
-            $sheet->setCellValue('B3', 
-                (\Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('d/m/Y')) . 
-                ' al ' . 
+            $sheet->setCellValue('B3',
+                (\Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('d/m/Y')) .
+                ' al ' .
                 (\Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('d/m/Y'))
             );
             $sheet->setCellValue('A4', 'Fecha de generación:');
@@ -95,7 +99,7 @@ class IngresosTotales extends Component
                 $column = chr(65 + $index);
                 $sheet->setCellValue($column . '6', $header);
             }
-            
+
             $sheet->getStyle('A6:E6')->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'color' => ['rgb' => '28A745']],
@@ -121,7 +125,7 @@ class IngresosTotales extends Component
             $sheet->setCellValue('C' . $row, $totalGeneral);
             $sheet->setCellValue('D' . $row, 1); // 100%
             $sheet->setCellValue('E' . $row, $this->totales['total_transacciones'] > 0 ? ($totalGeneral / $this->totales['total_transacciones']) : 0);
-            
+
             $sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray([
                 'font' => ['bold' => true],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'color' => ['rgb' => 'F8F9FA']],
@@ -151,10 +155,10 @@ class IngresosTotales extends Component
                 'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
             ]);
 
-            $filename = 'ingresos_totales_' . 
-                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('Y-m-d') . 
-                       '_al_' . 
-                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('Y-m-d') . 
+            $filename = 'ingresos_totales_' .
+                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('Y-m-d') .
+                       '_al_' .
+                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('Y-m-d') .
                        '.xlsx';
 
             session()->flash('success', 'Archivo Excel generado correctamente.');
@@ -186,10 +190,9 @@ class IngresosTotales extends Component
 
     public function render()
     {
-        return view('livewire.admin.reportes.ingresos-totales')
-            ->layout('components.layouts.admin', [
-                'title' => 'Ingresos Totales',
-                'description' => 'Ingresos totales por concepto'
-            ]);
+        return view('livewire.admin.reportes.ingresos-totales')->layout($this->getLayout());
     }
 }
+
+
+

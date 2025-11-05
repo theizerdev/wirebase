@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\Series;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Serie;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public Serie $serie;
     public $tipo_documento;
     public $serie_codigo;
@@ -60,8 +64,10 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.series.edit', [
-            'tipos' => Serie::getTiposDocumento()
-        ])->layout('components.layouts.admin');
+        return view('livewire.admin.series.edit')->layout($this->getLayout());
     }
 }
+
+
+
+

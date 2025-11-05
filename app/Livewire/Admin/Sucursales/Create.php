@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Admin\Sucursales;
 
+use App\Traits\HasDynamicLayout;
+
 use Livewire\Component;
 use App\Models\Sucursal;
 use App\Models\Empresa;
 
 class Create extends Component
 {
+        use HasDynamicLayout;
+
     public $empresa_id = '';
     public $nombre = '';
     public $telefono = '';
@@ -15,7 +19,7 @@ class Create extends Component
     public $latitud = '';
     public $longitud = '';
     public $status = true;
-    
+
     public $empresas;
 
     protected $rules = [
@@ -54,9 +58,9 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.sucursales.create')
-            ->layout('components.layouts.admin', [
-                'title' => 'Crear Sucursal'
-            ]);
+        return view('livewire.admin.sucursales.create')->layout($this->getLayout());
     }
 }
+
+
+

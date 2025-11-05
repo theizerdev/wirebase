@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reportes;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Matricula;
 use App\Models\SchoolPeriod;
@@ -11,17 +12,20 @@ use Illuminate\Support\Facades\DB;
 
 class HistoricoMatriculas extends Component
 {
+    use HasDynamicLayout;
+
+
     public $matriculas = [];
     public $periodos;
     public $nivelesEducativos;
     public $programas;
-    
+
     public $periodo_id;
     public $nivel_educativo_id;
     public $programa_id;
     public $fecha_inicio;
     public $fecha_fin;
-    
+
     public $estadisticas = [];
 
     public function mount()
@@ -41,7 +45,7 @@ class HistoricoMatriculas extends Component
         } else {
             $this->programas = collect();
         }
-        
+
         $this->programa_id = '';
     }
 
@@ -78,20 +82,20 @@ class HistoricoMatriculas extends Component
     private function calcularEstadisticas()
     {
         $total = $this->matriculas->count();
-        
+
         // Agrupar por estado
         $porEstado = $this->matriculas->groupBy('estado')->map->count();
-        
+
         // Agrupar por nivel educativo
         $porNivel = $this->matriculas->groupBy(function($matricula) {
             return $matricula->programa->nivelEducativo->nombre ?? 'Sin nivel';
         })->map->count();
-        
+
         // Agrupar por programa
         $porPrograma = $this->matriculas->groupBy(function($matricula) {
             return $matricula->programa->nombre ?? 'Sin programa';
         })->map->count();
-        
+
         // Agrupar por período
         $porPeriodo = $this->matriculas->groupBy(function($matricula) {
             return $matricula->periodo->nombre ?? 'Sin período';
@@ -129,9 +133,9 @@ class HistoricoMatriculas extends Component
 
             // Información del reporte
             $sheet->setCellValue('A3', 'Período:');
-            $sheet->setCellValue('B3', 
-                (\Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('d/m/Y')) . 
-                ' al ' . 
+            $sheet->setCellValue('B3',
+                (\Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('d/m/Y')) .
+                ' al ' .
                 (\Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('d/m/Y'))
             );
             $sheet->setCellValue('A4', 'Fecha de generación:');
@@ -160,7 +164,7 @@ class HistoricoMatriculas extends Component
                 $column = chr(65 + $index);
                 $sheet->setCellValue($column . '7', $header);
             }
-            
+
             $sheet->getStyle('A7:I7')->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'color' => ['rgb' => '0D6EFD']],
@@ -246,10 +250,10 @@ class HistoricoMatriculas extends Component
             $sheet2->getColumnDimension('B')->setWidth(15);
             $sheet2->getColumnDimension('C')->setWidth(15);
 
-            $filename = 'historico_matriculas_' . 
-                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('Y-m-d') . 
-                       '_al_' . 
-                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('Y-m-d') . 
+            $filename = 'historico_matriculas_' .
+                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_inicio)->format('Y-m-d') .
+                       '_al_' .
+                       \Carbon\Carbon::createFromFormat('Y-m-d', $this->fecha_fin)->format('Y-m-d') .
                        '.xlsx';
 
             session()->flash('success', 'Archivo Excel generado correctamente.');
@@ -281,10 +285,9 @@ class HistoricoMatriculas extends Component
 
     public function render()
     {
-        return view('livewire.admin.reportes.historico-matriculas')
-            ->layout('components.layouts.admin', [
-                'title' => 'Histórico de Matrículas',
-                'description' => 'Historial de matrículas por estudiante'
-            ]);
+        return view('livewire.admin.reportes.historico-matriculas')->layout($this->getLayout());
     }
 }
+
+
+

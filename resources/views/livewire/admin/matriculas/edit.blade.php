@@ -1,7 +1,21 @@
 <div>
+    @if (session()->has('message'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('message') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-0">Editar Matrícula</h4>
+            <h4 class="mb-0">Editar Matrícula #{{ $matricula->id }}</h4>
             <p class="text-muted mb-0">Actualizar datos de matrícula de estudiante</p>
         </div>
         <div>
@@ -20,51 +34,51 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="student_id" class="form-label">Estudiante *</label>
-                        <select wire:model="student_id" class="form-select" id="student_id" required>
+                        <select wire:model="student_id" class="form-select @error('student_id') is-invalid @enderror" id="student_id" required>
                             <option value="">Seleccione un estudiante</option>
                             @foreach($students as $student)
-                                <option value="{{ $student->id }}">{{ $student->nombres }} {{ $student->apellidos }} (DNI: {{ $student->documento_identidad }})</option>
+                                <option value="{{ $student->id }}">{{ $student->nombres }} {{ $student->apellidos }} @if($student->documento_identidad)({{ $student->documento_identidad }})@endif</option>
                             @endforeach
                         </select>
-                        @error('student_id') <div class="text-danger">{{ $message }}</div> @enderror
+                        @error('student_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-6">
                         <label for="programa_id" class="form-label">Programa *</label>
-                        <select wire:model="programa_id" class="form-select" id="programa_id" required>
+                        <select wire:model="programa_id" class="form-select @error('programa_id') is-invalid @enderror" id="programa_id" required>
                             <option value="">Seleccione un programa</option>
                             @foreach($programas as $programa)
                                 <option value="{{ $programa->id }}">{{ $programa->nombre }}</option>
                             @endforeach
                         </select>
-                        @error('programa_id') <div class="text-danger">{{ $message }}</div> @enderror
+                        @error('programa_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-6">
                         <label for="periodo_id" class="form-label">Período Escolar *</label>
-                        <select wire:model="periodo_id" class="form-select" id="periodo_id" required>
+                        <select wire:model="periodo_id" class="form-select @error('periodo_id') is-invalid @enderror" id="periodo_id" required>
                             <option value="">Seleccione un período</option>
                             @foreach($periodos as $periodo)
                                 <option value="{{ $periodo->id }}">{{ $periodo->name }}</option>
                             @endforeach
                         </select>
-                        @error('periodo_id') <div class="text-danger">{{ $message }}</div> @enderror
+                        @error('periodo_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-6">
                         <label for="fecha_matricula" class="form-label">Fecha de Matrícula *</label>
-                        <input type="date" wire:model="fecha_matricula" class="form-control" id="fecha_matricula" required>
-                        @error('fecha_matricula') <div class="text-danger">{{ $message }}</div> @enderror
+                        <input type="date" wire:model="fecha_matricula" class="form-control @error('fecha_matricula') is-invalid @enderror" id="fecha_matricula" required>
+                        @error('fecha_matricula') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-12">
                         <label for="estado" class="form-label">Estado *</label>
-                        <select wire:model="estado" class="form-select" id="estado" required>
+                        <select wire:model="estado" class="form-select @error('estado') is-invalid @enderror" id="estado" required>
                             <option value="activo">Activo</option>
                             <option value="inactivo">Inactivo</option>
                             <option value="graduado">Graduado</option>
                         </select>
-                        @error('estado') <div class="text-danger">{{ $message }}</div> @enderror
+                        @error('estado') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-12">
@@ -72,21 +86,21 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label for="costo" class="form-label">Costo Total *</label>
-                        <input type="number" step="0.01" wire:model.live="costo" class="form-control" id="costo" required>
-                        @error('costo') <div class="text-danger">{{ $message }}</div> @enderror
+                        <label for="costo" class="form-label">Costo Total ($) *</label>
+                        <input type="number" step="0.01" wire:model.blur="costo" class="form-control @error('costo') is-invalid @enderror" id="costo" required min="0">
+                        @error('costo') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-4">
-                        <label for="cuota_inicial" class="form-label">Cuota Inicial *</label>
-                        <input type="number" step="0.01" wire:model.live="cuota_inicial" class="form-control" id="cuota_inicial" required>
-                        @error('cuota_inicial') <div class="text-danger">{{ $message }}</div> @enderror
+                        <label for="cuota_inicial" class="form-label">Cuota Inicial ($) *</label>
+                        <input type="number" step="0.01" wire:model.blur="cuota_inicial" class="form-control @error('cuota_inicial') is-invalid @enderror" id="cuota_inicial" required min="0">
+                        @error('cuota_inicial') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-4">
                         <label for="numero_cuotas" class="form-label">Número de Cuotas *</label>
-                        <input type="number" wire:model.live="numero_cuotas" class="form-control" id="numero_cuotas" required>
-                        @error('numero_cuotas') <div class="text-danger">{{ $message }}</div> @enderror
+                        <input type="number" wire:model.blur="numero_cuotas" class="form-control @error('numero_cuotas') is-invalid @enderror" id="numero_cuotas" required min="0">
+                        @error('numero_cuotas') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
 

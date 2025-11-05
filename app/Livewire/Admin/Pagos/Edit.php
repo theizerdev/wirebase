@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Pagos;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\Matricula;
@@ -9,6 +10,9 @@ use App\Models\ConceptoPago;
 
 class Edit extends Component
 {
+    use HasDynamicLayout;
+
+
     public Pago $pago;
     public $matricula_id;
     public $concepto_pago_id;
@@ -85,10 +89,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.pagos.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Pago',
-                'description' => 'Modificar información del pago'
-            ]);
+        return view('livewire.admin.pagos.edit')->layout($this->getLayout());
     }
 }
+
+
+

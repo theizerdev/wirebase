@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\Matriculas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Matricula;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
+
     public $matricula;
 
     public function mount(Matricula $matricula)
@@ -16,10 +20,9 @@ class Show extends Component
 
     public function render()
     {
-        return view('livewire.admin.matriculas.show')
-            ->layout('components.layouts.admin', [
-                'title' => 'Ver Matrícula',
-                'description' => 'Detalles de la matrícula del estudiante'
-            ]);
+        return view('livewire.admin.matriculas.show')->layout($this->getLayout());
     }
 }
+
+
+

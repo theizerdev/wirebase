@@ -6,8 +6,13 @@
                 <i class="ri ri-arrow-left-line me-1"></i> Volver
             </a>
             @can('edit students')
-            <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-primary">
+            <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-primary me-2">
                 <i class="ri ri-pencil-line me-1"></i> Editar
+            </a>
+            @endcan
+            @can('view student historico')
+            <a href="{{ route('admin.students.historico', $student) }}" class="btn btn-info">
+                <i class="ri ri-history-line me-1"></i> Histórico
             </a>
             @endcan
         </div>

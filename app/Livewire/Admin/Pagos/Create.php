@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Pagos;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\Matricula;
@@ -13,6 +14,9 @@ use App\Services\PagoService;
 use DB;
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $matricula_id;
     public $tipo_pago = 'recibo';
     public $fecha;
@@ -21,6 +25,12 @@ class Create extends Component
     public $descuento = 0;
     public $observaciones;
     public $detalles = [];
+    public $tasa_cambio;
+    public $mostrar_bolivares = false;
+
+    // Propiedades para pago mixto
+    public $es_pago_mixto = false;
+    public $metodos_pago_mixto = [];
 
     // Propiedades adicionales para la vista
     public $fecha_pago;
@@ -37,24 +47,45 @@ class Create extends Component
     protected $rules = [
         'matricula_id' => 'required|exists:matriculas,id',
         'tipo_pago' => 'required|in:factura,boleta,nota_credito,recibo',
-
         'fecha' => 'required|date',
         'metodo_pago' => 'nullable|string',
-        'referencia' => 'nullable|string',
+        'referencia' => 'nullable|string|unique:pagos,referencia',
         'descuento' => 'nullable|numeric|min:0',
-        'detalles.*.concepto_pago_id' => 'required|exists:conceptos_pago,id',
+        'detalles.*.concepto_pago_id' => 'required|integer|exists:conceptos_pago,id',
         'detalles.*.descripcion' => 'required|string',
         'detalles.*.cantidad' => 'required|numeric|min:0.01',
-        'detalles.*.precio_unitario' => 'required|numeric|min:0'
+        'detalles.*.precio_unitario' => 'required|numeric|min:0',
+        'metodos_pago_mixto.*.metodo' => 'required_if:es_pago_mixto,true|string',
+        'metodos_pago_mixto.*.monto' => 'required_if:es_pago_mixto,true|numeric|min:0.01',
+        'metodos_pago_mixto.*.referencia' => 'nullable|string'
     ];
 
     public function mount()
     {
         $this->fecha = now()->format('Y-m-d');
         $this->fecha_pago = now()->format('Y-m-d');
+        $this->cargarTasaCambio();
         $this->cargarDatos();
         $this->verificarCajaAbierta();
         $this->agregarDetalle();
+        $this->inicializarPagoMixto();
+    }
+
+    public function inicializarPagoMixto()
+    {
+        $this->metodos_pago_mixto = [
+            ['metodo' => 'efectivo_dolares', 'monto' => 0, 'referencia' => ''],
+            ['metodo' => 'transferencia', 'monto' => 0, 'referencia' => '']
+        ];
+    }
+
+    public function cargarTasaCambio()
+    {
+        $tasaHoy = \App\Models\ExchangeRate::getTodayRate();
+        if ($tasaHoy) {
+            $this->tasa_cambio = $tasaHoy->usd_rate;
+            $this->mostrar_bolivares = true;
+        }
     }
 
     public function verificarCajaAbierta()
@@ -119,8 +150,10 @@ class Create extends Component
 
     public function agregarDetalle()
     {
+        $conceptoDefault = ConceptoPago::where('activo', true)->first();
+
         $this->detalles[] = [
-            'concepto_pago_id' => '',
+            'concepto_pago_id' => $conceptoDefault?->id ?? '',
             'payment_schedule_id' => null,
             'descripcion' => '',
             'cantidad' => 1,
@@ -139,8 +172,9 @@ class Create extends Component
         $schedule = PaymentSchedule::find($scheduleId);
         if ($schedule) {
             $conceptoMensualidad = ConceptoPago::where('nombre', 'Mensualidad')->first();
+            $conceptoRecargo = ConceptoPago::where('nombre', 'Recargo por Mora')->first();
 
-            // Agregar nuevo detalle en lugar de editar existente
+            // Agregar cuota principal
             $this->detalles[] = [
                 'concepto_pago_id' => $conceptoMensualidad?->id,
                 'payment_schedule_id' => $schedule->id,
@@ -148,6 +182,25 @@ class Create extends Component
                 'cantidad' => 1,
                 'precio_unitario' => $schedule->saldo_pendiente
             ];
+
+            // Agregar recargo si existe
+            if ($schedule->recargo_morosidad > 0) {
+                if (!$conceptoRecargo) {
+                    $conceptoRecargo = ConceptoPago::create([
+                        'nombre' => 'Recargo por Mora',
+                        'descripcion' => 'Recargo aplicado por pagos vencidos',
+                        'activo' => true
+                    ]);
+                }
+
+                $this->detalles[] = [
+                    'concepto_pago_id' => $conceptoRecargo->id,
+                    'payment_schedule_id' => null,
+                    'descripcion' => "Recargo por mora - Cuota #{$schedule->numero_cuota}",
+                    'cantidad' => 1,
+                    'precio_unitario' => $schedule->recargo_morosidad
+                ];
+            }
         }
     }
 
@@ -184,9 +237,49 @@ class Create extends Component
         return $this->subtotal - $this->descuento;
     }
 
+    public function getTotalBolivaresProperty()
+    {
+        if ($this->tasa_cambio) {
+            return $this->total * $this->tasa_cambio;
+        }
+        return 0;
+    }
+
+    public function updatedMetodoPago($value)
+    {
+        $this->es_pago_mixto = ($value === 'pago mixto');
+        if (!$this->es_pago_mixto) {
+            $this->inicializarPagoMixto();
+        }
+    }
+
+    public function agregarMetodoPago()
+    {
+        $this->metodos_pago_mixto[] = ['metodo' => 'efectivo_dolares', 'monto' => 0, 'referencia' => ''];
+    }
+
+    public function eliminarMetodoPago($index)
+    {
+        if (count($this->metodos_pago_mixto) > 1) {
+            unset($this->metodos_pago_mixto[$index]);
+            $this->metodos_pago_mixto = array_values($this->metodos_pago_mixto);
+        }
+    }
+
+    public function getTotalPagoMixtoProperty()
+    {
+        return collect($this->metodos_pago_mixto)->sum('monto');
+    }
+
     public function guardar()
     {
-        $this->validate();
+        // Validación especial para pago mixto
+        if ($this->es_pago_mixto && $this->totalPagoMixto != $this->total) {
+            session()->flash('error', 'El total configurado en el pago mixto debe coincidir con el total a pagar.');
+            return;
+        }
+
+
 
        try {
         DB::transaction(function () {
@@ -202,6 +295,9 @@ class Create extends Component
                 'referencia' => $this->referencia,
                 'descuento' => $this->descuento,
                 'observaciones' => $this->observaciones,
+                'tasa_cambio' => $this->tasa_cambio,
+                'es_pago_mixto' => $this->es_pago_mixto,
+                'detalles_pago_mixto' => $this->es_pago_mixto ? $this->metodos_pago_mixto : null,
                 'empresa_id' => auth()->user()->empresa_id,
                 'sucursal_id' => auth()->user()->sucursal_id,
                 'estado' => Pago::ESTADO_APROBADO,
@@ -212,18 +308,20 @@ class Create extends Component
             return redirect()->route('admin.pagos.index');
         });
         } catch (\Throwable $th) {
-            dd($th);
-            session()->flash('error', 'Algo salió mal al crear el pago');
+
+            session()->flash('error', 'Error al crear el pago: ' . $th->getMessage());
         }
     }
 
     public function render()
     {
-        return view('livewire.admin.pagos.create', [
-            'tipos' => Pago::getTipos(),
-            'estados' => Pago::getEstados()
-        ])->layout('components.layouts.admin', [
-            'title' => 'Registrar Pago'
-        ]);
+        $tipos = [
+            'factura' => 'Factura',
+            'boleta' => 'Boleta',
+            'nota_credito' => 'Nota de Crédito',
+            'recibo' => 'Recibo'
+        ];
+
+        return view('livewire.admin.pagos.create', compact('tipos'))->layout($this->getLayout());
     }
 }

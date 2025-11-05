@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\Pagos;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Comprobante;
 
 class Comprobantes extends Component
 {
+    use HasDynamicLayout;
+
+
     public Comprobante $comprobante;
 
     public function mount($comprobante)
@@ -26,10 +30,10 @@ class Comprobantes extends Component
 
     public function render()
     {
-        return view('livewire.admin.pagos.comprobante')
-            ->layout('components.layouts.admin', [
-                'title' => 'Comprobante de Pago',
-                'description' => 'Visualización de comprobante de pago'
-            ]);
+        return view('livewire.admin.pagos.comprobante')->layout($this->getLayout());
     }
 }
+
+
+
+

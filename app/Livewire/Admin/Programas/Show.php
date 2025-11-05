@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\Programas;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Programa;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
+
     public $programa;
 
     public function mount(Programa $programa)
@@ -22,10 +26,9 @@ class Show extends Component
 
     public function render()
     {
-        return view('livewire.admin.programas.show')
-            ->layout('components.layouts.admin', [
-                'title' => 'Ver Programa',
-                'description' => 'Detalles del programa académico'
-            ]);
+        return view('livewire.admin.programas.show')->layout($this->getLayout());
     }
 }
+
+
+

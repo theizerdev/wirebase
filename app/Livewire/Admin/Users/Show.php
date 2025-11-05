@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Users;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\User;
 use App\Models\ActiveSession;
@@ -9,6 +10,9 @@ use Livewire\WithPagination;
 
 class Show extends Component
 {
+    use HasDynamicLayout;
+
+
     use WithPagination;
 
     public User $user;
@@ -21,14 +25,14 @@ class Show extends Component
 
     public function render()
     {
-        $sessions = ActiveSession::where('user_id', $this->user->id)
-            ->orderBy('login_at', 'desc')
-            ->paginate($this->perPage);
-
         return view('livewire.admin.users.show', [
-            'sessions' => $sessions
-        ])->layout('components.layouts.admin', [
+            'user' => $this->user ?? null,
+            'sessions' => $sessions ?? null
+        ])->layout($this->getLayout(), [
             'title' => 'Detalles del Usuario'
         ]);
     }
 }
+
+
+

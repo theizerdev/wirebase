@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\Admin\Turnos;
+use App\Traits\HasDynamicLayout;
 
 use App\Models\Turno;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $status = '';
@@ -85,10 +86,12 @@ class Index extends Component
     {
         Gate::authorize('access turnos');
 
-        return view('livewire.admin.turnos.index', [
+        return $this->renderWithLayout('livewire.admin.turnos.index', [
             'turnos' => $this->getBaseQuery()
                 ->orderBy($this->sortField, $this->sortDirection)
                 ->paginate($this->perPage)
-        ])->layout('components.layouts.admin');
+        ], [
+            'description' => 'Gestión de ',
+        ]);
     }
 }

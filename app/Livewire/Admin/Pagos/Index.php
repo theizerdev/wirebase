@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\Admin\Pagos;
+use App\Traits\HasDynamicLayout;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -9,7 +10,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable;
+    use WithPagination, Exportable, HasDynamicLayout;
 
     public $search = '';
     public $status = '';
@@ -27,11 +28,24 @@ class Index extends Component
 
     public function getStatsProperty()
     {
-        $baseQuery = Pago::query();
-        
-        if (!auth()->user()->hasRole('Super Administrador')) {
-            $baseQuery->where('empresa_id', auth()->user()->empresa_id)
-                      ->where('sucursal_id', auth()->user()->sucursal_id);
+        // Para usuarios no Super Administrador, usar withoutGlobalScope y aplicar manualmente
+        if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
+            $baseQuery = Pago::withoutGlobalScope('multitenancy')
+                ->where(function($query) {
+                    if (auth()->user()->empresa_id) {
+                        $query->where('pagos.empresa_id', auth()->user()->empresa_id);
+                    }
+                    if (auth()->user()->sucursal_id) {
+                        $query->where('pagos.sucursal_id', auth()->user()->sucursal_id);
+                    }
+                })
+                ->whereHas('matricula', function($q) {
+                    $q->whereHas('student');
+                });
+        } else {
+            $baseQuery = Pago::whereHas('matricula', function($q) {
+                $q->whereHas('student');
+            });
         }
 
         return [
@@ -120,10 +134,18 @@ class Index extends Component
 
     public function formatExportRow($pago)
     {
+        $studentName = '';
+        $studentDocumento = '';
+
+        if ($pago->matricula && $pago->matricula->student) {
+            $studentName = ($pago->matricula->student->nombres ?? '') . ' ' . ($pago->matricula->student->apellidos ?? '');
+            $studentDocumento = $pago->matricula->student->documento_identidad ?? '';
+        }
+
         return [
             $pago->numero_completo,
-            ($pago->matricula->student->nombres ?? '') . ' ' . ($pago->matricula->student->apellidos ?? ''),
-            $pago->matricula->student->documento_identidad ?? '',
+            $studentName,
+            $studentDocumento,
             $pago->total,
             $pago->fecha->format('d/m/Y'),
             ucfirst($pago->estado),
@@ -133,40 +155,90 @@ class Index extends Component
 
     private function getQuery()
     {
-        $query = Pago::with(['matricula.student', 'detalles.conceptoPago', 'user', 'serieModel']);
-        
-        if (!auth()->user()->hasRole('Super Administrador')) {
-            $query->where('empresa_id', auth()->user()->empresa_id)
-                  ->where('sucursal_id', auth()->user()->sucursal_id);
+        // Para usuarios no Super Administrador, usar withoutGlobalScope y aplicar manualmente solo a pagos
+        if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
+            return Pago::withoutGlobalScope('multitenancy')
+                ->with(['matricula.student', 'detalles.conceptoPago', 'user', 'serieModel'])
+                ->where(function($query) {
+                    // Aplicar scope manualmente solo a pagos
+                    if (auth()->user()->empresa_id) {
+                        $query->where('pagos.empresa_id', auth()->user()->empresa_id);
+                    }
+                    if (auth()->user()->sucursal_id) {
+                        $query->where('pagos.sucursal_id', auth()->user()->sucursal_id);
+                    }
+                })
+                ->whereHas('matricula', function($q) {
+                    $q->whereHas('student');
+                })
+                ->when($this->search, function ($query) {
+                    $query->where(function($q) {
+                        $q->whereHas('matricula.student', function ($subQuery) {
+                            $subQuery->where('nombres', 'like', '%' . $this->search . '%')
+                                ->orWhere('apellidos', 'like', '%' . $this->search . '%')
+                                ->orWhere('documento_identidad', 'like', '%' . $this->search . '%');
+                        })
+                        ->orWhereHas('detalles.conceptoPago', function($subQuery) {
+                            $subQuery->where('nombre', 'like', '%' . $this->search . '%');
+                        })
+                        ->orWhere('referencia', 'like', '%' . $this->search . '%')
+                        ->orWhere('serie', 'like', '%' . $this->search . '%')
+                        ->orWhere('numero', 'like', '%' . $this->search . '%');
+                    });
+                })
+                ->when($this->status !== '', function ($query) {
+                    $query->where('estado', $this->status);
+                })
+                ->orderBy($this->sortBy, $this->sortDirection);
         }
 
-        return $query->when($this->search, function ($query) {
-                $query->whereHas('matricula.student', function ($subQuery) {
-                    $subQuery->where('nombres', 'like', '%' . $this->search . '%')
-                        ->orWhere('apellidos', 'like', '%' . $this->search . '%')
-                        ->orWhere('documento_identidad', 'like', '%' . $this->search . '%');
-                })
-                ->orWhereHas('detalles.conceptoPago', function($subQuery) {
-                    $subQuery->where('nombre', 'like', '%' . $this->search . '%');
-                })
-                ->orWhere('referencia', 'like', '%' . $this->search . '%')
-                ->orWhere('serie', 'like', '%' . $this->search . '%')
-                ->orWhere('numero', 'like', '%' . $this->search . '%');
-            })
-            ->when($this->status !== '', function ($query) {
-                $query->where('estado', $this->status);
-            })
-            ->orderBy($this->sortBy, $this->sortDirection);
+        // Para Super Administrador, usar el scope normal
+        return Pago::with(['matricula.student', 'detalles.conceptoPago', 'user', 'serieModel'])
+                    ->whereHas('matricula', function($q) {
+                        $q->whereHas('student');
+                    })
+                    ->when($this->search, function ($query) {
+                        $query->where(function($q) {
+                            $q->whereHas('matricula.student', function ($subQuery) {
+                                $subQuery->where('nombres', 'like', '%' . $this->search . '%')
+                                    ->orWhere('apellidos', 'like', '%' . $this->search . '%')
+                                    ->orWhere('documento_identidad', 'like', '%' . $this->search . '%');
+                            })
+                            ->orWhereHas('detalles.conceptoPago', function($subQuery) {
+                                $subQuery->where('nombre', 'like', '%' . $this->search . '%');
+                            })
+                            ->orWhere('referencia', 'like', '%' . $this->search . '%')
+                            ->orWhere('serie', 'like', '%' . $this->search . '%')
+                            ->orWhere('numero', 'like', '%' . $this->search . '%');
+                        });
+                    })
+                    ->when($this->status !== '', function ($query) {
+                        $query->where('estado', $this->status);
+                    })
+                    ->orderBy($this->sortBy, $this->sortDirection);
     }
 
     public function render()
     {
         $pagos = $this->getQuery()->paginate($this->perPage);
 
+        // Debug temporal para verificar datos
+        \Log::info('=== RENDER DE PAGOS COMPONENT ===', [
+            'user_id' => auth()->id(),
+            'user_role' => auth()->user()->roles->first()->name ?? 'no role',
+            'is_super_admin' => auth()->user()->hasRole('Super Administrador'),
+            'empresa_id' => auth()->user()->empresa_id,
+            'sucursal_id' => auth()->user()->sucursal_id,
+            'pagos_count' => $pagos->count(),
+            'pagos_total' => $pagos->total(),
+            'per_page' => $this->perPage,
+            'search' => $this->search,
+            'status' => $this->status,
+            'sql' => $this->getQuery()->toSql(),
+            'bindings' => $this->getQuery()->getBindings()
+        ]);
+
         return view('livewire.admin.pagos.index', compact('pagos'))
-            ->layout('components.layouts.admin', [
-                'title' => 'Pagos',
-                'description' => 'Gestión de pagos de estudiantes'
-            ]);
+            ->layout($this->getLayout());
     }
 }

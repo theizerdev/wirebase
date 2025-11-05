@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Roles;
 
+use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -10,6 +11,9 @@ use Illuminate\Validation\Rule;
 
 class Create extends Component
 {
+    use HasDynamicLayout;
+
+
     public $name;
     public $permissions = [];
     public $selectedPermissions = [];
@@ -206,9 +210,10 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.roles.create')
-            ->layout('components.layouts.admin', [
-                'title' => 'Crear Rol'
-            ]);
+        return view('livewire.admin.roles.create')->layout($this->getLayout());
     }
 }
+
+
+
+

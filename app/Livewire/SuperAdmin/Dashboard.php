@@ -10,9 +10,12 @@ use App\Models\ActiveSession;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasDynamicLayout;
 
 class Dashboard extends Component
 {
+    use HasDynamicLayout;
+    
     public $dateRange = 'year';
     
     protected $queryString = ['dateRange'];
@@ -48,7 +51,7 @@ class Dashboard extends Component
         // Obtener estadísticas de permisos
         $permissionsStats = $this->getPermissionsStats();
 
-        return view('livewire.super-admin.dashboard', [
+        return $this->renderWithLayout('livewire.super-admin.dashboard', [
             'totalUsers' => $totalUsers,
             'totalEmpresas' => $totalEmpresas,
             'totalSucursales' => $totalSucursales,
@@ -63,7 +66,9 @@ class Dashboard extends Component
             'serverInfo' => $serverInfo,
             'recentSessions' => $recentSessions,
             'permissionsStats' => $permissionsStats,
-        ])->layout('components.layouts.admin', ['title' => 'Super Admin Dashboard']);
+        ], [
+            'description' => 'Gestión de ',
+        ]);
     }
     
     public function updatedDateRange()

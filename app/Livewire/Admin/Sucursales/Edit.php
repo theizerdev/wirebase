@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Admin\Sucursales;
 
+use App\Traits\HasDynamicLayout;
+
 use Livewire\Component;
 use App\Models\Sucursal;
 use App\Models\Empresa;
 
 class Edit extends Component
 {
+
+    use HasDynamicLayout;
     public $sucursal;
     public $empresa_id = '';
     public $nombre = '';
@@ -16,7 +20,7 @@ class Edit extends Component
     public $latitud = '';
     public $longitud = '';
     public $status = true;
-    
+
     public $empresas;
 
     protected $rules = [
@@ -39,7 +43,7 @@ class Edit extends Component
         $this->latitud = $sucursal->latitud;
         $this->longitud = $sucursal->longitud;
         $this->status = $sucursal->status;
-        
+
         $this->empresas = Empresa::where('status', true)->get();
     }
 
@@ -64,9 +68,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.sucursales.edit')
-            ->layout('components.layouts.admin', [
-                'title' => 'Editar Sucursal'
-            ]);
+        return view('livewire.admin.sucursales.edit')->layout($this->getLayout());
     }
 }
+
+
+
