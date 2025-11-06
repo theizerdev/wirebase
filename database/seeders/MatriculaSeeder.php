@@ -49,6 +49,8 @@ class MatriculaSeeder extends Seeder
                     'costo' => $nivelEducativo->costo ?? 0,
                     'cuota_inicial' => $nivelEducativo->cuota_inicial ?? 0,
                     'numero_cuotas' => $nivelEducativo->numero_cuotas ?? 0,
+                    'empresa_id' => 1,
+                    'sucursal_id' => 1
                 ]);
             }
         }

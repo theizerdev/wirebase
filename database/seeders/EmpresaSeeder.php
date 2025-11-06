@@ -20,6 +20,7 @@ class EmpresaSeeder extends Seeder
                 'telefono'     => '1234567890',
                 'email'        => '1234567890',
                 'representante_legal' => 'Theizer Gonzalez',
+                'pais_id'      => 20,
             ],
         ];
 

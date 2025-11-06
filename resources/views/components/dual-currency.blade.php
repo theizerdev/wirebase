@@ -3,7 +3,7 @@
 @php
     $isVenezuela = is_venezuela_company();
     $rate = $isVenezuela ? \App\Models\ExchangeRate::getLatestRate('USD') : null;
-    $amountValue = (float) $amount;
+    $amountValue = is_numeric($amount) ? (float) $amount : 0;
     $config = get_regional_config();
     $currencySymbol = $config['currency_symbol'] ?? '$';
     $decimalSep = $config['decimal_separator'] ?? '.';
