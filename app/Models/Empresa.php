@@ -20,7 +20,8 @@ class Empresa extends Model
         'representante_legal',
         'status',
         'telefono',
-        'email'
+        'email',
+        'pais_id'
     ];
 
     protected $casts = [
@@ -32,6 +33,11 @@ class Empresa extends Model
     public function sucursales()
     {
         return $this->hasMany(Sucursal::class);
+    }
+
+    public function pais()
+    {
+        return $this->belongsTo(Pais::class);
     }
 
     public function scopeForUser($query)

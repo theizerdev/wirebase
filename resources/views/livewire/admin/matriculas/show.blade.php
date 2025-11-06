@@ -49,7 +49,7 @@
                         <div class="col-sm-8">{{ $matricula->schoolPeriod->name ?? '' }}</div>
 
                         <div class="col-sm-4"><strong>Fecha:</strong></div>
-                        <div class="col-sm-8">{{ $matricula->fecha_matricula->format('d/m/Y') }}</div>
+                        <div class="col-sm-8">{{ format_date($matricula->fecha_matricula) }}</div>
 
                         <div class="col-sm-4"><strong>Estado:</strong></div>
                         <div class="col-sm-8">
@@ -72,10 +72,10 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-sm-4"><strong>Costo Total:</strong></div>
-                        <div class="col-sm-8">${{ number_format($matricula->costo_matricula, 2) }}</div>
+                        <div class="col-sm-8">@money($matricula->costo_matricula)</div>
 
                         <div class="col-sm-4"><strong>Cuota Inicial:</strong></div>
-                        <div class="col-sm-8">${{ number_format($matricula->monto_inicial, 2) }}</div>
+                        <div class="col-sm-8">@money($matricula->monto_inicial)</div>
 
                         <div class="col-sm-4"><strong>Número de Cuotas:</strong></div>
                         <div class="col-sm-8">{{ $matricula->numero_cuotas }}</div>
@@ -110,10 +110,10 @@
                                 @foreach($matricula->paymentSchedules as $schedule)
                                 <tr>
                                     <td>{{ $schedule->numero_cuota }}</td>
-                                    <td>{{ $schedule->fecha_vencimiento->format('d/m/Y') }}</td>
-                                    <td>${{ number_format($schedule->monto, 2) }}</td>
-                                    <td>${{ number_format($schedule->monto_pagado, 2) }}</td>
-                                    <td>${{ number_format($schedule->monto - $schedule->monto_pagado, 2) }}</td>
+                                    <td>{{ format_date($schedule->fecha_vencimiento) }}</td>
+                                    <td>@money($schedule->monto)</td>
+                                    <td>@money($schedule->monto_pagado)</td>
+                                    <td>@money($schedule->monto - $schedule->monto_pagado)</td>
                                     <td>
                                         @if($schedule->estado === 'pendiente')
                                             <span class="badge bg-warning">Pendiente</span>

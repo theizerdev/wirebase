@@ -145,7 +145,7 @@ Todos los archivos `index.blade.php` deben seguir esta estructura:
 
                 <!-- 3.4 PAGINACIÓN -->
                 <div class="card-footer">
-                   {{ $items->links('vendor.pagination.materialize') }}
+                   {{ $items->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

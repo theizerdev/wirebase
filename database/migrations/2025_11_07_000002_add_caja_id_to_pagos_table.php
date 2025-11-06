@@ -6,19 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::table('pagos', function (Blueprint $table) {
-            $table->unsignedBigInteger('serie_id')->nullable()->after('matricula_id');
-            $table->foreign('serie_id')->references('id')->on('series')->onDelete('set null');
+            $table->foreignId('caja_id')->nullable()->after('id')->constrained()->onDelete('set null');
+            $table->index('caja_id');
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('pagos', function (Blueprint $table) {
-            $table->dropForeign(['serie_id']);
-            $table->dropColumn('serie_id');
+            $table->dropForeign(['caja_id']);
+            $table->dropColumn('caja_id');
         });
     }
 };

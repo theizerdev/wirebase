@@ -24,6 +24,12 @@ class RolesAndPermissionsSeeder extends Seeder
                 'edit empresas',
                 'delete empresas',
             ],
+            'paises' => [
+                'access paises',
+                'create paises',
+                'edit paises',
+                'delete paises',
+            ],
             'sucursales' => [
                 'access sucursales',
                 'create sucursales',
@@ -257,16 +263,17 @@ class RolesAndPermissionsSeeder extends Seeder
         ])->get();
         $recepcionistaRole->syncPermissions($recepcionistaPermissions);
 
-        // Asignar permisos de mensajería, biblioteca, series, cajas y reuniones a Administradores y Super Administradores
-        $mensajeriaBibliotecaSeriesCajasPermissions = Permission::whereIn('module', [
+        // Asignar permisos de mensajería, biblioteca, series, cajas, reuniones y países a Administradores y Super Administradores
+        $mensajeriaBibliotecaSeriesCajasPaisesPermissions = Permission::whereIn('module', [
             'mensajeria',
             'biblioteca',
             'series',
             'cajas',
-            'reuniones'
+            'reuniones',
+            'paises'
         ])->get();
-        
-        $superAdminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPermissions);
-        $adminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPermissions);
+
+        $superAdminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPaisesPermissions);
+        $adminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPaisesPermissions);
     }
 }

@@ -126,11 +126,11 @@
                                         <td>
                                             @if($activity->properties->count() > 0)
                                                 <button class="btn btn-sm btn-text-secondary rounded-pill btn-icon"
-                                                        data-bs-toggle="modal" 
+                                                        data-bs-toggle="modal"
                                                         data-bs-target="#activityDetailsModal{{ $activity->id }}">
                                                     <i class="ti ti-eye"></i>
                                                 </button>
-                                                
+
                                                 <!-- Modal de detalles -->
                                                 <div class="modal fade" id="activityDetailsModal{{ $activity->id }}" tabindex="-1">
                                                     <div class="modal-dialog modal-lg">
@@ -214,11 +214,11 @@
                             </tbody>
                         </table>
                     </div>
-                    
+
                 </div>
 
                 <div class="card-footer">
-                   {{ $activities->links('vendor.pagination.materialize') }}
+                   {{ $activities->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

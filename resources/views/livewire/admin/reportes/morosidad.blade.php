@@ -31,11 +31,11 @@
             <p class="text-muted mb-0">Morosidad por nivel/programa</p>
         </div>
         <div>
-            <button 
-                wire:click="exportarExcel" 
+            <button
+                wire:click="exportarExcel"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50"
-                class="btn btn-success me-2" 
+                class="btn btn-success me-2"
                 @if(count($morosos) == 0) disabled @endif
             >
                 <span wire:loading.remove wire:target="exportarExcel">
@@ -117,7 +117,7 @@
                             @if(($totales['porcentaje_morosidad'] ?? 0) > 20) text-danger
                             @elseif(($totales['porcentaje_morosidad'] ?? 0) > 10) text-warning
                             @else text-success @endif">
-                            {{ number_format($totales['porcentaje_morosidad'] ?? 0, 2) }}%
+                            {{ Number::format($totales['porcentaje_morosidad'] ?? 0, 2) }}%
                         </h3>
                     </div>
                 </div>
@@ -158,9 +158,9 @@
                                     </td>
                                     <td>{{ $moroso['matricula']->programa->nombre ?? '' }}</td>
                                     <td>{{ $moroso['matricula']->programa->nivelEducativo->nombre ?? '' }}</td>
-                                    <td class="text-end">${{ number_format($moroso['matricula']->costo ?? 0, 2) }}</td>
-                                    <td class="text-end">${{ number_format($moroso['total_pagado'], 2) }}</td>
-                                    <td class="text-end">${{ number_format($moroso['saldo_pendiente'], 2) }}</td>
+                                    <td class="text-end"><x-dual-currency :amount="$moroso['matricula']->costo ?? 0" /></td>
+                                    <td class="text-end"><x-dual-currency :amount="$moroso['total_pagado']" /></td>
+                                    <td class="text-end"><x-dual-currency :amount="$moroso['saldo_pendiente']" /></td>
                                     <td class="text-end">{{ number_format($moroso['porcentaje_pagado'], 2) }}%</td>
                                     <td>
                                         @if($moroso['porcentaje_pagado'] < 30)
@@ -227,20 +227,20 @@
                         <div class="col-md-4">
                             <div class="border rounded p-3 text-center">
                                 <p class="mb-1 text-muted">Costo Total</p>
-                                <h4 class="mb-0">${{ number_format($estudianteSeleccionado->costo ?? 0, 2) }}</h4>
+                                <h4 class="mb-0"><x-dual-currency :amount="$estudianteSeleccionado->costo ?? 0" /></h4>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border rounded p-3 text-center">
                                 <p class="mb-1 text-muted">Total Pagado</p>
-                                <h4 class="mb-0 text-success">${{ number_format($estudianteSeleccionado->pagos->sum('total'), 2) }}</h4>
+                                <h4 class="mb-0 text-success"><x-dual-currency :amount="$estudianteSeleccionado->pagos->sum('total')" /></h4>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border rounded p-3 text-center bg-warning bg-opacity-10">
                                 <p class="mb-1 text-muted">Saldo Pendiente</p>
                                 <h4 class="mb-0 text-warning">
-                                    ${{ number_format(($estudianteSeleccionado->costo ?? 0) - $estudianteSeleccionado->pagos->sum('total'), 2) }}
+                                    <x-dual-currency :amount="($estudianteSeleccionado->costo ?? 0) - $estudianteSeleccionado->pagos->sum('total')" />
                                 </h4>
                             </div>
                         </div>
@@ -268,10 +268,10 @@
                                 <tbody>
                                     @foreach($detalleDeuda as $cuota)
                                         <tr>
-                                            <td>{{ $cuota->fecha_vencimiento?->format('d/m/Y') ?? 'N/A' }}</td>
+                                            <td>{{ format_date($cuota->fecha_vencimiento) ?? 'N/A' }}</td>
                                             <td>Cuota {{ $cuota->numero_cuota ?? 'N/A' }}</td>
-                                            <td class="text-end">${{ number_format($cuota->monto, 2) }}</td>
-                                            <td class="text-end">${{ number_format($cuota->monto_pagado ?? 0, 2) }}</td>
+                                            <td class="text-end"><x-dual-currency :amount="$cuota->monto" /></td>
+                                            <td class="text-end"><x-dual-currency :amount="$cuota->monto_pagado ?? 0" /></td>
                                             <td>
                                                 <span class="badge bg-danger">Pendiente</span>
                                             </td>

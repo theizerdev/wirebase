@@ -20,9 +20,9 @@
                 <div class="card-header border-bottom">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title mb-1">Detalle de Caja - {{ $caja->fecha->format('d/m/Y') }}</h5>
+                            <h5 class="card-title mb-1">Detalle de Caja - {{ format_date($caja->fecha) }}</h5>
                             <p class="mb-0">
-                                Estado: 
+                                Estado:
                                 @if($caja->estado === 'abierta')
                                     <span class="badge bg-success">Abierta</span>
                                 @else
@@ -59,7 +59,9 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Monto Inicial</h6>
-                            <h3 class="mb-0">${{ number_format($caja->monto_inicial, 2) }}</h3>
+                            <h3 class="mb-0">
+                                <x-dual-currency :amount="$caja->monto_inicial" />
+                            </h3>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-3 rounded">
                             <i class="ri ri-money-dollar-circle-line text-primary" style="font-size: 1.5rem;"></i>
@@ -74,7 +76,9 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Total Ingresos</h6>
-                            <h3 class="mb-0">${{ number_format($caja->total_ingresos, 2) }}</h3>
+                            <h3 class="mb-0">
+                                <x-dual-currency :amount="$caja->total_ingresos" />
+                            </h3>
                         </div>
                         <div class="bg-success bg-opacity-10 p-3 rounded">
                             <i class="ri ri-arrow-up-circle-line text-success" style="font-size: 1.5rem;"></i>
@@ -89,7 +93,9 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Monto Final</h6>
-                            <h3 class="mb-0">${{ number_format($caja->monto_final, 2) }}</h3>
+                            <h3 class="mb-0">
+                                <x-dual-currency :amount="$caja->monto_final" />
+                            </h3>
                         </div>
                         <div class="bg-info bg-opacity-10 p-3 rounded">
                             <i class="ri ri-safe-line text-info" style="font-size: 1.5rem;"></i>
@@ -150,7 +156,9 @@
                                             </div>
                                         </td>
                                         <td class="text-end">{{ $metodo->cantidad }}</td>
-                                        <td class="text-end fw-semibold">${{ number_format($metodo->total, 2) }}</td>
+                                        <td class="text-end fw-semibold">
+                                            <x-dual-currency :amount="$metodo->total" class="fw-semibold" />
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -185,7 +193,7 @@
                                     <tr>
                                         <td>{{ $concepto['concepto'] }}</td>
                                         <td class="text-end">{{ $concepto['cantidad'] }}</td>
-                                        <td class="text-end fw-semibold">${{ number_format($concepto['total'], 2) }}</td>
+                                        <td class="text-end fw-semibold"><x-dual-currency :amount="$concepto['total']" /></td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -242,7 +250,7 @@
                                             <i class="{{ $iconClass }} me-1"></i>
                                             {{ ucfirst($pago->metodo_pago) }}
                                         </td>
-                                        <td class="text-end fw-semibold">${{ number_format($pago->total, 2) }}</td>
+                                        <td class="text-end fw-semibold"><x-dual-currency :amount="$pago->total" /></td>
                                         <td>{{ $pago->created_at->format('H:i') }}</td>
                                         <td>
                                             @if($pago->estado === 'aprobado')
@@ -283,21 +291,21 @@
                             <strong>¿Estás seguro de cerrar la caja?</strong><br>
                             Una vez cerrada no se podrán agregar más pagos a esta caja.
                         </div>
-                        
+
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Monto Final Calculado:</label>
-                                <div class="fw-bold text-success">${{ number_format($caja->monto_final, 2) }}</div>
+                                <div class="fw-bold text-success"><x-dual-currency :amount="$caja->monto_final" /></div>
                             </div>
                             <div class="col-6">
                                 <label class="form-label">Total Ingresos:</label>
-                                <div class="fw-bold text-primary">${{ number_format($caja->total_ingresos, 2) }}</div>
+                                <div class="fw-bold text-primary"><x-dual-currency :amount="$caja->total_ingresos" /></div>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Observaciones de Cierre</label>
-                            <textarea class="form-control" wire:model="observaciones_cierre" rows="3" 
+                            <textarea class="form-control" wire:model="observaciones_cierre" rows="3"
                                       placeholder="Observaciones sobre el cierre de caja..."></textarea>
                         </div>
                     </div>

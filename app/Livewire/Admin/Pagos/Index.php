@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Pagos;
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -10,7 +11,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable, HasDynamicLayout;
+    use WithPagination, Exportable, HasDynamicLayout, HasRegionalFormatting;
 
     public $search = '';
     public $status = '';
@@ -146,8 +147,8 @@ class Index extends Component
             $pago->numero_completo,
             $studentName,
             $studentDocumento,
-            $pago->total,
-            $pago->fecha->format('d/m/Y'),
+            $this->format_money($pago->total),
+            $this->format_date($pago->fecha),
             ucfirst($pago->estado),
             $pago->metodo_pago ?? ''
         ];

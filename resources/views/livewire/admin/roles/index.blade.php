@@ -226,7 +226,7 @@
                 </div>
 
                 <div class="card-footer">
-                   {{ $roles->links('vendor.pagination.materialize') }}
+                   {{ $roles->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

@@ -35,7 +35,7 @@
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label">Buscar</label>
-                            <input type="text" class="form-control" placeholder="IP, ubicación, dispositivo..." 
+                            <input type="text" class="form-control" placeholder="IP, ubicación, dispositivo..."
                                    wire:model.live.debounce.300ms="search">
                         </div>
 
@@ -171,7 +171,7 @@
                 </div>
 
                 <div class="card-footer">
-                   {{ $sessions->links('vendor.pagination.materialize') }}
+                   {{ $sessions->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

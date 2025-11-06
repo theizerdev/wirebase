@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Pagos;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\Matricula;
@@ -10,7 +11,7 @@ use App\Models\ConceptoPago;
 
 class Edit extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public Pago $pago;
@@ -92,6 +93,3 @@ class Edit extends Component
         return view('livewire.admin.pagos.edit')->layout($this->getLayout());
     }
 }
-
-
-

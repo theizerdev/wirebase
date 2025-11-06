@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Students;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Student;
 use App\Models\Matricula;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 class Historico extends Component
 {
     use HasDynamicLayout;
+    use HasRegionalFormatting;
 
 
     public $student;
@@ -146,6 +148,3 @@ class Historico extends Component
         return view('livewire.admin.students.historico')->layout($this->getLayout());
     }
 }
-
-
-

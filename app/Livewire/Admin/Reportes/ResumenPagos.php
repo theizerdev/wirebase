@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Reportes;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\SchoolPeriod;
@@ -17,6 +18,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ResumenPagos extends Component
 {
     use HasDynamicLayout;
+    use HasRegionalFormatting;
 
 
     public $periodos;
@@ -325,7 +327,3 @@ class ResumenPagos extends Component
         return view('livewire.admin.reportes.resumen-pagos')->layout($this->getLayout());
     }
 }
-
-
-
-

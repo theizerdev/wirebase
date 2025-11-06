@@ -2,14 +2,14 @@
     <!-- Alertas -->
     @if (session()->has('message'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="ri-check-line me-2"></i>{{ session('message') }}
+            <i class="ri ri-check-line me-2"></i>{{ session('message') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     @if (session()->has('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="ri-error-warning-line me-2"></i>{{ session('error') }}
+            <i class="ri ri-error-warning-line me-2"></i>{{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -23,7 +23,7 @@
             </div>
             @can('create conceptos pago')
             <a href="{{ route('admin.conceptos-pago.create') }}" class="btn btn-primary">
-                <i class="ri-add-line me-1"></i> Nuevo Concepto
+                <i class="ri ri-add-line me-1"></i> Nuevo Concepto
             </a>
             @endcan
         </div>
@@ -33,7 +33,7 @@
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="input-group">
-                        <span class="input-group-text"><i class="ri-search-line"></i></span>
+                        <span class="input-group-text"><i class="ri ri-search-line"></i></span>
                         <input type="text" wire:model.live="search" class="form-control" placeholder="Buscar conceptos...">
                     </div>
                 </div>
@@ -55,10 +55,10 @@
                     <div class="d-flex gap-2 justify-content-end">
                         <span class="badge bg-label-primary">Total: {{ $conceptos->total() }}</span>
                         <button wire:click="clearFilters" class="btn btn-outline-secondary">
-                            <i class="ri-eraser-line me-1"></i> Limpiar
+                            <i class="ri ri-eraser-line me-1"></i> Limpiar
                         </button>
                         <button wire:click="export" class="btn btn-outline-success">
-                            <i class="ri-file-excel-line me-1"></i> Exportar
+                            <i class="ri ri-file-excel-line me-1"></i> Exportar
                         </button>
                     </div>
                 </div>
@@ -69,21 +69,21 @@
                     <thead class="table-light">
                         <tr>
                             <th wire:click="sortBy('nombre')" style="cursor: pointer;">
-                                <i class="ri-price-tag-3-line me-1"></i>Nombre
+                                <i class="ri ri-price-tag-3-line me-1"></i>Nombre
                                 @if($sortBy === 'nombre')
-                                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                                 @endif
                             </th>
                             <th wire:click="sortBy('descripcion')" style="cursor: pointer;">
-                                <i class="ri-file-text-line me-1"></i>Descripción
+                                <i class="ri ri-file-text-line me-1"></i>Descripción
                                 @if($sortBy === 'descripcion')
-                                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                                 @endif
                             </th>
                             <th wire:click="sortBy('activo')" style="cursor: pointer;">
-                                <i class="ri-toggle-line me-1"></i>Estado
+                                <i class="ri ri-toggle-line me-1"></i>Estado
                                 @if($sortBy === 'activo')
-                                    <i class="ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
+                                    <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
                                 @endif
                             </th>
                             <th width="120">Acciones</th>
@@ -105,9 +105,9 @@
                             <td>{{ $concepto->descripcion ?? '-' }}</td>
                             <td>
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" 
-                                           type="checkbox" 
-                                           wire:click="toggleStatus({{ $concepto->id }})" 
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           wire:click="toggleStatus({{ $concepto->id }})"
                                            {{ $concepto->activo ? 'checked' : '' }}
                                            id="switch{{ $concepto->id }}">
                                     <label class="form-check-label" for="switch{{ $concepto->id }}">
@@ -120,18 +120,18 @@
                             <td>
                                 <div class="d-flex gap-1">
                                     @can('edit conceptos pago')
-                                    <a href="{{ route('admin.conceptos-pago.edit', $concepto) }}" 
-                                       class="btn btn-sm btn-icon btn-text-secondary rounded-pill" 
+                                    <a href="{{ route('admin.conceptos-pago.edit', $concepto) }}"
+                                       class="btn btn-sm btn-icon btn-text-secondary rounded-pill"
                                        title="Editar">
-                                        <i class="ri-edit-line ri-20px"></i>
+                                        <i class="ri ri-edit-line ri ri-20px"></i>
                                     </a>
                                     @endcan
                                     @can('delete conceptos pago')
-                                    <button wire:click="delete({{ $concepto->id }})" 
-                                            wire:confirm="¿Eliminar el concepto {{ $concepto->nombre }}?" 
-                                            class="btn btn-sm btn-icon btn-text-danger rounded-pill" 
+                                    <button wire:click="delete({{ $concepto->id }})"
+                                            wire:confirm="¿Eliminar el concepto {{ $concepto->nombre }}?"
+                                            class="btn btn-sm btn-icon btn-text-danger rounded-pill"
                                             title="Eliminar">
-                                        <i class="ri-delete-bin-7-line ri-20px"></i>
+                                        <i class="ri ri-delete-bin-7-line ri ri-20px"></i>
                                     </button>
                                     @endcan
                                 </div>
@@ -141,7 +141,7 @@
                     <tr>
                         <td colspan="4" class="text-center py-4">
                             <div class="d-flex flex-column align-items-center">
-                                <i class="ri-price-tag-3-line ri-48px text-muted mb-2"></i>
+                                <i class="ri ri-price-tag-3-line ri ri-48px text-muted mb-2"></i>
                                 <h6 class="text-muted">No hay conceptos de pago</h6>
                                 <p class="text-muted mb-0">Crea el primer concepto de pago</p>
                             </div>
@@ -153,16 +153,9 @@
         </div>
 
             <!-- Paginación -->
-            @if($conceptos->hasPages())
-            <div class="mt-4 d-flex justify-content-between align-items-center">
-                <div class="text-muted">
-                    Mostrando {{ $conceptos->firstItem() }} a {{ $conceptos->lastItem() }} de {{ $conceptos->total() }} resultados
+             <div class="card-footer">
+                   {{ $conceptos->links('livewire.pagination')}}
                 </div>
-                <div>
-                    {{ $conceptos->links() }}
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 </div>

@@ -155,9 +155,9 @@
                                     <td>{{ $turno->hora_fin->format('H:i') }}</td>
                                     <td>
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" 
-                                                   type="checkbox" 
-                                                   wire:click="toggleStatus({{ $turno->id }})" 
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   wire:click="toggleStatus({{ $turno->id }})"
                                                    {{ $turno->status ? 'checked' : '' }}
                                                    id="switch{{ $turno->id }}">
                                             <label class="form-check-label" for="switch{{ $turno->id }}">
@@ -170,16 +170,16 @@
                                     <td>
                                         <div class="d-flex gap-1">
                                             @can('edit turnos')
-                                            <a href="{{ route('admin.turnos.edit', $turno) }}" 
-                                               class="btn btn-sm btn-icon btn-text-secondary rounded-pill" 
+                                            <a href="{{ route('admin.turnos.edit', $turno) }}"
+                                               class="btn btn-sm btn-icon btn-text-secondary rounded-pill"
                                                title="Editar">
                                                 <i class="ri-edit-line ri-20px"></i>
                                             </a>
                                             @endcan
                                             @can('delete turnos')
-                                            <button wire:click="delete({{ $turno->id }})" 
-                                                    wire:confirm="¿Eliminar el turno {{ $turno->nombre }}?" 
-                                                    class="btn btn-sm btn-icon btn-text-danger rounded-pill" 
+                                            <button wire:click="delete({{ $turno->id }})"
+                                                    wire:confirm="¿Eliminar el turno {{ $turno->nombre }}?"
+                                                    class="btn btn-sm btn-icon btn-text-danger rounded-pill"
                                                     title="Eliminar">
                                                 <i class="ri-delete-bin-7-line ri-20px"></i>
                                             </button>
@@ -209,7 +209,7 @@
                     Mostrando {{ $turnos->firstItem() }} a {{ $turnos->lastItem() }} de {{ $turnos->total() }} resultados
                 </div>
                 <div>
-                    {{ $turnos->links() }}
+                    {{ $turnos->links('livewire.pagination') }}
                 </div>
             </div>
             @endif

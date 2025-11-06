@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Matriculas;
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -10,7 +11,7 @@ use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, Exportable, HasDynamicLayout;
+    use WithPagination, Exportable, HasDynamicLayout, HasRegionalFormatting;
 
     public $search = '';
     public $status = '';
@@ -130,7 +131,7 @@ class Index extends Component
             $matricula->student->documento_identidad,
             $matricula->programa->nombre ?? 'N/A',
             $matricula->periodo->name ?? 'N/A',
-            $matricula->fecha_matricula->format('d/m/Y'),
+            format_date($matricula->fecha_matricula),
             $matricula->costo,
             $matricula->cuota_inicial,
             $matricula->numero_cuotas,

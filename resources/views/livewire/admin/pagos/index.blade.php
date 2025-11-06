@@ -66,7 +66,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Ingresos Totales</h6>
-                            <h2 class="mb-0">${{ number_format($this->stats['ingresos_totales'], 2) }}</h2>
+                            <h2 class="mb-0"><x-dual-currency :amount="$this->stats['ingresos_totales']" /></h2>
                         </div>
                         <div class="bg-info bg-opacity-10 p-3 rounded">
                             <i class="ri ri-money-dollar-circle-line text-info" style="font-size: 1.5rem;"></i>
@@ -210,13 +210,13 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold">${{ number_format($pago->total, 2) }}</div>
+                                        <div class="fw-semibold"><x-dual-currency :amount="$pago->total" /></div>
                                         @if($pago->descuento > 0)
-                                            <small class="text-muted">Desc: ${{ number_format($pago->descuento, 2) }}</small>
+                                            <small class="text-muted">Desc: <x-dual-currency :amount="$pago->descuento" /></small>
                                         @endif
                                     </td>
                                     <td>
-                                        <div>{{ $pago->fecha->format('d/m/Y') }}</div>
+                                        <div>{{ format_date($pago->fecha) }}</div>
                                         <small class="text-muted">{{ $pago->created_at->format('H:i') }}</small>
                                     </td>
                                     <td>
@@ -268,7 +268,7 @@
 
                 <!-- Paginación -->
                 <div class="card-footer">
-                   {{ $pagos->links('vendor.pagination.materialize') }}
+                   {{ $pagos->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

@@ -94,6 +94,12 @@
                 </li>
                 <!--/ Notification -->
 
+                <!-- Regional Configuration Indicator -->
+                <li class="nav-item me-4 me-xl-1">
+                    @livewire('regional-configuration-indicator')
+                </li>
+                <!--/ Regional Configuration Indicator -->
+
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
                   <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">

@@ -30,11 +30,11 @@
             <p class="text-muted mb-0">Ingresos totales por concepto</p>
         </div>
         <div>
-            <button 
-                wire:click="exportarExcel" 
+            <button
+                wire:click="exportarExcel"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50"
-                class="btn btn-success me-2" 
+                class="btn btn-success me-2"
                 @if(count($ingresos) == 0) disabled @endif
             >
                 <span wire:loading.remove wire:target="exportarExcel">
@@ -70,9 +70,9 @@
                     </div>
                 </div>
             </div>
-            
-            <button 
-                wire:click="cargarReporte" 
+
+            <button
+                wire:click="cargarReporte"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50"
                 class="btn btn-primary"
@@ -94,7 +94,7 @@
                 <div class="card">
                     <div class="card-body text-center">
                         <p class="mb-1 text-muted">Total Ingresos</p>
-                        <h3 class="mb-0 text-success">${{ number_format($totales['total_ingresos'], 2) }}</h3>
+                        <h3 class="mb-0 text-success"><x-dual-currency :amount="$totales['total_ingresos']" /></h3>
                     </div>
                 </div>
             </div>
@@ -133,7 +133,7 @@
                                     <td class="text-end">
                                         <span class="badge bg-primary">{{ $ingreso->cantidad }}</span>
                                     </td>
-                                    <td class="text-end fw-bold text-success">${{ number_format($ingreso->total, 2) }}</td>
+                                    <td class="text-end fw-bold text-success"><x-dual-currency :amount="$ingreso->total" /></td>
                                     <td class="text-end">
                                         @php
                                             $porcentaje = $totales['total_ingresos'] > 0 ? ($ingreso->total / $totales['total_ingresos']) * 100 : 0;
@@ -156,7 +156,7 @@
                                 <th class="text-end">
                                     <span class="badge bg-success">{{ $ingresos->sum('cantidad') }}</span>
                                 </th>
-                                <th class="text-end fw-bold">${{ number_format($ingresos->sum('total'), 2) }}</th>
+                                <th class="text-end fw-bold"><x-dual-currency :amount="$ingresos->sum('total')" /></th>
                                 <th class="text-end fw-bold">100%</th>
                             </tr>
                         </tfoot>

@@ -70,3 +70,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 Route::get('/admin/template-customization', \App\Livewire\Admin\TemplateCustomization\Index::class)
     ->middleware(['auth'])
     ->name('admin.template-customization');
+
+// Ruta de prueba para configuración regional
+Route::get('/test/regional-configuration', \App\Livewire\TestRegionalConfiguration::class)
+    ->middleware(['auth'])
+    ->name('test.regional-configuration');

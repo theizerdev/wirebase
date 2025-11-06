@@ -66,7 +66,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Ingresos Totales</h6>
-                            <h2 class="mb-0">${{ number_format($ingresosTotales, 0) }}</h2>
+                            <h2 class="mb-0">@money($ingresosTotales)</h2>
                         </div>
                         <div class="bg-info bg-opacity-10 p-3 rounded">
                             <i class="ri ri-money-dollar-circle-line text-info" style="font-size: 1.5rem;"></i>
@@ -192,8 +192,8 @@
                                 @endif
                             </td>
                             <td>{{ $matricula->periodo->name ?? '' }}</td>
-                            <td>{{ $matricula->fecha_matricula->format('d/m/Y') }}</td>
-                            <td>${{ number_format($matricula->costo, 2) }}</td>
+                            <td>{{ format_date($matricula->fecha_matricula) }}</td>
+                            <td>@money($matricula->costo)</td>
                             <td>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox"
@@ -242,7 +242,7 @@
         </div>
 
                 <div class="card-footer">
-                   {{ $matriculas->links('vendor.pagination.materialize') }}
+                   {{ $matriculas->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

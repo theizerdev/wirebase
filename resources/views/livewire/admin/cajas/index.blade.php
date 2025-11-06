@@ -21,7 +21,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Total Cajas</h6>
-                            <h2 class="mb-0">{{ number_format($this->stats['total']) }}</h2>
+                            <h2 class="mb-0">{{ format_money($this->stats['total'], false) }}</h2>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-3 rounded">
                             <i class="ri ri-safe-line text-primary" style="font-size: 1.5rem;"></i>
@@ -36,7 +36,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Cajas Abiertas</h6>
-                            <h2 class="mb-0">{{ number_format($this->stats['abiertas']) }}</h2>
+                            <h2 class="mb-0">{{ format_money($this->stats['abiertas'], false) }}</h2>
                         </div>
                         <div class="bg-success bg-opacity-10 p-3 rounded">
                             <i class="ri ri-lock-unlock-line text-success" style="font-size: 1.5rem;"></i>
@@ -51,7 +51,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Cajas Cerradas</h6>
-                            <h2 class="mb-0">{{ number_format($this->stats['cerradas']) }}</h2>
+                            <h2 class="mb-0">{{ format_money($this->stats['cerradas'], false) }}</h2>
                         </div>
                         <div class="bg-warning bg-opacity-10 p-3 rounded">
                             <i class="ri ri-lock-line text-warning" style="font-size: 1.5rem;"></i>
@@ -66,7 +66,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Ingresos Hoy</h6>
-                            <h2 class="mb-0">${{ number_format($this->stats['ingresos_hoy'], 2) }}</h2>
+                            <h2 class="mb-0"><x-dual-currency :amount="$this->stats['ingresos_hoy']" /></h2>
                         </div>
                         <div class="bg-info bg-opacity-10 p-3 rounded">
                             <i class="ri ri-money-dollar-circle-line text-info" style="font-size: 1.5rem;"></i>
@@ -159,7 +159,7 @@
                             @forelse($cajas as $caja)
                                 <tr>
                                     <td>
-                                        <div>{{ $caja->fecha->format('d/m/Y') }}</div>
+                                        <div>{{ format_date($caja->fecha) }}</div>
                                         <small class="text-muted">{{ $caja->fecha_apertura->format('H:i') }}</small>
                                     </td>
                                     <td>
@@ -173,23 +173,21 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>${{ number_format($caja->monto_inicial, 2) }}</td>
+                                    <td>@money($caja->monto_inicial)</td>
                                     <td>
-                                        <div class="fw-semibold">${{ number_format($caja->total_ingresos, 2) }}</div>
-                                        <small class="text-muted">
-                                            E: ${{ number_format($caja->total_efectivo, 2) }} | 
-                                            T: ${{ number_format($caja->total_transferencias, 2) }} | 
-                                            TC: ${{ number_format($caja->total_tarjetas, 2) }}
+                                        <div class="fw-semibold">@money($caja->total_ingresos)</div>
+                                        <small class="text-muted d-inline">
+                                            E: @money($caja->total_efectivo) | T: @money($caja->total_transferencias) | TC: @money($caja->total_tarjetas)
                                         </small>
                                     </td>
-                                    <td>${{ number_format($caja->monto_final, 2) }}</td>
+                                    <td>@money($caja->monto_final)</td>
                                     <td>
                                         @if($caja->estado === 'abierta')
                                             <span class="badge bg-success">Abierta</span>
                                         @else
                                             <span class="badge bg-secondary">Cerrada</span>
                                             @if($caja->fecha_cierre)
-                                                <small class="d-block text-muted">{{ $caja->fecha_cierre->format('H:i') }}</small>
+                                                <small class="d-block text-muted">{{ format_datetime($caja->fecha_cierre, false) }}</small>
                                             @endif
                                         @endif
                                     </td>
@@ -206,7 +204,7 @@
                                                 @endcan
                                                 @if($caja->estado === 'abierta')
                                                     @can('edit cajas')
-                                                    <button type="button" class="dropdown-item" 
+                                                    <button type="button" class="dropdown-item"
                                                             wire:click="cerrarCaja({{ $caja->id }})">
                                                         <i class="ri ri-lock-line me-1"></i> Cerrar Caja
                                                     </button>
@@ -227,7 +225,7 @@
 
                 <!-- Paginación -->
                 <div class="card-footer">
-                   {{ $cajas->links('vendor.pagination.materialize') }}
+                   {{ $cajas->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

@@ -5,12 +5,13 @@ namespace App\Livewire\Admin\Cajas;
 use App\Models\Caja;
 use App\Traits\Exportable;
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination, Exportable, HasDynamicLayout;
+    use WithPagination, Exportable, HasDynamicLayout, HasRegionalFormatting;
 
     public $search = '';
     public $status = '';
@@ -109,17 +110,17 @@ class Index extends Component
     public function formatExportRow($caja)
     {
         return [
-            $caja->fecha->format('d/m/Y'),
+            format_date($caja->fecha),
             $caja->usuario->name ?? '',
-            number_format($caja->monto_inicial, 2),
-            number_format($caja->total_efectivo, 2),
-            number_format($caja->total_transferencias, 2),
-            number_format($caja->total_tarjetas, 2),
-            number_format($caja->total_ingresos, 2),
-            number_format($caja->monto_final, 2),
+            format_money($caja->monto_inicial),
+            format_money($caja->total_efectivo),
+            format_money($caja->total_transferencias),
+            format_money($caja->total_tarjetas),
+            format_money($caja->total_ingresos),
+            format_money($caja->monto_final),
             ucfirst($caja->estado),
-            $caja->fecha_apertura->format('d/m/Y H:i'),
-            $caja->fecha_cierre ? $caja->fecha_cierre->format('d/m/Y H:i') : ''
+            format_datetime($caja->fecha_apertura),
+            $caja->fecha_cierre ? format_datetime($caja->fecha_cierre) : ''
         ];
     }
 

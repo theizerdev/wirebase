@@ -162,7 +162,7 @@
 
                 <!-- Paginación -->
                 <div class="card-footer">
-                   {{ $programas->links('vendor.pagination.materialize') }}
+                   {{ $programas->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

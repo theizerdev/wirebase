@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Matriculas;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Matricula;
 use App\Models\Student;
@@ -12,7 +13,7 @@ use App\Models\PaymentSchedule;
 
 class Create extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $student_id;
@@ -29,6 +30,11 @@ class Create extends Component
     public $students = [];
     public $programas = [];
     public $periodos = [];
+
+    // Búsqueda de estudiantes
+    public $searchStudent = '';
+    public $showStudentDropdown = false;
+    public $selectedStudent = null;
 
     // Tabla de amortización
     public $paymentSchedule = [];
@@ -53,15 +59,63 @@ class Create extends Component
 
     public function loadData()
     {
-        // Cargar solo estudiantes que no tienen matrícula
-        $this->students = Student::whereDoesntHave('matriculas')
-            ->with('nivelEducativo')
-            ->orderBy('nombres')
-            ->orderBy('apellidos')
-            ->get();
-
         $this->programas = Programa::where('activo', true)->orderBy('nombre')->get();
         $this->periodos = SchoolPeriod::orderBy('name')->get();
+    }
+
+    public function updatedSearchStudent()
+    {
+        if (strlen($this->searchStudent) >= 2) {
+            $this->students = Student::whereDoesntHave('matriculas')
+                ->with('nivelEducativo')
+                ->where(function($query) {
+                    $query->where('nombres', 'like', '%' . $this->searchStudent . '%')
+                          ->orWhere('apellidos', 'like', '%' . $this->searchStudent . '%')
+                          ->orWhere('documento_identidad', 'like', '%' . $this->searchStudent . '%');
+                })
+                ->orderBy('nombres')
+                ->orderBy('apellidos')
+                ->limit(10)
+                ->get();
+            $this->showStudentDropdown = true;
+        } else {
+            $this->students = [];
+            $this->showStudentDropdown = false;
+        }
+    }
+
+    public function selectStudent($studentId)
+    {
+        $student = Student::with('nivelEducativo')->find($studentId);
+        if ($student) {
+            $this->selectedStudent = $student;
+            $this->student_id = $student->id;
+            $this->searchStudent = $student->nombres . ' ' . $student->apellidos;
+            $this->showStudentDropdown = false;
+            
+            // Auto-completar costos del nivel educativo
+            if ($student->nivelEducativo) {
+                $this->costo = $student->nivelEducativo->costo;
+                $this->cuota_inicial = $student->nivelEducativo->cuota_inicial;
+                $this->numero_cuotas = $student->nivelEducativo->numero_cuotas;
+            }
+            
+            $this->generatePaymentSchedule();
+        }
+    }
+
+    public function clearStudentSelection()
+    {
+        $this->selectedStudent = null;
+        $this->student_id = null;
+        $this->searchStudent = '';
+        $this->showStudentDropdown = false;
+        $this->students = [];
+        $this->costo = 0;
+        $this->cuota_inicial = 0;
+        $this->numero_cuotas = 0;
+        $this->paymentSchedule = [];
+        $this->showSchedule = false;
     }
 
     public function updatedStudentId($value)
@@ -247,6 +301,3 @@ class Create extends Component
         return view('livewire.admin.matriculas.create')->layout($this->getLayout());
     }
 }
-
-
-

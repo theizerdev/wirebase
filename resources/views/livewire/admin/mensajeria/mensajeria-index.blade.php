@@ -67,8 +67,8 @@
         <div class="border-b border-gray-200">
             <ul class="nav nav-tabs card-header-tabs" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link {{ $activeTab === 'inbox' ? 'active' : '' }}" 
-                       wire:click="cambiarTab('inbox')" 
+                    <a class="nav-link {{ $activeTab === 'inbox' ? 'active' : '' }}"
+                       wire:click="cambiarTab('inbox')"
                        role="tab" style="cursor: pointer;">
                         <i class="ri ri-inbox me-2"></i>Bandeja de entrada
                         @if($this->noLeidosCount > 0)
@@ -77,15 +77,15 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ $activeTab === 'sent' ? 'active' : '' }}" 
-                       wire:click="cambiarTab('sent')" 
+                    <a class="nav-link {{ $activeTab === 'sent' ? 'active' : '' }}"
+                       wire:click="cambiarTab('sent')"
                        role="tab" style="cursor: pointer;">
                         <i class="ri ri-send me-2"></i>Enviados
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ $activeTab === 'archived' ? 'active' : '' }}" 
-                       wire:click="cambiarTab('archived')" 
+                    <a class="nav-link {{ $activeTab === 'archived' ? 'active' : '' }}"
+                       wire:click="cambiarTab('archived')"
                        role="tab" style="cursor: pointer;">
                         <i class="ri ri-archive me-2"></i>Archivados
                     </a>
@@ -99,15 +99,15 @@
                 <div class="col-md-6 mb-3 mb-md-0">
                     <div class="input-group">
                         <span class="input-group-text"><i class="ri ri-search"></i></span>
-                        <input type="text" 
-                               class="form-control" 
-                               wire:model.live="search" 
+                        <input type="text"
+                               class="form-control"
+                               wire:model.live="search"
                                placeholder="Buscar mensajes...">
                     </div>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <button type="button" 
-                            class="btn btn-primary" 
+                    <button type="button"
+                            class="btn btn-primary"
                             wire:click="abrirModalNuevo">
                         <i class="ri ri-plus me-2"></i>Nuevo mensaje
                     </button>
@@ -121,7 +121,7 @@
                         @forelse($this->mensajes as $mensaje)
                             <div class="col-12 mb-3">
                         <div class="card {{ $selectedMessage && $selectedMessage->id === $mensaje->id ? 'border-primary border-2' : '' }}"
-                             wire:click="seleccionarMensaje({{ $mensaje->id }})" 
+                             wire:click="seleccionarMensaje({{ $mensaje->id }})"
                              style="cursor: pointer;">
                             <div class="card-body">
                                 <div class="d-flex align-items-start">
@@ -163,7 +163,7 @@
                     </div>
 
                     <div class="mt-4">
-                        {{ $this->mensajes->links() }}
+                        {{ $this->mensajes->links('livewire.pagination') }}
                     </div>
                 </div>
 
@@ -185,41 +185,41 @@
                                 </div>
                                 <div class="btn-group" role="group">
                                     @if($activeTab !== 'sent')
-                                        <button type="button" 
-                                                class="btn btn-outline-primary btn-sm" 
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm"
                                                 wire:click="marcarComoLeido({{ $selectedMessage->id }})">
                                             <i class="ri ri-check me-1"></i>Marcar como leído
                                         </button>
                                     @endif
-                                    
+
                                     @if($activeTab !== 'archived')
-                                        <button type="button" 
-                                                class="btn btn-outline-warning btn-sm" 
+                                        <button type="button"
+                                                class="btn btn-outline-warning btn-sm"
                                                 wire:click="archivarMensaje({{ $selectedMessage->id }})">
                                             <i class="ri ri-archive me-1"></i>Archivar
                                         </button>
                                     @else
-                                        <button type="button" 
-                                                class="btn btn-outline-success btn-sm" 
+                                        <button type="button"
+                                                class="btn btn-outline-success btn-sm"
                                                 wire:click="desarchivarMensaje({{ $selectedMessage->id }})">
                                             <i class="ri ri-refresh me-1"></i>Desarchivar
                                         </button>
                                     @endif
-                                    
-                                    <button type="button" 
-                                            class="btn btn-outline-danger btn-sm" 
+
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm"
                                             wire:click="eliminarMensaje({{ $selectedMessage->id }})"
                                             onclick="confirm('¿Estás seguro de eliminar este mensaje?') || event.stopImmediatePropagation()">
                                         <i class="ri ri-trash me-1"></i>Eliminar
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div class="card-body">
                                 <div class="mb-4">
                                     {!! nl2br(e($selectedMessage->contenido)) !!}
                                 </div>
-                                
+
                                 @if($selectedMessage->archivos->count() > 0)
                                     <div class="pt-3 border-top">
                                         <h6 class="mb-3">Archivos adjuntos</h6>
@@ -268,9 +268,9 @@
                         <div class="row mb-3">
                             <label class="col-sm-2 col-form-label">Para</label>
                             <div class="col-sm-10">
-                                <select wire:model="selectedDestinatarios" 
-                                        class="form-select" 
-                                        multiple 
+                                <select wire:model="selectedDestinatarios"
+                                        class="form-select"
+                                        multiple
                                         size="5">
                                     @foreach($this->usuarios as $usuario)
                                         <option value="{{ $usuario->id }}">{{ $usuario->name }}</option>
@@ -279,17 +279,17 @@
                                 <small class="text-muted">Mantén presionado Ctrl para seleccionar múltiples usuarios</small>
                             </div>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <label class="col-sm-2 col-form-label">Asunto</label>
                             <div class="col-sm-10">
-                                <input type="text" 
-                                       wire:model="nuevoAsunto" 
-                                       class="form-control" 
+                                <input type="text"
+                                       wire:model="nuevoAsunto"
+                                       class="form-control"
                                        placeholder="Asunto del mensaje">
                             </div>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <label class="col-sm-2 col-form-label">Prioridad</label>
                             <div class="col-sm-10">
@@ -301,13 +301,13 @@
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <label class="col-sm-2 col-form-label">Mensaje</label>
                             <div class="col-sm-10">
-                                <textarea wire:model="nuevoContenido" 
-                                          class="form-control" 
-                                          rows="5" 
+                                <textarea wire:model="nuevoContenido"
+                                          class="form-control"
+                                          rows="5"
                                           placeholder="Escribe tu mensaje aquí..."></textarea>
                             </div>
                         </div>

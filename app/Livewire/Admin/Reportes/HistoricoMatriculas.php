@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Reportes;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Matricula;
 use App\Models\SchoolPeriod;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class HistoricoMatriculas extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $matriculas = [];
@@ -288,6 +289,3 @@ class HistoricoMatriculas extends Component
         return view('livewire.admin.reportes.historico-matriculas')->layout($this->getLayout());
     }
 }
-
-
-

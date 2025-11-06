@@ -221,7 +221,7 @@
             @endif
 
             <div class="mt-4">
-                {{ $this->archivos->links() }}
+                {{ $this->archivos->links('livewire.pagination') }}
             </div>
         </div>
     </div>

@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,7 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Paginator::defaultView('vendor.pagination.materialize');
-        Paginator::defaultSimpleView('vendor.pagination.materialize-simple');
+        // Configurar vista de paginación personalizada para Livewire
+        Paginator::defaultView('livewire.pagination');
+        Paginator::defaultSimpleView('livewire.pagination');
     }
 }

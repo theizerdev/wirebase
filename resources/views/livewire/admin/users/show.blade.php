@@ -134,7 +134,7 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mt-3">
-            {{ $sessions->links() }}
+            {{ $sessions->links('livewire.pagination') }}
             <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
                 <i class="ri ri-arrow-left-line"></i> Volver al listado
             </a>

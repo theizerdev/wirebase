@@ -239,7 +239,7 @@
                 </div>
 
                 <div class="card-footer">
-                   {{ $permissions->links('vendor.pagination.materialize') }}
+                   {{ $permissions->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

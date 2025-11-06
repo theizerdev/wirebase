@@ -94,7 +94,7 @@
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label">Buscar</label>
-                            <input type="text" class="form-control" placeholder="Nombre, descripción..." 
+                            <input type="text" class="form-control" placeholder="Nombre, descripción..."
                                    wire:model.live.debounce.300ms="search">
                         </div>
                         <div class="col-md-3">
@@ -132,27 +132,27 @@
                         <thead>
                             <tr>
                                 <th wire:click="sortBy('name')" style="cursor: pointer;">
-                                    Nombre 
-                                    @if($sortField == 'name') 
-                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> 
+                                    Nombre
+                                    @if($sortField == 'name')
+                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i>
                                     @endif
                                 </th>
                                 <th wire:click="sortBy('start_date')" style="cursor: pointer;">
-                                    Fecha Inicio 
-                                    @if($sortField == 'start_date') 
-                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> 
+                                    Fecha Inicio
+                                    @if($sortField == 'start_date')
+                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i>
                                     @endif
                                 </th>
                                 <th wire:click="sortBy('end_date')" style="cursor: pointer;">
-                                    Fecha Fin 
-                                    @if($sortField == 'end_date') 
-                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> 
+                                    Fecha Fin
+                                    @if($sortField == 'end_date')
+                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i>
                                     @endif
                                 </th>
                                 <th wire:click="sortBy('is_active')" style="cursor: pointer;">
-                                    Estado 
-                                    @if($sortField == 'is_active') 
-                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> 
+                                    Estado
+                                    @if($sortField == 'is_active')
+                                        <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i>
                                     @endif
                                 </th>
                                 <th>Acciones</th>
@@ -234,7 +234,7 @@
 
                 <!-- Paginación -->
                 <div class="card-footer">
-                   {{ $schoolPeriods->links('vendor.pagination.materialize') }}
+                   {{ $schoolPeriods->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

@@ -5,6 +5,8 @@ namespace App\Livewire\Admin\Cajas;
 use App\Models\Caja;
 use App\Models\ExchangeRate;
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
+use App\Traits\HasDualCurrency;
 use Livewire\Component;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -14,7 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class Show extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting, HasDualCurrency;
 
 
     public Caja $caja;
@@ -99,6 +101,3 @@ class Show extends Component
         return view('livewire.admin.cajas.show')->layout($this->getLayout());
     }
 }
-
-
-

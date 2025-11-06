@@ -27,7 +27,7 @@
             <div class="row mb-4">
                 <div class="col-md-6">
                     <h6>Información del Pago</h6>
-                    <p class="mb-1"><strong>Fecha:</strong> {{ $comprobante->fecha_emision->format('d/m/Y H:i') }}</p>
+                    <p class="mb-1"><strong>Fecha:</strong> {{ format_date($comprobante->fecha_emision, 'd/m/Y H:i') }}</p>
                     <p class="mb-1"><strong>Método:</strong> {{ ucfirst($comprobante->comprobanteable->metodo_pago) }}</p>
                     <p class="mb-1"><strong>Referencia:</strong> {{ $comprobante->comprobanteable->referencia ?? 'N/A' }}</p>
                     <p class="mb-1"><strong>Registrado por:</strong> {{ $comprobante->comprobanteable->user->name }}</p>
@@ -57,29 +57,29 @@
                                 @endif
                             </td>
                             <td class="text-end">
-                                ${{ number_format($comprobante->comprobanteable->monto, 2) }}
+                                @money($comprobante->comprobanteable->monto)
                                 @if($comprobante->comprobanteable->estado == 'pendiente')
                                     <div class="text-success">
-                                        <small>Pagado: ${{ number_format($comprobante->comprobanteable->monto_pagado, 2) }}</small>
+                                        <small>Pagado: @money($comprobante->comprobanteable->monto_pagado)</small>
                                     </div>
                                     <div class="text-danger">
-                                        <small>Pendiente: ${{ number_format($comprobante->comprobanteable->monto - $comprobante->comprobanteable->monto_pagado, 2) }}</small>
+                                        <small>Pendiente: @money($comprobante->comprobanteable->monto - $comprobante->comprobanteable->monto_pagado)</small>
                                     </div>
                                 @endif
                             </td>
                         </tr>
                         <tr class="table-light">
                             <td class="fw-bold">Total</td>
-                            <td class="text-end fw-bold">${{ number_format($comprobante->comprobanteable->monto, 2) }}</td>
+                            <td class="text-end fw-bold">@money($comprobante->comprobanteable->monto)</td>
                         </tr>
                         @if($comprobante->comprobanteable->estado == 'pendiente')
                         <tr class="table-light">
                             <td class="fw-bold">Total Pagado</td>
-                            <td class="text-end fw-bold text-success">${{ number_format($comprobante->comprobanteable->monto_pagado, 2) }}</td>
+                            <td class="text-end fw-bold text-success">@money($comprobante->comprobanteable->monto_pagado)</td>
                         </tr>
                         <tr class="table-light">
                             <td class="fw-bold">Saldo Pendiente</td>
-                            <td class="text-end fw-bold text-danger">${{ number_format($comprobante->comprobanteable->monto - $comprobante->comprobanteable->monto_pagado, 2) }}</td>
+                            <td class="text-end fw-bold text-danger">@money($comprobante->comprobanteable->monto - $comprobante->comprobanteable->monto_pagado)</td>
                         </tr>
                         @endif
                     </tbody>

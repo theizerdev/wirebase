@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Matriculas;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PaymentSchedule;
@@ -10,18 +11,25 @@ use App\Models\Matricula;
 
 class CambiarCuotas extends Component
 {
-    use HasDynamicLayout;
-
-
+    use HasDynamicLayout, HasRegionalFormatting;
     use WithPagination;
 
     public $search = '';
     public $nuevo_monto = '';
+    public $porcentaje_ajuste = '';
+    public $tipo_ajuste = 'monto'; // 'monto' o 'porcentaje'
+    public $aplicar_a = 'seleccionadas'; // 'seleccionadas', 'todas_pendientes', 'por_curso'
+    public $curso_id = '';
+    public $fecha_desde = '';
+    public $fecha_hasta = '';
     public $selectedSchedules = [];
     public $showModal = false;
+    public $showPreview = false;
+    public $previewData = [];
 
     protected $rules = [
-        'nuevo_monto' => 'required|numeric|min:0.01'
+        'nuevo_monto' => 'required_if:tipo_ajuste,monto|numeric|min:0.01',
+        'porcentaje_ajuste' => 'required_if:tipo_ajuste,porcentaje|numeric|min:-50|max:200'
     ];
 
     public function mount()
@@ -63,22 +71,83 @@ class CambiarCuotas extends Component
         $this->showModal = true;
     }
 
-    public function cambiarMontos()
+    public function previewChanges()
     {
         $this->validate();
 
+        $schedules = $this->getSchedulesToUpdate();
+        $this->previewData = [];
+
+        foreach ($schedules as $schedule) {
+            $montoOriginal = $schedule->monto;
+            $montoNuevo = $this->tipo_ajuste === 'monto'
+                ? $this->nuevo_monto
+                : $montoOriginal * (1 + ($this->porcentaje_ajuste / 100));
+
+            $this->previewData[] = [
+                'id' => $schedule->id,
+                'estudiante' => $schedule->matricula->student->nombres . ' ' . $schedule->matricula->student->apellidos,
+                'cuota' => $schedule->numero_cuota,
+                'monto_original' => $montoOriginal,
+                'monto_nuevo' => round($montoNuevo, 2),
+                'diferencia' => round($montoNuevo - $montoOriginal, 2)
+            ];
+        }
+
+        $this->showPreview = true;
+    }
+
+    public function aplicarCambios()
+    {
         try {
-            $updated = PaymentSchedule::whereIn('id', $this->selectedSchedules)
-                ->where('numero_cuota', '>', 0) // Excluir cuota inicial
-                ->where('estado', 'pendiente') // Solo cuotas pendientes
-                ->update(['monto' => $this->nuevo_monto]);
+            $updated = 0;
+
+            foreach ($this->previewData as $item) {
+                PaymentSchedule::where('id', $item['id'])
+                    ->update(['monto' => $item['monto_nuevo']]);
+                $updated++;
+            }
 
             session()->flash('message', "Se actualizaron {$updated} cuotas correctamente.");
-
-            $this->reset(['selectedSchedules', 'nuevo_monto', 'showModal']);
+            $this->reset(['selectedSchedules', 'nuevo_monto', 'porcentaje_ajuste', 'showModal', 'showPreview', 'previewData']);
         } catch (\Exception $e) {
             session()->flash('error', 'Error al actualizar las cuotas: ' . $e->getMessage());
         }
+    }
+
+    private function getSchedulesToUpdate()
+    {
+        $query = PaymentSchedule::with(['matricula.student'])
+            ->where('numero_cuota', '>', 0)
+            ->where('estado', 'pendiente');
+
+        if (!auth()->user()->hasRole('Super Administrador')) {
+            $query->where('empresa_id', auth()->user()->empresa_id)
+                  ->where('sucursal_id', auth()->user()->sucursal_id);
+        }
+
+        switch ($this->aplicar_a) {
+            case 'seleccionadas':
+                $query->whereIn('id', $this->selectedSchedules);
+                break;
+            case 'todas_pendientes':
+                if ($this->fecha_desde) {
+                    $query->where('fecha_vencimiento', '>=', $this->fecha_desde);
+                }
+                if ($this->fecha_hasta) {
+                    $query->where('fecha_vencimiento', '<=', $this->fecha_hasta);
+                }
+                break;
+            case 'por_curso':
+                if ($this->curso_id) {
+                    $query->whereHas('matricula', function($q) {
+                        $q->where('programa_id', $this->curso_id);
+                    });
+                }
+                break;
+        }
+
+        return $query->get();
     }
 
     private function getSchedulesQuery()
@@ -109,9 +178,13 @@ class CambiarCuotas extends Component
     public function render()
     {
         $schedules = $this->getSchedulesQuery()->paginate(10);
+        $cursos = \App\Models\Programa::where('activo', true)
+            ->orderBy('nombre')
+            ->get();
 
         return view('livewire.admin.matriculas.cambiar-cuotas', [
-            'schedules' => $schedules
+            'schedules' => $schedules,
+            'cursos' => $cursos
         ])->layout($this->getLayout());
     }
 }

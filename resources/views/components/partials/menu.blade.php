@@ -75,10 +75,7 @@
       </a>
     </li>
 
-    <!-- === GESTIÓN ACADÉMICA === -->
-    <li class="menu-header small text-uppercase">
-      <span class="menu-header-text">Gestión Académica</span>
-    </li>
+
 
     @can('access students')
     <!-- Estudiantes -->
@@ -156,10 +153,7 @@
     </li>
     @endcan
 
-    <!-- === GESTIÓN FINANCIERA === -->
-    <li class="menu-header small text-uppercase">
-      <span class="menu-header-text">Gestión Financiera</span>
-    </li>
+
 
     @canany(['access pagos', 'access conceptos pago', 'access cajas'])
     <!-- Pagos y Finanzas -->
@@ -255,23 +249,27 @@
     </li>
     @endcan
 
-    <!-- === CONFIGURACIÓN === -->
-    <li class="menu-header small text-uppercase">
-      <span class="menu-header-text">Configuración</span>
-    </li>
+
 
     @canany(['access empresas', 'access sucursales', 'access school periods', 'access niveles educativos', 'access turnos'])
     <!-- Configuración Institucional -->
     <li class="menu-item {{ request()->routeIs('admin.empresas.*') || request()->routeIs('admin.sucursales.*') || request()->routeIs('admin.school-periods.*') || request()->routeIs('admin.niveles-educativos.*') || request()->routeIs('admin.turnos.*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons ri ri-building-4-line"></i>
-        <div>Configuración Institucional</div>
+        <div>Configuración</div>
       </a>
       <ul class="menu-sub">
         @can('access empresas')
         <li class="menu-item {{ request()->routeIs('admin.empresas.index') ? 'active' : '' }}">
           <a href="{{ route('admin.empresas.index') }}" class="menu-link">
             <div>Empresas</div>
+          </a>
+        </li>
+        @endcan
+        @can('access paises')
+        <li class="menu-item {{ request()->routeIs('admin.paises.index') ? 'active' : '' }}">
+          <a href="{{ route('admin.paises.index') }}" class="menu-link">
+            <div>Países</div>
           </a>
         </li>
         @endcan
@@ -312,7 +310,7 @@
     <li class="menu-item {{ request()->routeIs('admin.series.*') ? 'active' : '' }}">
       <a href="{{ route('admin.series.index') }}" class="menu-link">
         <i class="menu-icon tf-icons ri ri-file-list-3-line"></i>
-        <div>Series de Documentos</div>
+        <div>Series</div>
       </a>
     </li>
     @endcan
@@ -322,7 +320,7 @@
     <li class="menu-item {{ request()->routeIs('admin.exchange-rates') ? 'active' : '' }}">
       <a href="{{ route('admin.exchange-rates') }}" class="menu-link">
         <i class="menu-icon tf-icons ri ri-exchange-dollar-line"></i>
-        <div>Tasas de Cambio BCV</div>
+        <div>Tasas BCV</div>
       </a>
     </li>
     @endcan
@@ -335,10 +333,7 @@
       </a>
     </li>
 
-    <!-- === HERRAMIENTAS === -->
-    <li class="menu-header small text-uppercase">
-      <span class="menu-header-text">Herramientas</span>
-    </li>
+
 
     @can('access mensajeria')
     <!-- Mensajería -->
@@ -355,32 +350,21 @@
     <li class="menu-item {{ request()->routeIs('admin.biblioteca.*') ? 'active' : '' }}">
       <a href="{{ route('admin.biblioteca.index') }}" class="menu-link">
         <i class="menu-icon tf-icons ri ri-book-2-line"></i>
-        <div>Biblioteca Digital</div>
+        <div>Biblioteca</div>
       </a>
     </li>
     @endcan
 
-    @can('access reuniones')
-    <!-- Reuniones -->
-    <li class="menu-item {{ request()->routeIs('admin.reuniones.*') ? 'active' : '' }}">
-      <a href="{{ route('admin.reuniones.index') }}" class="menu-link">
-        <i class="menu-icon tf-icons ri ri-calendar-event-line"></i>
-        <div>Calendario de Reuniones</div>
-      </a>
-    </li>
-    @endcan
 
-    <!-- === ADMINISTRACIÓN === -->
-    <li class="menu-header small text-uppercase">
-      <span class="menu-header-text">Administración</span>
-    </li>
+
+
 
     @canany(['access users', 'access roles', 'access permissions'])
     <!-- Usuarios y Permisos -->
     <li class="menu-item {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons ri ri-group-line"></i>
-        <div>Usuarios y Permisos</div>
+        <div>Administración</div>
       </a>
       <ul class="menu-sub">
         @can('access users')
@@ -413,60 +397,24 @@
     <li class="menu-item {{ request()->routeIs('admin.active-sessions*') || request()->is('admin/activity-log*') || request()->routeIs('admin.monitoreo.*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons ri ri-line-chart-line"></i>
-        <div>Sistema y Monitoreo</div>
+        <div>Monitoreo</div>
       </a>
       <ul class="menu-sub">
         @can('view active sessions')
         <li class="menu-item {{ request()->routeIs('admin.active-sessions*') ? 'active' : '' }}">
           <a href="{{ route('admin.active-sessions.index') }}" class="menu-link">
-            <div>Sesiones Activas</div>
+            <div>Sesiones</div>
           </a>
         </li>
         @endcan
         @can('access activity log')
         <li class="menu-item {{ request()->is('admin/activity-log*') ? 'active' : '' }}">
           <a href="{{ route('admin.activity-log') }}" class="menu-link">
-            <div>Registro de Actividad</div>
+            <div>Actividad</div>
           </a>
         </li>
         @endcan
-        @can('access monitoreo')
-        <li class="menu-item {{ request()->routeIs('admin.monitoreo.*') ? 'active open' : '' }}">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-            <div>Monitoreo</div>
-          </a>
-          <ul class="menu-sub">
-            @can('view monitoreo servidor')
-            <li class="menu-item {{ request()->routeIs('admin.monitoreo.servidor') ? 'active' : '' }}">
-              <a href="{{ route('admin.monitoreo.servidor') }}" class="menu-link">
-                <div>Servidor</div>
-              </a>
-            </li>
-            @endcan
-            @can('view monitoreo base-datos')
-            <li class="menu-item {{ request()->routeIs('admin.monitoreo.base-datos') ? 'active' : '' }}">
-              <a href="{{ route('admin.monitoreo.base-datos') }}" class="menu-link">
-                <div>Base de Datos</div>
-              </a>
-            </li>
-            @endcan
-            @can('view monitoreo estudiantes')
-            <li class="menu-item {{ request()->routeIs('admin.monitoreo.estudiantes') ? 'active' : '' }}">
-              <a href="{{ route('admin.monitoreo.estudiantes') }}" class="menu-link">
-                <div>Estudiantes</div>
-              </a>
-            </li>
-            @endcan
-            @can('view monitoreo accesos')
-            <li class="menu-item {{ request()->routeIs('admin.monitoreo.accesos') ? 'active' : '' }}">
-              <a href="{{ route('admin.monitoreo.accesos') }}" class="menu-link">
-                <div>Accesos</div>
-              </a>
-            </li>
-            @endcan
-          </ul>
-        </li>
-        @endcan
+
       </ul>
     </li>
     @endcan

@@ -130,7 +130,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Listado de Cuotas Vencidas -->
     <div class="row mb-4">
         <div class="col-12">
@@ -247,7 +247,7 @@
                                             {{ ucfirst($matricula->estado) }}
                                         </span>
                                     </td>
-                                    <td>{{ $matricula->fecha_matricula->format('d/m/Y') }}</td>
+                                    <td>{{ format_date($matricula->fecha_matricula) }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -283,9 +283,9 @@
                             <tbody>
                                 @forelse($student->matriculas->flatMap->pagos->sortByDesc('fecha')->take(10) as $pago)
                                 <tr>
-                                    <td>{{ $pago->fecha->format('d/m/Y') }}</td>
+                                    <td>{{ format_date($pago->fecha) }}</td>
                                     <td>{{ $pago->tipo_pago }}</td>
-                                    <td class="fw-medium">${{ number_format($pago->total, 2) }}</td>
+                                    <td class="fw-medium">@money($pago->total)</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -397,7 +397,7 @@
                                         label: 'Total',
                                         formatter: function(w) {
                                             const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                                            return '$' + total.toLocaleString();
+                                            return '@money(' + total + ')';
                                         }
                                     }
                                 }
@@ -407,7 +407,7 @@
                     tooltip: {
                         y: {
                             formatter: function(val) {
-                                return '$' + val.toLocaleString();
+                                return '@money(' + val + ')';
                             }
                         }
                     }

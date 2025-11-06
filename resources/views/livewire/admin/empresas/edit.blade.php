@@ -34,6 +34,51 @@
                                 @enderror
                             </div>
 
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">País <span class="text-danger">*</span></label>
+                                <select class="form-select @error('pais_id') is-invalid @enderror" wire:model="pais_id">
+                                    <option value="">Seleccione un país</option>
+                                    @foreach($paises as $pais)
+                                        <option value="{{ $pais->id }}">{{ $pais->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('pais_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Configuración Regional --}}
+                            @if($pais_id)
+                            <div class="col-12 mb-3">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="ri ri-settings-3-line"></i> Configuración Regional Aplicada</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <strong>Moneda:</strong><br>
+                                                <span class="badge bg-primary">{{ $moneda }}</span>
+                                                <small class="text-muted">({{ $simbolo_moneda }})</small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Zona Horaria:</strong><br>
+                                                <span class="badge bg-secondary">{{ $zona_horaria }}</span>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Formato Fecha:</strong><br>
+                                                <span class="badge bg-success">{{ $formato_fecha }}</span>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Idioma:</strong><br>
+                                                <span class="badge bg-warning">{{ $idioma }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Representante Legal</label>
                                 <input type="text" class="form-control @error('representante_legal') is-invalid @enderror"

@@ -227,7 +227,7 @@
 
                 <!-- Paginación -->
                 <div class="card-footer">
-                   {{ $sucursales->links('vendor.pagination.materialize') }}
+                   {{ $sucursales->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

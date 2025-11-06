@@ -3,12 +3,14 @@
 namespace App\Livewire\Admin\Matriculas;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Matricula;
 
 class Show extends Component
 {
     use HasDynamicLayout;
+    use HasRegionalFormatting;
 
 
     public $matricula;
@@ -23,6 +25,3 @@ class Show extends Component
         return view('livewire.admin.matriculas.show')->layout($this->getLayout());
     }
 }
-
-
-

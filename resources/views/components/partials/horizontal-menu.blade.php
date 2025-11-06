@@ -231,9 +231,9 @@
   </li>
   @endcan
 
-  @canany(['access empresas', 'access sucursales', 'access school periods', 'access niveles educativos', 'access turnos'])
+  @canany(['access empresas', 'access paises', 'access sucursales', 'access school periods', 'access niveles educativos', 'access turnos'])
   <!-- Configuración Institucional -->
-  <li class="menu-item {{ request()->routeIs('admin.empresas.*') || request()->routeIs('admin.sucursales.*') || request()->routeIs('admin.school-periods.*') || request()->routeIs('admin.niveles-educativos.*') || request()->routeIs('admin.turnos.*') ? 'active open' : '' }}">
+  <li class="menu-item {{ request()->routeIs('admin.empresas.*') || request()->routeIs('admin.paises.*') || request()->routeIs('admin.sucursales.*') || request()->routeIs('admin.school-periods.*') || request()->routeIs('admin.niveles-educativos.*') || request()->routeIs('admin.turnos.*') ? 'active open' : '' }}">
     <a href="javascript:void(0);" class="menu-link menu-toggle">
       <i class="menu-icon tf-icons ri ri-building-4-line"></i>
       <div>Configuración</div>
@@ -243,6 +243,13 @@
       <li class="menu-item {{ request()->routeIs('admin.empresas.index') ? 'active' : '' }}">
         <a href="{{ route('admin.empresas.index') }}" class="menu-link">
           <div>Empresas</div>
+        </a>
+      </li>
+      @endcan
+      @can('access paises')
+      <li class="menu-item {{ request()->routeIs('admin.paises.index') ? 'active' : '' }}">
+        <a href="{{ route('admin.paises.index') }}" class="menu-link">
+          <div>Países</div>
         </a>
       </li>
       @endcan

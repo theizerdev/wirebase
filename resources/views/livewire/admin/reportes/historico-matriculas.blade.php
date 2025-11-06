@@ -30,11 +30,11 @@
             <p class="text-muted mb-0">Historial de matrículas por estudiante</p>
         </div>
         <div>
-            <button 
-                wire:click="exportarExcel" 
+            <button
+                wire:click="exportarExcel"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50"
-                class="btn btn-success me-2" 
+                class="btn btn-success me-2"
                 @if(count($matriculas) == 0) disabled @endif
             >
                 <span wire:loading.remove wire:target="exportarExcel">
@@ -64,7 +64,7 @@
                             <option value="">Seleccione un período</option>
                             @foreach($periodos as $periodo)
                                 <option value="{{ $periodo->id }}">
-                                    {{ $periodo->nombre }} ({{ $periodo->fecha_inicio?->format('d/m/Y') ?? 'N/A' }} - {{ $periodo->fecha_fin?->format('d/m/Y') ?? 'N/A' }})
+                                    {{ $periodo->nombre }} ({{ format_date($periodo->fecha_inicio) ?? 'N/A' }} - {{ format_date($periodo->fecha_fin) ?? 'N/A' }})
                                 </option>
                             @endforeach
                         </select>
@@ -105,9 +105,9 @@
                     </div>
                 </div>
             </div>
-            
-            <button 
-                wire:click="cargarReporte" 
+
+            <button
+                wire:click="cargarReporte"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50"
                 class="btn btn-primary"
@@ -251,7 +251,7 @@
                                 <tr>
                                     <td>
                                         <i class="ri ri-calendar-check-line text-muted me-1"></i>
-                                        {{ $matricula->fecha_matricula?->format('d/m/Y') ?? 'N/A' }}
+                                        {{ format_date($matricula->fecha_matricula) ?? 'N/A' }}
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
@@ -283,7 +283,7 @@
                                             <span class="badge bg-secondary">{{ ucfirst($matricula->estado) }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-end fw-bold text-success">${{ number_format($matricula->costo ?? 0, 2) }}</td>
+                                    <td class="text-end fw-bold text-success">@money($matricula->costo)</td>
                                 </tr>
                             @endforeach
                         </tbody>

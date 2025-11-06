@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Reportes;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\ConceptoPago;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class IngresosTotales extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $fecha_inicio;
@@ -193,6 +194,3 @@ class IngresosTotales extends Component
         return view('livewire.admin.reportes.ingresos-totales')->layout($this->getLayout());
     }
 }
-
-
-

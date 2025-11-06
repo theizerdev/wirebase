@@ -3,12 +3,13 @@
 namespace App\Livewire\Admin\Pagos;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Pago;
 
 class Show extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $pago;
@@ -23,6 +24,3 @@ class Show extends Component
         return view('livewire.admin.pagos.show')->layout($this->getLayout());
     }
 }
-
-
-

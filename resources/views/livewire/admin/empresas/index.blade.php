@@ -222,7 +222,7 @@
                 </div>
 
                 <div class="card-footer">
-                   {{ $empresas->links('vendor.pagination.materialize') }}
+                   {{ $empresas->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Matriculas;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Matricula;
 use App\Models\Student;
@@ -12,7 +13,7 @@ use App\Models\PaymentSchedule;
 
 class Edit extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $matricula;
@@ -290,6 +291,3 @@ class Edit extends Component
         return view('livewire.admin.matriculas.edit')->layout($this->getLayout());
     }
 }
-
-
-

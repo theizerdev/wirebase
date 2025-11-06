@@ -42,69 +42,114 @@
         </div>
     @endif
 
+    {{-- Estado de conexión --}}
+    <div wire:offline class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="ri ri-wifi-off-line me-2"></i>
+        <strong>Sin conexión a internet</strong> - Los cambios se guardarán cuando se restablezca la conexión
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="mb-0">Nuevo Pago</h4>
-            <p class="text-muted mb-0">Registrar pagos de estudiantes</p>
+
         </div>
         <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary">
             <i class="ri ri-arrow-left-line me-1"></i> Volver
         </a>
     </div>
 
-    <!-- Información del documento -->
+    <!-- Información del Pago -->
     <div class="row mb-4">
-        <div class="col-md-6">
+        <div class="col-12">
             <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tipo de Documento *</label>
-                            <select wire:model.change="tipo_pago" class="form-select @error('tipo_pago') is-invalid @enderror" required>
-                                @foreach($tipos as $key => $tipo)
-                                    <option value="{{ $key }}">{{ $tipo }}</option>
-                                @endforeach
-                            </select>
-                            @error('tipo_pago') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Número de Documento</label>
-                            <input type="text" value="{{ $numero_documento ?? 'Seleccione tipo de documento' }}" class="form-control" readonly>
-                            @if(!$serie_actual && $tipo_pago)
-                                <div class="text-danger small mt-1">No hay series configuradas para este tipo de documento</div>
-                            @endif
-                        </div>
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <i class="ri ri-file-text-line text-primary me-2" style="font-size: 1.2rem;"></i>
+                        <h5 class="mb-0">Información del Pago</h5>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" wire:model="fecha_pago" class="form-control @error('fecha_pago') is-invalid @enderror">
-                            @error('fecha_pago') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="row g-3">
+                        <!-- Tipo y Número de Documento -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri ri-file-list-line text-info me-2"></i>
+                                    <label class="form-label mb-0 fw-medium">Documento</label>
+                                </div>
+                                <select wire:model.change="tipo_pago" class="form-select form-select-sm mb-2 @error('tipo_pago') is-invalid @enderror">
+                                    @foreach($tipos as $key => $tipo)
+                                        <option value="{{ $key }}">{{ $tipo }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="text" value="{{ $numero_documento ?? 'Seleccione tipo' }}" class="form-control form-control-sm" readonly>
+                                @if(!$serie_actual && $tipo_pago)
+                                    <small class="text-danger mt-1">Sin series configuradas</small>
+                                @endif
+                                @error('tipo_pago') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Método de Pago</label>
-                            <select wire:model.change="metodo_pago" class="form-select @error('metodo_pago') is-invalid @enderror">
-                                <option value="efectivo Bs.">Efectivo Bs.</option>
-                                <option value="efectivo Divisas.">Efectivo Divisas</option>
-                                <option value="transferencia">Transferencia Bancaria</option>
-                                <option value="pago mixto">Pago Mixto</option>
-                                <option value="pago movil">Pago Movil</option>
-                            </select>
-                            @error('metodo_pago') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                        <!-- Fecha -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri ri-calendar-line text-success me-2"></i>
+                                    <label class="form-label mb-0 fw-medium">Fecha</label>
+                                </div>
+                                <input type="date" wire:model="fecha_pago" class="form-control form-control-sm @error('fecha_pago') is-invalid @enderror">
+                                @error('fecha_pago') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Referencia</label>
-                            <input type="text" wire:model="referencia" class="form-control @error('referencia') is-invalid @enderror" placeholder="Opcional" @if($es_pago_mixto) disabled @endif>
-                            @error('referencia') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                        <!-- Método de Pago -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri ri-bank-card-line text-warning me-2"></i>
+                                    <label class="form-label mb-0 fw-medium">Método de Pago</label>
+                                </div>
+                                <select wire:model.change="metodo_pago" class="form-select form-select-sm @error('metodo_pago') is-invalid @enderror">
+                                    <option value="efectivo Bs.">Efectivo Bs.</option>
+                                    <option value="efectivo Divisas.">Efectivo Divisas</option>
+                                    <option value="transferencia">Transferencia</option>
+                                    <option value="pago mixto">Pago Mixto</option>
+                                    <option value="pago movil">Pago Móvil</option>
+                                </select>
+                                @error('metodo_pago') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
                         </div>
+
+                        <!-- Referencia -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri ri-hashtag text-secondary me-2"></i>
+                                    <label class="form-label mb-0 fw-medium">Referencia</label>
+                                </div>
+                                <input type="text" wire:model="referencia" class="form-control form-control-sm @error('referencia') is-invalid @enderror" placeholder="Opcional" @if($es_pago_mixto) disabled @endif>
+                                @error('referencia') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Monto Recibido (solo para efectivo) -->
+                        @if(str_contains($metodo_pago, 'efectivo'))
+                        <div class="col-lg-2 col-md-6">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri ri-money-dollar-circle-line text-success me-2"></i>
+                                    <label class="form-label mb-0 fw-medium">Recibido</label>
+                                </div>
+                                <input type="number" step="0.01" wire:model.live="monto_recibido" class="form-control form-control-sm" placeholder="0.00">
+                                @if($monto_recibido > $this->total)
+                                    <div class="mt-2 p-2 bg-success bg-opacity-10 rounded">
+                                        <small class="text-success fw-bold">Cambio: @money($this->cambio)</small>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -196,55 +241,175 @@
         <!-- Selección de matrícula y cuotas -->
         <div class="col-lg-6">
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Seleccionar Estudiante</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" wire:click="aplicarPlantilla('mensualidad')" class="btn btn-outline-primary" title="Plantilla Mensualidad">
+                            <i class="ri ri-calendar-line"></i>
+                        </button>
+                        <button type="button" wire:click="aplicarPlantilla('inscripcion')" class="btn btn-outline-success" title="Plantilla Inscripción">
+                            <i class="ri ri-user-add-line"></i>
+                        </button>
+                        <button type="button" wire:click="aplicarPlantilla('materiales')" class="btn btn-outline-info" title="Plantilla Materiales">
+                            <i class="ri ri-book-line"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label">Matrícula *</label>
-                        <select wire:model.change="matricula_id" class="form-select @error('matricula_id') is-invalid @enderror" required>
-                            <option value="">Seleccione una matrícula</option>
-                            @foreach($matriculas as $matricula)
-                                <option value="{{ $matricula->id }}">
-                                    {{ $matricula->student->nombres ?? '' }} {{ $matricula->student->apellidos ?? '' }} - {{ $matricula->programa->nombre ?? '' }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <label class="form-label">Buscar Estudiante *</label>
+                        <div class="position-relative">
+                            <input type="text"
+                                   wire:model.live.debounce.300ms="busqueda_estudiante"
+                                   class="form-control @error('matricula_id') is-invalid @enderror"
+                                   placeholder="Buscar por nombre, documento o código..."
+                                   autocomplete="off">
+                            <i class="ri ri-search-line position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
                         @error('matricula_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                        @if($busqueda_estudiante && count($matriculas_filtradas) > 0)
+                        <div class="border rounded mt-2" style="max-height: 200px; overflow-y: auto;">
+                            @foreach($matriculas_filtradas as $matricula)
+                            <div class="p-2 border-bottom cursor-pointer hover-bg-light"
+                                 wire:click="seleccionarMatricula({{ $matricula->id }})"
+                                 style="cursor: pointer;"
+                                 onmouseover="this.style.backgroundColor='#f8f9fa'"
+                                 onmouseout="this.style.backgroundColor='transparent'">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        @if($matricula->student->foto)
+                                            <img src="{{ asset('storage/' . $matricula->student->foto) }}" alt="Foto" class="rounded-circle" width="32" height="32">
+                                        @else
+                                            <div class="avatar-initial bg-primary rounded-circle">
+                                                {{ substr($matricula->student->nombres, 0, 1) }}{{ substr($matricula->student->apellidos, 0, 1) }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-medium">{{ $matricula->student->nombres }} {{ $matricula->student->apellidos }}</div>
+                                        <small class="text-muted">{{ $matricula->student->documento_identidad }} • {{ $matricula->programa->nombre }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @elseif($busqueda_estudiante && count($matriculas_filtradas) === 0)
+                        <div class="alert alert-warning mt-2 mb-0">
+                            <i class="ri ri-search-line me-1"></i> No se encontraron estudiantes con "{{ $busqueda_estudiante }}"
+                        </div>
+                        @endif
                     </div>
 
                     @if($matricula_id)
                         @php $matricula = $matriculas->firstWhere('id', $matricula_id); @endphp
                         @if($matricula)
-                        <div class="border rounded p-3">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="avatar-sm me-3">
-                                    <div class="avatar-title bg-primary-subtle text-primary rounded-circle">
-                                        {{ substr($matricula->student->nombres, 0, 1) }}{{ substr($matricula->student->apellidos, 0, 1) }}
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar me-3">
+                                        @if($matricula->student->foto)
+                                            <img src="{{ asset('storage/' . $matricula->student->foto) }}" alt="Foto" class="rounded-circle" width="48" height="48">
+                                        @else
+                                            <div class="avatar-initial bg-primary rounded-circle">
+                                                {{ substr($matricula->student->nombres, 0, 1) }}{{ substr($matricula->student->apellidos, 0, 1) }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-1">{{ $matricula->student->nombres }} {{ $matricula->student->apellidos }}</h5>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-info">{{ $matricula->student->documento_identidad }}</span>
+                                            <span class="badge bg-success">Activa</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <h6 class="mb-1">{{ $matricula->student->nombres }} {{ $matricula->student->apellidos }}</h6>
-                                    <small class="text-muted">{{ $matricula->student->documento_identidad }}</small>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ri ri-graduation-cap-line text-primary me-2"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Programa</small>
+                                                <span class="fw-medium">{{ $matricula->programa->nombre }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ri ri-calendar-line text-success me-2"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Fecha Matrícula</small>
+                                                <span class="fw-medium">{{ format_date($matricula->fecha_matricula) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ri ri-money-dollar-circle-line text-warning me-2"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Costo Total</small>
+                                                <span class="fw-bold text-primary">@money($matricula->costo ?? 0)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ri ri-user-line text-info me-2"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Código Estudiante</small>
+                                                <span class="fw-medium">{{ $matricula->student->codigo ?? 'N/A' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                @if($matricula->student->telefono || $matricula->student->email)
+                                <div class="border-top pt-3 mt-3">
+                                    <div class="row g-2">
+                                        @if($matricula->student->telefono)
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ri ri-phone-line text-success me-2"></i>
+                                                <small>{{ $matricula->student->telefono }}</small>
+                                            </div>
+                                        </div>
+                                        @endif
+                                        @if($matricula->student->email)
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ri ri-mail-line text-primary me-2"></i>
+                                                <small>{{ $matricula->student->email }}</small>
+                                            </div>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
                             </div>
-                            <div class="row">
-                                <div class="col-6">
-                                    <small class="text-muted">Programa:</small>
-                                    <p class="mb-2 fw-medium">{{ $matricula->programa->nombre }}</p>
+                        </div>
+
+                        @endif
+
+                        {{-- Historial de pagos --}}
+                        @if($matricula_id && count($pagos_anteriores) > 0)
+                        <div class="card mt-3">
+                            <div class="card-header py-2">
+                                <h6 class="mb-0"><i class="ri ri-history-line me-1"></i> Últimos Pagos</h6>
+                            </div>
+                            <div class="card-body py-2">
+                                @foreach($pagos_anteriores as $pago)
+                                <div class="d-flex justify-content-between align-items-center py-1 {{ !$loop->last ? 'border-bottom' : '' }}">
+                                    <div>
+                                        <small class="fw-medium">{{ $pago->created_at->format('d/m/Y') }}</small>
+                                        <br><small class="text-muted">{{ $pago->numero_completo }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-bold text-success">@money($pago->total)</span>
+                                        <br><small class="text-muted">{{ ucfirst($pago->metodo_pago) }}</small>
+                                    </div>
                                 </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Fecha Matrícula:</small>
-                                    <p class="mb-2">{{ $matricula->fecha_matricula->format('d/m/Y') }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Estado:</small>
-                                    <span class="badge bg-success-subtle text-success">Activa</span>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Costo Total:</small>
-                                    <p class="mb-0 fw-bold text-primary">${{ number_format($matricula->costo ?? 0, 2) }}</p>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
                         @endif
@@ -272,19 +437,19 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <h6 class="mb-1">Cuota #{{ $cuota->numero_cuota }}</h6>
-                                        <small class="text-muted">{{ $cuota->fecha_vencimiento->format('M Y') }}</small>
+                                        <small class="text-muted">{{ format_date($cuota->fecha_vencimiento, 'M Y') }}</small>
                                         @if($cuota->fecha_vencimiento < now())
                                             <span class="badge bg-label-danger ms-2">Vencida</span>
                                         @endif
                                     </div>
                                     <div class="text-end">
-                                        <div class="fw-bold text-primary">${{ number_format($cuota->saldo_pendiente, 2) }}</div>
+                                        <div class="fw-bold text-primary">@money($cuota->saldo_pendiente)</div>
                                         @if($cuota->recargo_morosidad > 0)
-                                            <div class="text-danger small">+ Recargo: ${{ number_format($cuota->recargo_morosidad, 2) }}</div>
-                                            <div class="fw-bold text-success">Total: ${{ number_format($cuota->monto_con_recargo, 2) }}</div>
+                                            <div class="text-danger small">+ Recargo: @money($cuota->recargo_morosidad)</div>
+                                            <div class="fw-bold text-success">Total: @money($cuota->monto_con_recargo)</div>
                                         @endif
                                         @if($cuota->saldo_pendiente != $cuota->monto)
-                                            <small class="text-muted">Original: ${{ number_format($cuota->monto, 2) }}</small>
+                                            <small class="text-muted">Original: @money($cuota->monto)</small>
                                         @endif
                                     </div>
                                 </div>
@@ -357,7 +522,7 @@
                                             <input type="number" wire:model.blur="detalles.{{ $index }}.precio_unitario" class="form-control" min="0" step="0.01">
                                         </td>
                                         <td class="text-end">
-                                            ${{ number_format($this->calcularSubtotal($index), 2) }}
+                                            @money($this->calcularSubtotal($index))
                                         </td>
                                         <td>
                                             <button wire:click="eliminarDetalle({{ $index }})" class="btn btn-sm btn-outline-danger">
@@ -384,37 +549,42 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
+                                    <div class="card bg-gradient-primary text-white mb-3">
+                                        <div class="card-body text-center py-3">
+                                            <h3 class="mb-1">@money($this->total)</h3>
+                                            <p class="mb-0 opacity-75">Total a Pagar</p>
+                                            @if($this->totalBolivares > 0)
+                                                <small class="opacity-75">Bs. {{ number_format($this->totalBolivares, 2, ',', '.') }}</small>
+                                            @endif
+                                        </div>
+                                    </div>
+
                                     <div class="bg-light p-3 rounded">
                                         <div class="d-flex justify-content-between mb-2">
                                             <span>Subtotal:</span>
-                                            <span>${{ number_format($this->subtotal, 2) }}</span>
+                                            <span>@money($this->subtotal)</span>
                                         </div>
                                         @if($descuento > 0)
                                         <div class="d-flex justify-content-between mb-2 text-danger">
                                             <span>Descuento:</span>
-                                            <span>-${{ number_format($descuento, 2) }}</span>
+                                            <span>-@money($descuento)</span>
                                         </div>
                                         @endif
-                                        <hr>
-                                        <div class="d-flex justify-content-between fw-bold fs-5">
-                                            <span>Total USD:</span>
-                                            <span class="text-primary">${{ number_format($this->total, 2) }}</span>
-                                        </div>
                                         @if($tasa_cambio)
                                         <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
                                             <span>Total Bs:</span>
-                                            <span class="text-success">{{ number_format($this->totalBolivares, 2) }} Bs</span>
+                                            <span class="text-success">Bs. {{ number_format($this->totalBolivares, 2, ',', '.') }}</span>
                                         </div>
                                         @endif
                                         @if($mostrar_bolivares && $tasa_cambio && !$es_pago_mixto)
                                         <div class="mt-2 pt-2 border-top">
                                             <div class="d-flex justify-content-between mb-1">
                                                 <small class="text-muted">Tasa del día:</small>
-                                                <small class="text-muted">{{ number_format($tasa_cambio, 4) }} Bs.</small>
+                                                <small class="text-muted">{{ number_format($tasa_cambio, 4, ',', '.') }} Bs/$</small>
                                             </div>
                                             <div class="d-flex justify-content-between fw-bold text-success">
                                                 <span>Total Bolívares:</span>
-                                                <span>{{ number_format($this->totalBolivares, 2) }} Bs.</span>
+                                                <span>Bs. {{ number_format($this->totalBolivares, 2, ',', '.') }}</span>
                                             </div>
                                         </div>
                                         @endif
@@ -423,7 +593,7 @@
                                         <div class="mt-2 pt-2 border-top">
                                             <div class="d-flex justify-content-between mb-1">
                                                 <small class="text-muted">Configurado:</small>
-                                                <small class="text-muted">${{ number_format($this->totalPagoMixto, 2) }}</small>
+                                                <small class="text-muted">@money($this->totalPagoMixto)</small>
                                             </div>
                                             <div class="d-flex justify-content-between fw-bold {{ $this->totalPagoMixto == $this->total ? 'text-success' : 'text-warning' }}">
                                                 <span>Estado:</span>
@@ -433,13 +603,23 @@
                                         @endif
                                     </div>
 
-                                    <button wire:click="guardar" class="btn btn-success w-100 mt-3" @if($this->total <= 0 || !$matricula_id || !$this->serie_actual || ($es_pago_mixto && $this->totalPagoMixto != $this->total)) disabled @endif>
-                                        <i class="ri ri-save-line me-1"></i>
-                                        @if($es_pago_mixto && $this->totalPagoMixto != $this->total)
-                                            Ajustar Montos
-                                        @else
-                                            Registrar Pago
-                                        @endif
+                                    <button wire:click="guardar"
+                                            wire:loading.attr="disabled"
+                                            wire:loading.class="opacity-50"
+                                            class="btn btn-success w-100 mt-3"
+                                            @if($this->total <= 0 || !$matricula_id || !$this->serie_actual || ($es_pago_mixto && $this->totalPagoMixto != $this->total)) disabled @endif>
+                                        <span wire:loading.remove wire:target="guardar">
+                                            <i class="ri ri-save-line me-1"></i>
+                                            @if($es_pago_mixto && $this->totalPagoMixto != $this->total)
+                                                Ajustar Montos
+                                            @else
+                                                Registrar Pago (Ctrl+S)
+                                            @endif
+                                        </span>
+                                        <span wire:loading wire:target="guardar">
+                                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                            Procesando...
+                                        </span>
                                     </button>
                                 </div>
                             </div>
@@ -487,12 +667,48 @@
 @push('scripts')
 <script>
 function promptAbono(cuotaId, saldoMaximo) {
-    const monto = prompt(`Ingrese el monto del abono (máximo: $${saldoMaximo.toFixed(2)}):`);
+    const monto = prompt(`Ingrese el monto del abono (máximo: ${saldoMaximo.toFixed(2)}):`);
     if (monto && !isNaN(monto) && parseFloat(monto) > 0 && parseFloat(monto) <= saldoMaximo) {
         @this.call('agregarAbono', cuotaId, parseFloat(monto));
     } else if (monto) {
         alert('Monto inválido. Debe ser mayor a 0 y no exceder el saldo pendiente.');
     }
 }
+
+// Atajos de teclado
+document.addEventListener('keydown', function(e) {
+    // Ctrl+S para guardar
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        @this.call('guardar');
+    }
+    // F2 para enfocar búsqueda
+    if (e.key === 'F2') {
+        e.preventDefault();
+        const searchInput = document.querySelector('[wire\\:model*="busqueda_estudiante"]');
+        if (searchInput) searchInput.focus();
+    }
+    // F3 para agregar detalle
+    if (e.key === 'F3') {
+        e.preventDefault();
+        @this.call('agregarDetalle');
+    }
+});
+
+// Notificaciones
+document.addEventListener('livewire:init', function () {
+    Livewire.on('pago-registrado', (event) => {
+        // Mostrar notificación de éxito
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Pago Registrado!',
+                text: event.mensaje,
+                timer: 3000,
+                showConfirmButton: false
+            });
+        }
+    });
+});
 </script>
 @endpush

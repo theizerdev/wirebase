@@ -159,9 +159,9 @@
                             <td>{{ $nivel->descripcion ?? '-' }}</td>
                             <td>
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" 
-                                           type="checkbox" 
-                                           wire:click="toggleStatus({{ $nivel->id }})" 
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           wire:click="toggleStatus({{ $nivel->id }})"
                                            {{ $nivel->status ? 'checked' : '' }}
                                            id="switch{{ $nivel->id }}">
                                     <label class="form-check-label" for="switch{{ $nivel->id }}">
@@ -174,16 +174,16 @@
                             <td>
                                 <div class="d-flex gap-1">
                                     @can('edit niveles educativos')
-                                    <a href="{{ route('admin.niveles-educativos.edit', $nivel) }}" 
-                                       class="btn btn-sm btn-icon btn-text-secondary rounded-pill" 
+                                    <a href="{{ route('admin.niveles-educativos.edit', $nivel) }}"
+                                       class="btn btn-sm btn-icon btn-text-secondary rounded-pill"
                                        title="Editar">
                                         <i class="ri-edit-line ri-20px"></i>
                                     </a>
                                     @endcan
                                     @can('delete niveles educativos')
-                                    <button wire:click="delete({{ $nivel->id }})" 
-                                            wire:confirm="¿Eliminar el nivel {{ $nivel->nombre }}?" 
-                                            class="btn btn-sm btn-icon btn-text-danger rounded-pill" 
+                                    <button wire:click="delete({{ $nivel->id }})"
+                                            wire:confirm="¿Eliminar el nivel {{ $nivel->nombre }}?"
+                                            class="btn btn-sm btn-icon btn-text-danger rounded-pill"
                                             title="Eliminar">
                                         <i class="ri-delete-bin-7-line ri-20px"></i>
                                     </button>
@@ -213,7 +213,7 @@
                     Mostrando {{ $niveles->firstItem() }} a {{ $niveles->lastItem() }} de {{ $niveles->total() }} resultados
                 </div>
                 <div>
-                    {{ $niveles->links() }}
+                    {{ $niveles->links('livewire.pagination') }}
                 </div>
             </div>
             @endif

@@ -21,17 +21,17 @@
                     <div class="row g-2">
                         <div class="col-sm-4"><strong>Nombre:</strong></div>
                         <div class="col-sm-8">{{ $pago->matricula->student->nombres ?? '' }} {{ $pago->matricula->student->apellidos ?? '' }}</div>
-                        
+
                         <div class="col-sm-4"><strong>Documento:</strong></div>
                         <div class="col-sm-8">{{ $pago->matricula->student->documento_identidad ?? '' }}</div>
-                        
+
                         <div class="col-sm-4"><strong>Programa:</strong></div>
                         <div class="col-sm-8">{{ $pago->matricula->programa->nombre ?? '' }}</div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-header">
@@ -41,23 +41,23 @@
                     <div class="row g-2">
                         <div class="col-sm-4"><strong>Tipo:</strong></div>
                         <div class="col-sm-8">{{ ucfirst($pago->tipo_pago) }}</div>
-                        
+
                         <div class="col-sm-4"><strong>Fecha:</strong></div>
-                        <div class="col-sm-8">{{ $pago->fecha->format('d/m/Y') }}</div>
-                        
+                        <div class="col-sm-8">{{ format_date($pago->fecha) }}</div>
+
                         <div class="col-sm-4"><strong>Método:</strong></div>
                         <div class="col-sm-8">{{ $pago->metodo_pago }}</div>
-                        
+
                         @if($pago->referencia)
                         <div class="col-sm-4"><strong>Referencia:</strong></div>
                         <div class="col-sm-8">{{ $pago->referencia }}</div>
                         @endif
-                        
+
                         @if($pago->tasa_cambio)
                         <div class="col-sm-4"><strong>Tasa de Cambio:</strong></div>
-                        <div class="col-sm-8">{{ number_format($pago->tasa_cambio, 4) }} Bs/$</div>
+                        <div class="col-sm-8">{{ format_money($pago->tasa_cambio, false) }} Bs/{{ $pago->tasa_cambio > 1 ? '$' : 'Bs' }}</div>
                         @endif
-                        
+
                         <div class="col-sm-4"><strong>Estado:</strong></div>
                         <div class="col-sm-8">
                             @if($pago->estado === 'pendiente')
@@ -97,8 +97,8 @@
                             <td>{{ $detalle->conceptoPago->nombre ?? 'N/A' }}</td>
                             <td>{{ $detalle->descripcion }}</td>
                             <td class="text-center">{{ $detalle->cantidad }}</td>
-                            <td class="text-end">${{ number_format($detalle->precio_unitario, 2) }}</td>
-                            <td class="text-end">${{ number_format($detalle->subtotal, 2) }}</td>
+                            <td class="text-end"><x-dual-currency :amount="$detalle->precio_unitario" /></td>
+                            <td class="text-end"><x-dual-currency :amount="$detalle->subtotal" /></td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -128,10 +128,10 @@
                         @foreach($pago->detalles_pago_mixto as $metodo)
                         <tr>
                             <td>{{ ucfirst(str_replace('_', ' ', $metodo['metodo'])) }}</td>
-                            <td class="text-end">${{ number_format($metodo['monto'], 2) }}</td>
+                            <td class="text-end"><x-dual-currency :amount="$metodo['monto']" /></td>
                             <td class="text-end">
                                 @if(in_array($metodo['metodo'], ['transferencia', 'pago_movil', 'efectivo_bolivares']) && $pago->tasa_cambio)
-                                    Bs. {{ number_format($metodo['monto'] * $pago->tasa_cambio, 2) }}
+                                    {{ format_money($metodo['monto'] * $pago->tasa_cambio, false) }} Bs
                                 @else
                                     -
                                 @endif
@@ -153,26 +153,26 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
-                        <span>${{ number_format($pago->subtotal, 2) }}</span>
+                        <span><x-dual-currency :amount="$pago->subtotal" /></span>
                     </div>
                     @if($pago->descuento > 0)
                     <div class="d-flex justify-content-between mb-2 text-danger">
                         <span>Descuento:</span>
-                        <span>-${{ number_format($pago->descuento, 2) }}</span>
+                        <span>-<x-dual-currency :amount="$pago->descuento" /></span>
                     </div>
                     @endif
                     <hr>
                     <div class="d-flex justify-content-between fw-bold fs-5">
-                        <span>Total USD:</span>
-                        <span class="text-primary">${{ number_format($pago->total, 2) }}</span>
+                        <span>Total:</span>
+                        <span class="text-primary"><x-dual-currency :amount="$pago->total" /></span>
                     </div>
                     @if($pago->tasa_cambio && $pago->total_bolivares)
                     <div class="d-flex justify-content-between fw-bold text-success mt-2">
                         <span>Total Bs:</span>
-                        <span>{{ number_format($pago->total_bolivares, 2) }} Bs</span>
+                        <span>{{ format_money($pago->total_bolivares, false) }} Bs</span>
                     </div>
                     <div class="text-muted small mt-1">
-                        Tasa: {{ number_format($pago->tasa_cambio, 4) }} Bs/$
+                        Tasa: {{ format_money($pago->tasa_cambio, false) }} Bs/{{ $pago->tasa_cambio > 1 ? '$' : 'Bs' }}
                     </div>
                     @endif
                 </div>

@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             RolesAndPermissionsSeeder::class,
+            PaisSeeder::class, // Agregar países antes que empresas
             EmpresaSeeder::class,
             SucursalSeeder::class,
             ShiftSeeder::class,

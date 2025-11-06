@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Pagos;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Pago;
 use App\Models\Matricula;
@@ -14,7 +15,7 @@ use App\Services\PagoService;
 use DB;
 class Create extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $matricula_id;
@@ -43,6 +44,15 @@ class Create extends Component
     public $serie_actual;
     public $numero_documento;
     public $caja_abierta;
+    
+    // Propiedades para búsqueda
+    public $busqueda_estudiante = '';
+    public $matriculas_filtradas = [];
+    
+    // Propiedades para mejoras
+    public $monto_recibido = 0;
+    public $pagos_anteriores = [];
+    public $plantillas_pago = [];
 
     protected $rules = [
         'matricula_id' => 'required|exists:matriculas,id',
@@ -69,6 +79,7 @@ class Create extends Component
         $this->verificarCajaAbierta();
         $this->agregarDetalle();
         $this->inicializarPagoMixto();
+        $this->cargarPlantillasPago();
     }
 
     public function inicializarPagoMixto()
@@ -98,7 +109,7 @@ class Create extends Component
 
     public function cargarDatos()
     {
-        $query = Matricula::with(['estudiante', 'programa']);
+        $query = Matricula::with(['student', 'programa']);
 
         if (!auth()->user()->hasRole('Super Administrador')) {
             $query->where('empresa_id', auth()->user()->empresa_id)
@@ -108,6 +119,98 @@ class Create extends Component
         $this->matriculas = $query->get();
         $this->conceptos = ConceptoPago::where('activo', true)->get();
         $this->cargarSerieActual();
+    }
+    
+    public function updatedBusquedaEstudiante($value)
+    {
+        if (strlen($value) >= 2) {
+            $query = Matricula::with(['student', 'programa'])
+                ->whereHas('student', function($q) use ($value) {
+                    $q->where('nombres', 'like', '%' . $value . '%')
+                      ->orWhere('apellidos', 'like', '%' . $value . '%')
+                      ->orWhere('documento_identidad', 'like', '%' . $value . '%')
+                      ->orWhere('codigo', 'like', '%' . $value . '%');
+                })
+                ->orWhereHas('programa', function($q) use ($value) {
+                    $q->where('nombre', 'like', '%' . $value . '%');
+                });
+
+            if (!auth()->user()->hasRole('Super Administrador')) {
+                $query->where('empresa_id', auth()->user()->empresa_id)
+                      ->where('sucursal_id', auth()->user()->sucursal_id);
+            }
+
+            $this->matriculas_filtradas = $query->limit(10)->get();
+        } else {
+            $this->matriculas_filtradas = [];
+        }
+    }
+    
+    public function seleccionarMatricula($matriculaId)
+    {
+        $this->matricula_id = $matriculaId;
+        $this->busqueda_estudiante = '';
+        $this->matriculas_filtradas = [];
+        $this->updatedMatriculaId($matriculaId);
+        $this->cargarPagosAnteriores($matriculaId);
+    }
+    
+    public function cargarPagosAnteriores($matriculaId)
+    {
+        $this->pagos_anteriores = Pago::where('matricula_id', $matriculaId)
+            ->where('estado', 'aprobado')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+    }
+    
+    public function cargarPlantillasPago()
+    {
+        $this->plantillas_pago = [
+            'mensualidad' => ['nombre' => 'Mensualidad', 'conceptos' => ['Mensualidad']],
+            'inscripcion' => ['nombre' => 'Inscripción', 'conceptos' => ['Inscripción', 'Materiales']],
+            'materiales' => ['nombre' => 'Materiales', 'conceptos' => ['Materiales Escolares']]
+        ];
+    }
+    
+    public function aplicarPlantilla($tipo)
+    {
+        $this->detalles = [];
+        $plantilla = $this->plantillas_pago[$tipo] ?? null;
+        
+        if ($plantilla) {
+            foreach ($plantilla['conceptos'] as $nombreConcepto) {
+                $concepto = ConceptoPago::where('nombre', 'like', '%' . $nombreConcepto . '%')
+                    ->where('activo', true)
+                    ->first();
+                    
+                if ($concepto) {
+                    $this->detalles[] = [
+                        'concepto_pago_id' => $concepto->id,
+                        'payment_schedule_id' => null,
+                        'descripcion' => $concepto->nombre,
+                        'cantidad' => 1,
+                        'precio_unitario' => $concepto->precio_sugerido ?? 0
+                    ];
+                }
+            }
+        }
+        
+        if (empty($this->detalles)) {
+            $this->agregarDetalle();
+        }
+    }
+    
+    public function updatedDetalles($value, $key)
+    {
+        if (str_contains($key, 'precio_unitario') || str_contains($key, 'cantidad')) {
+            $this->validateOnly("detalles.{$key}");
+        }
+    }
+    
+    public function getCambioProperty()
+    {
+        return max(0, $this->monto_recibido - $this->total);
     }
 
     public function updatedMatriculaId($value)
@@ -304,6 +407,8 @@ class Create extends Component
                 'detalles' => $this->detalles
             ]);
 
+            $this->dispatch('pago-registrado', ['mensaje' => 'Pago registrado exitosamente: ' . $pago->numero_completo]);
+            
             session()->flash('message', 'Pago registrado exitosamente: ' . $pago->numero_completo);
             return redirect()->route('admin.pagos.index');
         });

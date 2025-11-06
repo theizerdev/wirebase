@@ -124,13 +124,13 @@
                                     <tr>
                                         <td>{{ $schedule['numero_cuota'] }}</td>
                                         <td>{{ $schedule['descripcion'] }}</td>
-                                        <td>${{ number_format($schedule['monto'], 2) }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($schedule['fecha_vencimiento'])->format('d/m/Y') }}</td>
+                                        <td>@money($schedule['monto'])</td>
+                                        <td>{{ format_date($schedule['fecha_vencimiento']) }}
                                     </tr>
                                     @endforeach
                                     <tr class="table-info">
                                         <td colspan="2"><strong>Total</strong></td>
-                                        <td><strong>${{ number_format(array_sum(array_column($paymentSchedule, 'monto')), 2) }}</strong></td>
+                                        <td><strong>@money(array_sum(array_column($paymentSchedule, 'monto')))</strong></td>
                                         <td></td>
                                     </tr>
                                 </tbody>

@@ -50,10 +50,10 @@
                     @endforelse
                 </div>
             </div>
-            
+
             @if($notifications->hasPages())
                 <div class="mt-4">
-                    {{ $notifications->links() }}
+                    {{ $notifications->links('livewire.pagination') }}
                 </div>
             @endif
         </div>

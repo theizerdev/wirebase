@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\ApplyTemplateLayout::class,
+            \App\Http\Middleware\RegionalConfiguration::class,
         ]);
         $middleware->alias([
             'track-active-session' => \App\Http\Middleware\TrackActiveSession::class,

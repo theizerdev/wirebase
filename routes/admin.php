@@ -55,6 +55,11 @@ Route::get('/empresas', EmpresasIndex::class)->name('empresas.index');
 Route::get('/empresas/crear', EmpresasCreate::class)->name('empresas.create');
 Route::get('/empresas/{empresa}/editar', EmpresasEdit::class)->name('empresas.edit');
 
+// Países
+Route::get('/paises', \App\Livewire\Admin\Paises\PaisIndex::class)->name('paises.index');
+Route::get('/paises/crear', \App\Livewire\Admin\Paises\Create::class)->name('paises.create');
+Route::get('/paises/{pais}/editar', \App\Livewire\Admin\Paises\Edit::class)->name('paises.edit');
+
 // Sucursales
 Route::get('/sucursales', SucursalesIndex::class)->name('sucursales.index');
 Route::get('/sucursales/crear', SucursalesCreate::class)->name('sucursales.create');

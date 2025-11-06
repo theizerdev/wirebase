@@ -25,6 +25,50 @@
         </div>
     </div>
 
+    <!-- Filtros Avanzados -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="ri ri-filter-3-line me-2"></i>Opciones de Actualización
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Aplicar cambios a:</label>
+                    <select wire:model.live="aplicar_a" class="form-select">
+                        <option value="seleccionadas">Cuotas seleccionadas</option>
+                        <option value="todas_pendientes">Todas las pendientes</option>
+                        <option value="por_curso">Por curso específico</option>
+                    </select>
+                </div>
+
+                @if($aplicar_a === 'por_curso')
+                <div class="col-md-4">
+                    <label class="form-label">Curso:</label>
+                    <select wire:model="curso_id" class="form-select">
+                        <option value="">Seleccionar curso</option>
+                        @foreach($cursos as $curso)
+                            <option value="{{ $curso->id }}">{{ $curso->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                @if($aplicar_a === 'todas_pendientes')
+                <div class="col-md-4">
+                    <label class="form-label">Desde fecha:</label>
+                    <input type="date" wire:model="fecha_desde" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Hasta fecha:</label>
+                    <input type="date" wire:model="fecha_hasta" class="form-control">
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">
             <div class="row align-items-center">
@@ -42,11 +86,17 @@
             </div>
         </div>
         <div class="card-body">
-            @if(count($this->selectedSchedules) > 0)
+            @if(count($this->selectedSchedules) > 0 || $aplicar_a !== 'seleccionadas')
                 <div class="alert alert-info d-flex justify-content-between align-items-center">
-                    <span>{{ count($this->selectedSchedules) }} cuotas seleccionadas</span>
+                    @if($aplicar_a === 'seleccionadas')
+                        <span>{{ count($this->selectedSchedules) }} cuotas seleccionadas</span>
+                    @elseif($aplicar_a === 'todas_pendientes')
+                        <span>Se aplicará a todas las cuotas pendientes</span>
+                    @else
+                        <span>Se aplicará al curso seleccionado</span>
+                    @endif
                     <button wire:click="openModal" class="btn btn-sm btn-primary">
-                        <i class="ri ri-edit-line me-1"></i> Cambiar Montos
+                        <i class="ri ri-edit-line me-1"></i> Actualizar Cuotas
                     </button>
                 </div>
             @endif
@@ -109,12 +159,12 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="fw-bold text-primary">${{ number_format($schedule->monto, 2) }}</span>
+                                    <span class="fw-bold text-primary">@money($schedule->monto)</span>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <i class="ri ri-calendar-line text-muted me-1"></i>
-                                        {{ $schedule->fecha_vencimiento->format('d/m/Y') }}
+                                        {{ format_date($schedule->fecha_vencimiento) }}
                                         @if($schedule->fecha_vencimiento < now())
                                             <span class="badge bg-danger ms-2">Vencida</span>
                                         @endif
@@ -141,46 +191,159 @@
                 </table>
             </div>
 
-            {{ $schedules->links() }}
+            {{ $schedules->links('livewire.pagination') }}
         </div>
     </div>
 
     <!-- Modal para cambiar montos -->
     @if($showModal)
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Cambiar Monto de Cuotas</h5>
+                    <h5 class="modal-title">
+                        <i class="ri ri-edit-line me-2"></i>Actualizar Cuotas
+                    </h5>
                     <button type="button" class="btn-close" wire:click="$set('showModal', false)"></button>
                 </div>
-                <form wire:submit="cambiarMontos">
+
+                @if(!$showPreview)
+                <form wire:submit="previewChanges">
                     <div class="modal-body">
                         <div class="alert alert-info">
                             <i class="ri ri-information-line me-2"></i>
-                            Se actualizarán <strong>{{ count($this->selectedSchedules) }}</strong> cuotas mensuales.
-                            <br><small>Nota: La cuota inicial (cuota 0) no será modificada.</small>
+                            @if($aplicar_a === 'seleccionadas')
+                                Se actualizarán <strong>{{ count($this->selectedSchedules) }}</strong> cuotas seleccionadas.
+                            @elseif($aplicar_a === 'todas_pendientes')
+                                Se actualizarán <strong>todas las cuotas pendientes</strong> en el rango de fechas.
+                            @else
+                                Se actualizarán las cuotas del <strong>curso seleccionado</strong>.
+                            @endif
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Nuevo Monto ($) *</label>
-                            <input type="number" step="0.01" wire:model="nuevo_monto"
-                                   class="form-control @error('nuevo_monto') is-invalid @enderror"
-                                   placeholder="Ingrese el nuevo monto" required>
-                            @error('nuevo_monto')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de ajuste:</label>
+                                <select wire:model.live="tipo_ajuste" class="form-select">
+                                    <option value="monto">Monto fijo</option>
+                                    <option value="porcentaje">Porcentaje de ajuste</option>
+                                </select>
+                            </div>
+
+                            @if($tipo_ajuste === 'monto')
+                            <div class="col-md-6">
+                                <label class="form-label">Nuevo Monto ($) *</label>
+                                <input type="number" step="0.01" wire:model="nuevo_monto"
+                                       class="form-control @error('nuevo_monto') is-invalid @enderror"
+                                       placeholder="Ingrese el nuevo monto">
+                                @error('nuevo_monto')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            @else
+                            <div class="col-md-6">
+                                <label class="form-label">Porcentaje de Ajuste (%) *</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.1" wire:model="porcentaje_ajuste"
+                                           class="form-control @error('porcentaje_ajuste') is-invalid @enderror"
+                                           placeholder="Ej: 10 para aumentar 10%">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="text-muted">Valores negativos para descuentos (ej: -10 para 10% descuento)</small>
+                                @error('porcentaje_ajuste')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            @endif
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="$set('showModal', false)">
                             Cancelar
                         </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="ri ri-save-line me-1"></i> Actualizar Montos
+                        <button type="submit" class="btn btn-info">
+                            <i class="ri ri-eye-line me-1"></i> Previsualizar Cambios
                         </button>
                     </div>
                 </form>
+                @else
+                <!-- Vista previa de cambios -->
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="ri ri-alert-line me-2"></i>
+                        <strong>Previsualización de cambios</strong><br>
+                        Revise los cambios antes de aplicarlos. Esta acción no se puede deshacer.
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th>Cuota</th>
+                                    <th>Monto Actual</th>
+                                    <th>Monto Nuevo</th>
+                                    <th>Diferencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($previewData as $item)
+                                <tr>
+                                    <td>{{ $item['estudiante'] }}</td>
+                                    <td>
+                                        <span class="badge bg-info bg-opacity-10 text-info">
+                                            #{{ $item['cuota'] }}
+                                        </span>
+                                    </td>
+                                    <td>${{ number_format($item['monto_original'], 2) }}</td>
+                                    <td class="fw-bold text-primary">${{ number_format($item['monto_nuevo'], 2) }}</td>
+                                    <td>
+                                        <span class="badge {{ $item['diferencia'] >= 0 ? 'bg-success' : 'bg-danger' }}">
+                                            {{ $item['diferencia'] >= 0 ? '+' : '' }}${{ number_format($item['diferencia'], 2) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center py-2">
+                                    <small class="text-muted">Total de cuotas</small>
+                                    <h6 class="mb-0">{{ count($previewData) }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center py-2">
+                                    <small class="text-muted">Monto total actual</small>
+                                    <h6 class="mb-0">${{ number_format(collect($previewData)->sum('monto_original'), 2) }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center py-2">
+                                    <small class="text-muted">Monto total nuevo</small>
+                                    <h6 class="mb-0 text-primary">${{ number_format(collect($previewData)->sum('monto_nuevo'), 2) }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="$set('showPreview', false)">
+                        <i class="ri ri-arrow-left-line me-1"></i> Volver
+                    </button>
+                    <button type="button" wire:click="aplicarCambios" class="btn btn-success">
+                        <i class="ri ri-check-line me-1"></i> Aplicar Cambios
+                    </button>
+                </div>
+                @endif
             </div>
         </div>
     </div>

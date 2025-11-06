@@ -6,19 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
+    public function up()
     {
         Schema::table('pagos', function (Blueprint $table) {
-            $table->foreignId('caja_id')->nullable()->after('id')->constrained()->onDelete('set null');
-            $table->index('caja_id');
+            $table->boolean('es_pago_mixto')->default(false)->after('metodo_pago');
+            $table->json('detalles_pago_mixto')->nullable()->after('es_pago_mixto');
         });
     }
 
-    public function down(): void
+    public function down()
     {
         Schema::table('pagos', function (Blueprint $table) {
-            $table->dropForeign(['caja_id']);
-            $table->dropColumn('caja_id');
+            $table->dropColumn(['es_pago_mixto', 'detalles_pago_mixto']);
         });
     }
 };

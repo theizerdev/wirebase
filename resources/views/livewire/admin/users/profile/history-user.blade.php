@@ -94,7 +94,7 @@
             </div>
 
             <div class="mt-3">
-                 {{ $sessions->links('vendor.pagination.materialize') }}
+                 {{ $sessions->links('livewire.pagination') }}
             </div>
         </div>
     </div>

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Reportes;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Student;
 use App\Models\Matricula;
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EstadoCuentas extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $estudiantes;
@@ -247,6 +248,3 @@ class EstadoCuentas extends Component
         return view('livewire.admin.reportes.estado-cuentas')->layout($this->getLayout());
     }
 }
-
-
-

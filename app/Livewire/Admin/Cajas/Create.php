@@ -4,11 +4,12 @@ namespace App\Livewire\Admin\Cajas;
 
 use App\Models\Caja;
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 
 class Create extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public $monto_inicial = 0;

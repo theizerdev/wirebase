@@ -24,8 +24,8 @@
                                     <i class="ri ri-calendar-event-line me-1"></i>Año
                                 </button>
                             </div>
-                            <button 
-                                wire:click="exportDashboard" 
+                            <button
+                                wire:click="exportDashboard"
                                 wire:loading.attr="disabled"
                                 wire:loading.class="opacity-50"
                                 class="btn btn-sm btn-success"
@@ -208,7 +208,7 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <h6 class="mb-1">Ingresos Totales</h6>
-                            <h3 class="mb-0">{{ number_format($financialStats['totalIncome'], 2, ',', '.') }} $</h3>
+                            <h3 class="mb-0"><x-dual-currency :amount="$financialStats['totalIncome']" /></h3>
                             <small class="">Período actual</small>
                         </div>
                         <div class="avatar avatar-lg bg-primary">
@@ -224,7 +224,7 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <h6 class="mb-1">Monto por Cobrar</h6>
-                            <h3 class="mb-0 text-warning">${{ number_format($financialStats['pendingIncome'], 0) }}</h3>
+                            <h3 class="mb-0 text-warning"><x-dual-currency :amount="$financialStats['pendingIncome']" /></h3>
                             <small class="text-muted">Cronograma pendiente</small>
                         </div>
                         <div class="avatar avatar-lg bg-warning">
@@ -263,7 +263,7 @@
     <!-- Métricas Académicas -->
     @if($showAcademic)
     <div class="row g-4 mb-4">
-        <div class="col-lg-3">
+        <div class="col-lg-6">
             <div class="card border-primary">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
@@ -279,14 +279,14 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3">
+        <div class="col-lg-6">
             <div class="card border-success">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <h6 class="text-muted mb-1">Ingresos Hoy</h6>
-                            <h3 class="mb-0 text-success">${{ number_format($financialStats['todayIncome'] ?? 0, 0) }}</h3>
-                            <small class="text-muted">Pagos del día</small>
+                            <h3 class="mb-0 text-success"><x-dual-currency :amount="$financialStats['todayIncome'] ?? 0" /></h3>
+
                         </div>
                         <div class="avatar avatar-lg bg-success">
                             <i class="ri ri-money-dollar-circle-line ri-24px text-white"></i>
@@ -295,7 +295,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3">
+        <div class="col-lg-6">
             <div class="card border-danger">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
@@ -311,7 +311,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3">
+        <div class="col-lg-6">
             <div class="card border-info">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">

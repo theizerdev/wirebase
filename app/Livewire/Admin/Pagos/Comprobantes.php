@@ -3,12 +3,13 @@
 namespace App\Livewire\Admin\Pagos;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Comprobante;
 
 class Comprobantes extends Component
 {
-    use HasDynamicLayout;
+    use HasDynamicLayout, HasRegionalFormatting;
 
 
     public Comprobante $comprobante;
@@ -33,7 +34,3 @@ class Comprobantes extends Component
         return view('livewire.admin.pagos.comprobante')->layout($this->getLayout());
     }
 }
-
-
-
-

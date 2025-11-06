@@ -30,11 +30,11 @@
             <p class="text-muted mb-0">Resumen de pagos por período</p>
         </div>
         <div>
-            <button 
-                wire:click="exportarExcel" 
+            <button
+                wire:click="exportarExcel"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50"
-                class="btn btn-success me-2" 
+                class="btn btn-success me-2"
                 @if(count($pagos) == 0) disabled @endif
             >
                 <span wire:loading.remove wire:target="exportarExcel">
@@ -66,9 +66,9 @@
                                 <option value="{{ $periodo->id }}">
                                     {{ $periodo->nombre ?? $periodo->name ?? 'Período sin nombre' }}
                                     @if($periodo->fecha_inicio && $periodo->fecha_fin)
-                                        ({{ $periodo->fecha_inicio->format('d/m/Y') }} - {{ $periodo->fecha_fin->format('d/m/Y') }})
+                                        ({{ format_date($periodo->fecha_inicio) }} - {{ format_date($periodo->fecha_fin) }})
                                     @elseif($periodo->start_date && $periodo->end_date)
-                                        ({{ $periodo->start_date->format('d/m/Y') }} - {{ $periodo->end_date->format('d/m/Y') }})
+                                        ({{ format_date($periodo->start_date) }} - {{ format_date($periodo->end_date) }})
                                     @endif
                                 </option>
                             @endforeach
@@ -89,8 +89,8 @@
                 </div>
             </div>
 
-            <button 
-                wire:click="cargarReporte" 
+            <button
+                wire:click="cargarReporte"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-50"
                 class="btn btn-primary"
@@ -136,7 +136,7 @@
                                             <td class="text-end">
                                                 <span class="badge bg-primary">{{ $total->cantidad }}</span>
                                             </td>
-                                            <td class="text-end fw-bold text-success">${{ number_format($total->total, 2) }}</td>
+                                            <td class="text-end fw-bold text-success"><x-dual-currency :amount="$total->total" /></td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -149,7 +149,7 @@
                                         <th class="text-end">
                                             <span class="badge bg-success">{{ $totales->sum('cantidad') }}</span>
                                         </th>
-                                        <th class="text-end fw-bold">${{ number_format($totales->sum('total'), 2) }}</th>
+                                        <th class="text-end fw-bold"><x-dual-currency :amount="$totales->sum('total')" /></th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -174,15 +174,15 @@
                             <div class="col-md-6 mb-3">
                                 <div class="border rounded p-3 text-center">
                                     <p class="mb-1 text-muted">Total Ingresos</p>
-                                    <h4 class="mb-0 text-success">${{ number_format($pagos->sum('total'), 2) }}</h4>
+                                    <h4 class="mb-0 text-success"><x-dual-currency :amount="$pagos->sum('total')" /></h4>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="border rounded p-3 text-center">
                                     <p class="mb-1 text-muted">Período</p>
                                     <h6 class="mb-0">
-                                        {{ $fecha_inicio ? \Carbon\Carbon::createFromFormat('Y-m-d', $fecha_inicio)->format('d/m/Y') : 'N/A' }} -
-                                        {{ $fecha_fin ? \Carbon\Carbon::createFromFormat('Y-m-d', $fecha_fin)->format('d/m/Y') : 'N/A' }}
+                                        {{ $fecha_inicio ? format_date(\Carbon\Carbon::createFromFormat('Y-m-d', $fecha_inicio)) : 'N/A' }} -
+                                        {{ $fecha_fin ? format_date(\Carbon\Carbon::createFromFormat('Y-m-d', $fecha_fin)) : 'N/A' }}
                                     </h6>
                                     @if($periodo_id)
                                         @php
@@ -238,8 +238,8 @@
                                             N/A
                                         @endif
                                     </td>
-                                    <td class="text-end">${{ number_format($pago->total, 2) }}</td>
-                                    <td class="text-end">${{ number_format($pago->total, 2) }}</td>
+                                    <td class="text-end"><x-dual-currency :amount="$pago->total" /></td>
+                                    <td class="text-end"><x-dual-currency :amount="$pago->total" /></td>
                                     <td>
                                         @if($pago->metodo_pago == 'efectivo')
                                             <span class="badge bg-success">Efectivo</span>

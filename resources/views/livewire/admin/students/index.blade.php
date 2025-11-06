@@ -91,7 +91,7 @@
                                 <i class="ri ri-add-line"></i> Nuevo Estudiante
                             </a>
                             @endcan
-                            
+
                             @can('export students')
                             <div class="dropdown">
                                 <button class="btn btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -111,7 +111,7 @@
                                 </ul>
                             </div>
                             @endcan
-                            
+
                             @can('import students')
                             <a href="{{ route('admin.students.import') }}" class="btn btn-outline-secondary">
                                 <i class="ri ri-upload-line"></i> Importar
@@ -366,7 +366,7 @@
         </div>
 
                 <div class="card-footer">
-                   {{ $students->links('vendor.pagination.materialize') }}
+                   {{ $students->links('livewire.pagination')}}
                 </div>
             </div>
         </div>

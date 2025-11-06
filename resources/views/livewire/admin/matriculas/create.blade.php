@@ -44,20 +44,82 @@
             <form wire:submit.prevent="store">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="student_id" class="form-label">Estudiante *</label>
-                        <select wire:model.live="student_id" class="form-select" id="student_id" required>
-                            <option value="">Seleccione un estudiante</option>
-                            @foreach($students as $student)
-                                <option value="{{ $student->id }}">
-                                    {{ $student->nombres }} {{ $student->apellidos }}
-                                    (DNI: {{ $student->documento_identidad }})
-                                    @if($student->nivelEducativo)
-                                        - {{ $student->nivelEducativo->nombre }}
-                                    @endif
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('student_id') <div class="text-danger">{{ $message }}</div> @enderror
+                        <label for="searchStudent" class="form-label">Estudiante *</label>
+                        <div class="position-relative">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="ri ri-search-line"></i>
+                                </span>
+                                <input type="text" 
+                                       wire:model.live.debounce.300ms="searchStudent" 
+                                       class="form-control" 
+                                       id="searchStudent"
+                                       placeholder="Buscar por nombre, apellido o documento..."
+                                       autocomplete="off">
+                                @if($selectedStudent)
+                                    <button type="button" 
+                                            wire:click="clearStudentSelection" 
+                                            class="btn btn-outline-secondary">
+                                        <i class="ri ri-close-line"></i>
+                                    </button>
+                                @endif
+                            </div>
+                            
+                            @if($showStudentDropdown && count($students) > 0)
+                                <div class="dropdown-menu show w-100 mt-1" style="max-height: 300px; overflow-y: auto;">
+                                    @foreach($students as $student)
+                                        <a href="javascript:void(0)" 
+                                           wire:click="selectStudent({{ $student->id }})" 
+                                           class="dropdown-item d-flex align-items-center py-2">
+                                            <div class="avatar avatar-sm me-2">
+                                                <span class="avatar-initial bg-primary rounded-circle">
+                                                    {{ substr($student->nombres, 0, 1) }}{{ substr($student->apellidos, 0, 1) }}
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-medium">{{ $student->nombres }} {{ $student->apellidos }}</div>
+                                                <small class="text-muted">
+                                                    DNI: {{ $student->documento_identidad }}
+                                                    @if($student->nivelEducativo)
+                                                        • {{ $student->nivelEducativo->nombre }}
+                                                    @endif
+                                                </small>
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @elseif($showStudentDropdown && strlen($searchStudent) >= 2)
+                                <div class="dropdown-menu show w-100 mt-1">
+                                    <div class="dropdown-item-text text-muted text-center py-3">
+                                        <i class="ri ri-search-line me-1"></i>
+                                        No se encontraron estudiantes disponibles
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        @if($selectedStudent)
+                            <div class="mt-2 p-2 bg-light rounded">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        <span class="avatar-initial bg-success rounded-circle">
+                                            {{ substr($selectedStudent->nombres, 0, 1) }}{{ substr($selectedStudent->apellidos, 0, 1) }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">{{ $selectedStudent->nombres }} {{ $selectedStudent->apellidos }}</div>
+                                        <small class="text-muted">
+                                            DNI: {{ $selectedStudent->documento_identidad }}
+                                            @if($selectedStudent->nivelEducativo)
+                                                • {{ $selectedStudent->nivelEducativo->nombre }}
+                                            @endif
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        @error('student_id') <div class="text-danger mt-1">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-6">
@@ -141,13 +203,13 @@
                                     <tr>
                                         <td>{{ $schedule['numero_cuota'] }}</td>
                                         <td>{{ $schedule['descripcion'] }}</td>
-                                        <td>${{ number_format($schedule['monto'], 2) }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($schedule['fecha_vencimiento'])->format('d/m/Y') }}</td>
+                                        <td>@money($schedule['monto'])</td>
+                                        <td>{{ format_date($schedule['fecha_vencimiento']) }}
                                     </tr>
                                     @endforeach
                                     <tr class="table-info">
                                         <td colspan="2"><strong>Total</strong></td>
-                                        <td><strong>${{ number_format(array_sum(array_column($paymentSchedule, 'monto')), 2) }}</strong></td>
+                                        <td><strong>@money(array_sum(array_column($paymentSchedule, 'monto')))</strong></td>
                                         <td></td>
                                     </tr>
                                 </tbody>

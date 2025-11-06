@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Reportes;
 
 use App\Traits\HasDynamicLayout;
+use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Student;
 use App\Models\Matricula;
@@ -17,6 +18,7 @@ use App\Mail\DebtNotification;
 class Morosidad extends Component
 {
     use HasDynamicLayout;
+    use HasRegionalFormatting;
 
 
     public $nivelesEducativos;
@@ -390,6 +392,3 @@ class Morosidad extends Component
         return view('livewire.admin.reportes.morosidad')->layout($this->getLayout());
     }
 }
-
-
-

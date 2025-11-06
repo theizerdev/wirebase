@@ -3,14 +3,16 @@
 namespace App\Livewire\Admin\Empresas;
 
 use App\Traits\HasDynamicLayout;
+use App\Livewire\Traits\HasRegionalConfiguration;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use App\Models\Empresa;
+use App\Models\Pais;
+use App\Services\RegionalConfigurationService;
 
 class Edit extends Component
 {
-    use HasDynamicLayout;
-
+    use HasDynamicLayout, HasRegionalConfiguration;
 
     public $empresa;
     public $razon_social = '';
@@ -23,6 +25,7 @@ class Edit extends Component
     public $status = true;
     public $telefono = '';
     public $email = '';
+    public $pais_id = '';
 
     protected $rules = [
         'razon_social' => 'required|string|max:255',
@@ -35,6 +38,7 @@ class Edit extends Component
         'status' => 'boolean',
         'telefono' => 'nullable|string|max:20',
         'email' => 'nullable|email|max:255',
+        'pais_id' => 'required|exists:pais,id',
     ];
 
     #[On('location-updated')]
@@ -59,6 +63,10 @@ class Edit extends Component
         $this->status = $empresa->status;
         $this->telefono = $empresa->telefono;
         $this->email = $empresa->email;
+        $this->pais_id = $empresa->pais_id;
+
+        // Inicializar configuración regional si hay país seleccionado
+        $this->initializeRegionalConfiguration($empresa->pais);
 
         // Actualizar la regla de validación para permitir el documento actual
         $this->rules['documento'] = 'required|string|unique:empresas,documento,' . $empresa->id;
@@ -78,16 +86,29 @@ class Edit extends Component
             'status' => $this->status,
             'telefono' => $this->telefono,
             'email' => $this->email,
+            'pais_id' => $this->pais_id,
         ]);
 
-        session()->flash('message', 'Empresa actualizada correctamente.');
+        // Recargar la empresa con el país para aplicar configuración regional
+        $this->empresa->load('pais');
+
+        // Aplicar configuración regional para la empresa actualizada
+        $this->applyRegionalConfigurationToEmpresa($this->empresa);
+
+        session()->flash('message', 'Empresa actualizada correctamente. Configuración regional actualizada.');
 
         return redirect()->route('admin.empresas.index');
     }
 
+
+
     public function render()
     {
-        return $this->renderWithLayout('livewire.admin.empresas.edit', [], [
+        $paises = \App\Models\Pais::where('activo', true)->orderBy('nombre')->get();
+
+        return $this->renderWithLayout('livewire.admin.empresas.edit', [
+            'paises' => $paises
+        ], [
             'title' => 'Editar Empresa',
             'description' => 'Modificar empresa del sistema'
         ]);
