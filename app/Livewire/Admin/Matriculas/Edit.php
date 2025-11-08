@@ -32,6 +32,11 @@ class Edit extends Component
     public $programas = [];
     public $periodos = [];
 
+    // Búsqueda de estudiantes
+    public $searchStudent = '';
+    public $showStudentDropdown = false;
+    public $selectedStudent = null;
+
     // Tabla de amortización
     public $paymentSchedule = [];
     public $showSchedule = false;
@@ -49,18 +54,32 @@ class Edit extends Component
 
     public function mount(Matricula $matricula)
     {
-        $this->matricula = $matricula->load(['student', 'programa', 'schoolPeriod']);
+        $this->matricula = $matricula->load(['student', 'programa', 'periodo']);
         $this->student_id = $matricula->student_id;
         $this->programa_id = $matricula->programa_id;
-        $this->periodo_id = $matricula->school_period_id;
+        $this->periodo_id = $matricula->periodo_id;
         $this->fecha_matricula = $matricula->fecha_matricula ? $matricula->fecha_matricula->format('Y-m-d') : now()->format('Y-m-d');
         $this->estado = $matricula->estado ?? 'activo';
         $this->costo = $matricula->costo ?? 0;
         $this->cuota_inicial = $matricula->cuota_inicial ?? 0;
         $this->numero_cuotas = $matricula->numero_cuotas ?? 0;
 
+        // Configurar estudiante seleccionado
+        $this->selectedStudent = $matricula->student;
+        $this->searchStudent = $matricula->student ? $matricula->student->nombres . ' ' . $matricula->student->apellidos : '';
+
+        // Asegurar que el student_id esté correctamente establecido
+        if (!$this->student_id && $matricula->student) {
+            $this->student_id = $matricula->student->id;
+        }
+
         $this->loadData();
         $this->loadPaymentSchedule();
+        
+        // Verificar si el período existe
+        if ($this->periodo_id && !SchoolPeriod::find($this->periodo_id)) {
+            session()->flash('warning', 'El período escolar asociado a esta matrícula no está disponible. Por favor, seleccione un período válido.');
+        }
     }
 
     public function loadData()
@@ -88,7 +107,116 @@ class Edit extends Component
         }
         $this->programas = $programaQuery->orderBy('nombre')->get();
 
-        $this->periodos = SchoolPeriod::orderBy('name')->get();
+        // Cargar períodos, asegurando que el período actual esté incluido
+        $periodoQuery = SchoolPeriod::query();
+        
+        // Si hay un período seleccionado, asegurarnos de que esté en la lista
+        if ($this->periodo_id) {
+            $periodoActual = SchoolPeriod::find($this->periodo_id);
+            if ($periodoActual) {
+                // Obtener todos los períodos ordenados, incluyendo el actual
+                $this->periodos = $periodoQuery->orderBy('name')->get();
+            } else {
+                $this->periodos = collect(); // Lista vacía si el período no existe
+            }
+        } else {
+            $this->periodos = $periodoQuery->orderBy('name')->get();
+        }
+    }
+
+    public function updatingStudentId($value)
+    {
+        // En modo edición, proteger el student_id original
+        if ($this->matricula && $this->matricula->exists) {
+            $this->student_id = $this->matricula->student_id;
+            return;
+        }
+    }
+
+    public function updatedSearchStudent()
+    {
+        // En modo edición, no permitir búsqueda de estudiantes
+        if ($this->matricula && $this->matricula->exists) {
+            return;
+        }
+        
+        if (strlen($this->searchStudent) >= 2) {
+            $query = Student::query();
+
+            if (!auth()->user()->hasRole('Super Administrador')) {
+                $query->where('empresa_id', auth()->user()->empresa_id)
+                      ->where('sucursal_id', auth()->user()->sucursal_id);
+            }
+
+            $this->students = $query->where(function($q) {
+                    $q->where('nombres', 'like', '%' . $this->searchStudent . '%')
+                      ->orWhere('apellidos', 'like', '%' . $this->searchStudent . '%')
+                      ->orWhere('documento_identidad', 'like', '%' . $this->searchStudent . '%');
+                })
+                ->orderBy('nombres')
+                ->orderBy('apellidos')
+                ->limit(10)
+                ->get();
+            $this->showStudentDropdown = true;
+        } else {
+            $this->students = [];
+            $this->showStudentDropdown = false;
+        }
+    }
+
+    public function selectStudent($studentId)
+    {
+        // En modo edición, no permitir cambiar el estudiante
+        if ($this->matricula && $this->matricula->exists) {
+            return;
+        }
+        
+        $student = Student::with('nivelEducativo')->find($studentId);
+        if ($student) {
+            $this->selectedStudent = $student;
+            $this->student_id = $student->id;
+            $this->searchStudent = $student->nombres . ' ' . $student->apellidos;
+            $this->showStudentDropdown = false;
+            
+            // Auto-completar costos del nivel educativo
+            if ($student->nivelEducativo) {
+                $this->costo = $student->nivelEducativo->costo_matricula ?? $this->costo;
+                $this->cuota_inicial = $student->nivelEducativo->cuota_inicial ?? $this->cuota_inicial;
+                $this->numero_cuotas = $student->nivelEducativo->numero_cuotas ?? $this->numero_cuotas;
+            }
+            
+            $this->generatePaymentSchedule();
+        }
+    }
+
+    public function clearStudentSelection()
+    {
+        // En modo edición, no permitir limpiar la selección de estudiante
+        if ($this->matricula && $this->matricula->exists) {
+            return;
+        }
+        
+        $this->selectedStudent = null;
+        $this->student_id = null;
+        $this->searchStudent = '';
+        $this->showStudentDropdown = false;
+        $this->students = [];
+        $this->generatePaymentSchedule();
+    }
+
+    public function updateCostos()
+    {
+        if ($this->student_id && $this->programa_id) {
+            $student = Student::find($this->student_id);
+            $programa = Programa::find($this->programa_id);
+            
+            if ($student && $student->nivelEducativo && $programa) {
+                $this->costo = $student->nivelEducativo->costo ?? 0;
+                $this->cuota_inicial = $student->nivelEducativo->cuota_inicial ?? 0;
+                $this->numero_cuotas = $student->nivelEducativo->numero_cuotas ?? 1;
+                $this->generatePaymentSchedule();
+            }
+        }
     }
 
     public function loadPaymentSchedule()
@@ -233,13 +361,18 @@ class Edit extends Component
             return;
         }
 
+        // Asegurar que el student_id se mantiene en modo edición
+        if ($this->matricula && $this->matricula->exists && !$this->student_id) {
+            $this->student_id = $this->matricula->student_id;
+        }
+
         $this->validate();
 
         try {
             $this->matricula->update([
                 'student_id' => $this->student_id,
                 'programa_id' => $this->programa_id,
-                'school_period_id' => $this->periodo_id,
+                'periodo_id' => $this->periodo_id,
                 'fecha_matricula' => $this->fecha_matricula,
                 'estado' => $this->estado,
                 'costo' => $this->costo,

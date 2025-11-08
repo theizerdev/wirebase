@@ -20,7 +20,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-1">{{ $schoolPeriods->total() }}</h4>
+                            <h4 class="mb-1">{{ $schoolPeriods->count() }}</h4>
                             <p class="mb-0">Total Períodos</p>
                         </div>
                         <div class="avatar">

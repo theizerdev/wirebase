@@ -2,14 +2,14 @@
     <!-- Alertas -->
     @if (session()->has('message'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="ri-check-line me-2"></i>{{ session('message') }}
+            <i class="ri ri-check-line me-2"></i>{{ session('message') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     @if (session()->has('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="ri-error-warning-line me-2"></i>{{ session('error') }}
+            <i class="ri ri-error-warning-line me-2"></i>{{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -25,7 +25,7 @@
                             <h2 class="mb-0">{{ \App\Models\NivelEducativo::count() }}</h2>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-3 rounded">
-                            <i class="ri-graduation-cap-line text-primary" style="font-size: 1.5rem;"></i>
+                            <i class="ri ri-graduation-cap-line text-primary" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                             <h2 class="mb-0">{{ \App\Models\NivelEducativo::where('status', 1)->count() }}</h2>
                         </div>
                         <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="ri-check-double-line text-success" style="font-size: 1.5rem;"></i>
+                            <i class="ri ri-check-double-line text-success" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
                             <h2 class="mb-0">{{ \App\Models\Programa::count() }}</h2>
                         </div>
                         <div class="bg-info bg-opacity-10 p-3 rounded">
-                            <i class="ri-book-line text-info" style="font-size: 1.5rem;"></i>
+                            <i class="ri ri-book-line text-info" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
                             <h2 class="mb-0">{{ \App\Models\Student::count() }}</h2>
                         </div>
                         <div class="bg-warning bg-opacity-10 p-3 rounded">
-                            <i class="ri-user-3-line text-warning" style="font-size: 1.5rem;"></i>
+                            <i class="ri ri-user-3-line text-warning" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
             </div>
             @can('create niveles educativos')
             <a href="{{ route('admin.niveles-educativos.create') }}" class="btn btn-primary">
-                <i class="ri-add-line me-1"></i> Nuevo Nivel
+                <i class="ri ri-add-line me-1"></i> Nuevo Nivel
             </a>
             @endcan
         </div>
@@ -97,7 +97,7 @@
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="input-group">
-                        <span class="input-group-text"><i class="ri-search-line"></i></span>
+                        <span class="input-group-text"><i class="ri ri-search-line"></i></span>
                         <input type="text" wire:model.live="search" class="form-control" placeholder="Buscar niveles...">
                     </div>
                 </div>
@@ -117,12 +117,12 @@
                 </div>
                 <div class="col-md-3 text-end">
                     <div class="d-flex gap-2 justify-content-end">
-                        <span class="badge bg-label-primary">Total: {{ $niveles->total() }}</span>
+
                         <button wire:click="clearFilters" class="btn btn-outline-secondary">
-                            <i class="ri-eraser-line me-1"></i> Limpiar
+                            <i class="ri ri-eraser-line me-1"></i> Limpiar
                         </button>
                         <button wire:click="export" class="btn btn-outline-success">
-                            <i class="ri-file-excel-line me-1"></i> Exportar
+                            <i class="ri ri-file-excel-line me-1"></i> Exportar
                         </button>
                     </div>
                 </div>
@@ -134,13 +134,13 @@
                     <thead class="table-light">
                         <tr>
                             <th wire:click="sortBy('nombre')" style="cursor: pointer;">
-                                <i class="ri-graduation-cap-line me-1"></i>Nombre
-                                @if($sortField == 'nombre') <i class="ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                <i class="ri ri-graduation-cap-line me-1"></i>Nombre
+                                @if($sortField == 'nombre') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
                             </th>
-                            <th><i class="ri-file-text-line me-1"></i>Descripción</th>
+                            <th><i class="ri ri-file-text-line me-1"></i>Descripción</th>
                             <th wire:click="sortBy('status')" style="cursor: pointer;">
-                                <i class="ri-toggle-line me-1"></i>Estado
-                                @if($sortField == 'status') <i class="ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                <i class="ri ri-toggle-line me-1"></i>Estado
+                                @if($sortField == 'status') <i class="ri ri-arrow-{{ $sortDirection == 'asc' ? 'up' : 'down' }}-line"></i> @endif
                             </th>
                             <th width="120">Acciones</th>
                         </tr>
@@ -165,9 +165,7 @@
                                            {{ $nivel->status ? 'checked' : '' }}
                                            id="switch{{ $nivel->id }}">
                                     <label class="form-check-label" for="switch{{ $nivel->id }}">
-                                        <span class="badge bg-label-{{ $nivel->status ? 'success' : 'secondary' }}">
-                                            {{ $nivel->status ? 'Activo' : 'Inactivo' }}
-                                        </span>
+                                        
                                     </label>
                                 </div>
                             </td>
@@ -177,7 +175,7 @@
                                     <a href="{{ route('admin.niveles-educativos.edit', $nivel) }}"
                                        class="btn btn-sm btn-icon btn-text-secondary rounded-pill"
                                        title="Editar">
-                                        <i class="ri-edit-line ri-20px"></i>
+                                        <i class="ri ri-edit-line ri-20px"></i>
                                     </a>
                                     @endcan
                                     @can('delete niveles educativos')
@@ -185,7 +183,7 @@
                                             wire:confirm="¿Eliminar el nivel {{ $nivel->nombre }}?"
                                             class="btn btn-sm btn-icon btn-text-danger rounded-pill"
                                             title="Eliminar">
-                                        <i class="ri-delete-bin-7-line ri-20px"></i>
+                                        <i class="ri ri-delete-bin-7-line ri-20px"></i>
                                     </button>
                                     @endcan
                                 </div>
@@ -195,7 +193,7 @@
                         <tr>
                             <td colspan="4" class="text-center py-4">
                                 <div class="d-flex flex-column align-items-center">
-                                    <i class="ri-graduation-cap-line ri-48px text-muted mb-2"></i>
+                                    <i class="ri ri-graduation-cap-line ri-48px text-muted mb-2"></i>
                                     <h6 class="text-muted">No hay niveles educativos</h6>
                                     <p class="text-muted mb-0">Crea el primer nivel educativo</p>
                                 </div>

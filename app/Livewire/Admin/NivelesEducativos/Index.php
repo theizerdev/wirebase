@@ -130,7 +130,13 @@ class Index extends Component
         // Refrescar la lista
         $this->dispatch('refreshNiveles');
     }
-
+	
+	public function toggleStatus($value)
+	{
+		$pais = EducationalLevel::findOrFail($value);
+        $pais->update(['status' => !$pais->status]);
+        session()->flash('message', $pais->status ? 'Nivel Educativo activado exitosamente.' : 'Nivel Educativo desactivado exitosamente.');
+	}
     public function render()
     {
         $niveles = EducationalLevel::query()

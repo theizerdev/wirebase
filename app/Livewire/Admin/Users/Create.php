@@ -90,11 +90,29 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.admin.users.create', [
-            'user' => $this->user ?? null,
-            'sessions' => $sessions ?? null
-        ])->layout($this->getLayout(), [
-            'title' => 'Detalles del Usuario'
+         \Gate::authorize('create users');
+
+        $empresas = Empresa::forUser()->get();
+        $sucursales = Sucursal::forUser()->where('status', 'active')
+            ->when($this->empresa_id, function ($query) {
+                $query->where('empresa_id', $this->empresa_id);
+            })
+            ->get();
+
+        $roles = Role::all();
+
+        // Calcular estadísticas
+        $totalUsers = User::forUser()->count();
+        $activeUsers = User::forUser()->where('status', 1)->count();
+        $pendingUsers = 0;
+        $inactiveUsers = User::forUser()->where('status', 0)->count();
+
+        return $this->renderWithLayout('livewire.admin.users.create', compact('empresas', 'sucursales', 'roles', 'totalUsers', 'activeUsers', 'pendingUsers', 'inactiveUsers'), [
+            'title' => 'Lista de Usuarios',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.users.index' => 'Usuarios'
+            ]
         ]);
     }
 }

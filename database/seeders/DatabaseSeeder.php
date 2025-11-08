@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
             ShiftSeeder::class,
             EducationalLevelSeeder::class,
             SchoolPeriodSeeder::class,
-            StudentSeeder::class,
+            //StudentSeeder::class,
             ProgramaSeeder::class,
             ConceptoPagoMejoradoSeeder::class,
             BibliotecaCategoriasSeeder::class,
@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
             MensajeriaSeeder::class,
             UsersTableSeeder::class,
             SerieSeeder::class,
-            MatriculaSeeder::class,
+            //MatriculaSeeder::class,
            //PagoSeeder::class,
         ]);
     }

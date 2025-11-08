@@ -98,7 +98,27 @@ class Index extends Component
 
     public function render()
     {
-        return view('livewire.admin.school-periods.index')->layout($this->getLayout());
+		 
+		$nivelesEducativos = \App\Models\NivelEducativo::where('status', true)->get();
+		$programas = \App\Models\Programa::where('activo', true)->get();
+        $schoolPeriods = SchoolPeriod::query()
+
+            ->when($this->search, function($query) {
+                $query->where('nombre', 'like', '%' . $this->search . '%');
+            })
+  
+            
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
+
+        return $this->renderWithLayout('livewire.admin.school-periods.index', compact('schoolPeriods','nivelesEducativos','programas'), [
+            'title' => 'Programas',
+            'description' => 'Gestión de programas educativos',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.programas.index' => 'Programas'
+            ]
+        ]);
     }
 
     public function resetFilters()

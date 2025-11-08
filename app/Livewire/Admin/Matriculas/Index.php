@@ -156,11 +156,11 @@ class Index extends Component
             ->paginate($this->perPage);
 
         // Estadísticas
-        $totalMatriculas = Matricula::count();
+        $totalMatriculas = Matricula::where('estado', 'activo')->count();
         $matriculasActivas = Matricula::where('estado', 'activo')->count();
         $matriculasInactivas = Matricula::where('estado', 'inactivo')->count();
         $matriculasGraduadas = Matricula::where('estado', 'graduado')->count();
-        $ingresosTotales = Matricula::sum('costo');
+        $ingresosTotales = Matricula::where('estado', 'activo')->sum('costo');
 
         return view('livewire.admin.matriculas.index', compact(
             'matriculas',

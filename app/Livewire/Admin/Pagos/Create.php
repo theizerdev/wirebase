@@ -386,6 +386,8 @@ class Create extends Component
 
        try {
         DB::transaction(function () {
+            $this->validate();
+            
             $matricula = Matricula::find($this->matricula_id);
 
             $pagoService = new PagoService();

@@ -62,13 +62,13 @@ class Matricula extends Model
 
     public function schoolPeriod()
     {
-        return $this->belongsTo(SchoolPeriod::class, 'school_periods_id');
+        return $this->belongsTo(SchoolPeriod::class, 'periodo_id');
     }
 
     // Alias para la relación schoolPeriod
     public function periodo()
     {
-        return $this->belongsTo(SchoolPeriod::class, 'periodo_id');
+        return $this->schoolPeriod();
     }
 
     public function empresa()
@@ -106,9 +106,11 @@ class Matricula extends Model
                 'programa_id',
                 'nivel_educativo_id',
                 'turno_id',
-                'school_periods_id',
+                'periodo_id',
                 'fecha_matricula',
-                'costo_matricula',
+                'costo',
+                'cuota_inicial',
+                'numero_cuotas',
                 'estado'
             ])
             ->logOnlyDirty()
