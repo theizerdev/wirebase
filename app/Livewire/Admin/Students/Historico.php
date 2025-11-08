@@ -145,6 +145,14 @@ class Historico extends Component
 
     public function render()
     {
-        return view('livewire.admin.students.historico')->layout($this->getLayout());
+        return $this->renderWithLayout('livewire.admin.students.historico', [], [
+            'title' => 'Histórico del Estudiante',
+            'description' => 'Histórico completo del estudiante ' . $this->student->nombres . ' ' . $this->student->apellidos,
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.students.index' => 'Estudiantes',
+                'admin.students.historico' => 'Histórico'
+            ]
+        ]);
     }
 }

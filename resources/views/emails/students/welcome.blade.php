@@ -118,21 +118,21 @@
                     <div>{{ $student->nivelEducativo->nombre ?? 'N/A' }}</div>
                 </div>
 
-                @if($student->nivelEducativo)
+                @if($student->nivelEducativo && ($student->nivelEducativo->costo ?? 0) > 0)
                 <div class="detail-row">
                     <div class="detail-label">Costo Total:</div>
-                    <div>{{ number_format($student->nivelEducativo->costo ?? 0, 2) }}</div>
+                    <div>$ {{ number_format($student->nivelEducativo->costo, 2) }}</div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">Cuota Inicial:</div>
-                    <div>{{ number_format($student->nivelEducativo->cuota_inicial ?? 0, 2) }}</div>
+                    <div>$ {{ number_format($student->nivelEducativo->cuota_inicial ?? 0, 2) }}</div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">Número de Cuotas:</div>
                     <div>{{ $student->nivelEducativo->numero_cuotas ?? 0 }}</div>
                 </div>
 
-                @if(($student->nivelEducativo->costo ?? 0) > 0 && ($student->nivelEducativo->numero_cuotas ?? 0) > 0)
+                @if(($student->nivelEducativo->numero_cuotas ?? 0) > 0)
                 <table class="cost-table">
                     <thead>
                         <tr>
@@ -143,22 +143,27 @@
                     <tbody>
                         <tr>
                             <td>Costo Total</td>
-                            <td>{{ number_format($student->nivelEducativo->costo, 2) }}</td>
+                            <td>$ {{ number_format($student->nivelEducativo->costo, 2) }}</td>
                         </tr>
                         <tr>
                             <td>Cuota Inicial</td>
-                            <td>{{ number_format($student->nivelEducativo->cuota_inicial, 2) }}</td>
+                            <td>$ {{ number_format($student->nivelEducativo->cuota_inicial ?? 0, 2) }}</td>
                         </tr>
                         @php
-                            $montoCuota = (($student->nivelEducativo->costo - $student->nivelEducativo->cuota_inicial) / $student->nivelEducativo->numero_cuotas);
+                            $montoCuota = (($student->nivelEducativo->costo - ($student->nivelEducativo->cuota_inicial ?? 0)) / $student->nivelEducativo->numero_cuotas);
                         @endphp
                         <tr>
                             <td>Cuotas ({{ $student->nivelEducativo->numero_cuotas }} cuotas de)</td>
-                            <td>{{ number_format($montoCuota, 2) }} cada una</td>
+                            <td>$ {{ number_format($montoCuota, 2) }} cada una</td>
                         </tr>
                     </tbody>
                 </table>
                 @endif
+                @elseif($student->nivelEducativo)
+                <div class="detail-row">
+                    <div class="detail-label">Estado de Matrícula:</div>
+                    <div>Pendiente de configuración de costos</div>
+                </div>
                 @endif
 
                 <div class="detail-row">
