@@ -71,7 +71,7 @@
                 <i class="ri ri-upload-cloud-line" style="font-size: 64px; color: #6c757d;"></i>
                 <h5 class="mt-3">Selecciona un archivo</h5>
                 <p class="text-muted">Excel (.xlsx, .xls) o CSV (.csv)</p>
-                
+
                 <input type="file" wire:model="file" class="d-none" id="fileInput" accept=".xlsx,.xls,.csv">
                 <label for="fileInput" class="btn btn-primary btn-lg mt-3">
                     <i class="ri ri-file-upload-line"></i> Seleccionar Archivo

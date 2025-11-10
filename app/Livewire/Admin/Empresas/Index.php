@@ -168,11 +168,19 @@ class Index extends Component
         $empresasActivas = Empresa::forUser()->where('status', 'activo')->count();
         $empresasInactivas = Empresa::forUser()->where('status', 'inactivo')->count();
 
-        return view('livewire.admin.empresas.index', [
-            'empresas' => $empresas,
-            'totalEmpresas' => $totalEmpresas,
-            'empresasActivas' => $empresasActivas,
-            'empresasInactivas' => $empresasInactivas
-        ])->layout('components.layouts.admin', ['title' => 'Empresas']);
+         return $this->renderWithLayout('livewire.admin.empresas.index', compact(
+            'empresas',
+            'totalEmpresas',
+            'empresasActivas',
+            'empresasInactivas',
+
+        ), [
+            'title' => 'Empresas',
+            'description' => 'Gestión de empresas del sistema',
+            'breadcrumb' => [
+                'admin.dashboard' => 'Dashboard',
+                'admin.empresas.index' => 'Empresas'
+            ]
+        ]);
     }
 }

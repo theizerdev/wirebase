@@ -166,6 +166,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 'delete activity log',
                 'export activity log',
             ],
+            // Módulo de exportación de base de datos
+            'database_export' => [
+                'access database export',
+                'export database',
+            ],
             // Módulo de mensajería interna
             'mensajeria' => [
                 'access mensajeria',
@@ -206,6 +211,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'exchange_rates' => [
                 'view exchange-rates',
                 'fetch exchange-rates',
+                'edit exchange-rates',
                 'manage exchange-rates',
             ],
             // Módulo de reuniones
@@ -263,17 +269,18 @@ class RolesAndPermissionsSeeder extends Seeder
         ])->get();
         $recepcionistaRole->syncPermissions($recepcionistaPermissions);
 
-        // Asignar permisos de mensajería, biblioteca, series, cajas, reuniones y países a Administradores y Super Administradores
-        $mensajeriaBibliotecaSeriesCajasPaisesPermissions = Permission::whereIn('module', [
+        // Asignar permisos de mensajería, biblioteca, series, cajas, reuniones, países y exportación de base de datos a Administradores y Super Administradores
+        $mensajeriaBibliotecaSeriesCajasPaisesExportPermissions = Permission::whereIn('module', [
             'mensajeria',
             'biblioteca',
             'series',
             'cajas',
             'reuniones',
-            'paises'
+            'paises',
+            'database_export'
         ])->get();
 
-        $superAdminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPaisesPermissions);
-        $adminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPaisesPermissions);
+        $superAdminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPaisesExportPermissions);
+        $adminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPaisesExportPermissions);
     }
 }

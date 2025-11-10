@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Admin\Students;
 
-use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Student;
@@ -14,11 +13,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Traits\HasDynamicLayout;
 
 class ImportNew extends Component
 {
-
-
     use WithFileUploads, HasDynamicLayout;
 
     public $file;
@@ -51,7 +49,11 @@ class ImportNew extends Component
 
     public function render()
     {
-        return view('livewire.admin.students.import-new')->layout($this->getLayout());
+         return $this->renderWithLayout('livewire.admin.students.import-new',[
+            'title' => 'Estudiantes',
+            'description' => 'Gestión de estudiantes del sistema',
+
+        ]);
     }
 
     private function initializeColumnMapping()
@@ -70,69 +72,15 @@ class ImportNew extends Component
 
     public function updatedFile()
     {
-        // Limpiar errores previos
-        $this->errors = [];
-        
-        try {
-            Log::info('Iniciando carga de archivo');
-            
-            // Validar que se haya recibido un archivo
-            if (!$this->file) {
-                throw new \Exception('No se recibió ningún archivo.');
-            }
-
-            // Validar el archivo
-            $this->validate([
-                'file' => 'required|mimes:xlsx,xls,csv|max:10240'
-            ]);
-
-            Log::info('Archivo validado exitosamente', [
-                'nombre' => $this->file->getClientOriginalName(),
-                'tamaño' => $this->file->getSize(),
-                'tipo' => $this->file->getMimeType()
-            ]);
-
-            $this->processFile();
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Error de validación de archivo: ' . json_encode($e->errors()));
-            $this->errors[] = 'Error de validación: ' . implode(', ', $e->validator->errors()->all());
-        } catch (\Exception $e) {
-            Log::error('Error procesando archivo: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            $this->errors[] = 'Error procesando el archivo: ' . $e->getMessage();
-        }
+        $this->validate();
+        $this->processFile();
     }
 
     private function processFile()
     {
         try {
-            // Verificar que el archivo exista y sea válido
-            if (!$this->file) {
-                throw new \Exception('No se ha seleccionado ningún archivo.');
-            }
-
-            // Verificar que el archivo se haya cargado correctamente
-            if (!$this->file->isValid()) {
-                throw new \Exception('El archivo no es válido o hubo un error al cargarlo.');
-            }
-
             $path = $this->file->getRealPath();
-            if (empty($path) || !file_exists($path)) {
-                throw new \Exception('No se pudo obtener la ruta del archivo. Por favor, intente subir el archivo nuevamente.');
-            }
-
             $extension = $this->file->getClientOriginalExtension();
-            if (empty($extension)) {
-                throw new \Exception('No se pudo determinar la extensión del archivo.');
-            }
-
-            Log::info('Procesando archivo', [
-                'path' => $path,
-                'extension' => $extension,
-                'size' => $this->file->getSize(),
-                'original_name' => $this->file->getClientOriginalName()
-            ]);
 
             if (in_array($extension, ['xlsx', 'xls'])) {
                 $this->readExcel($path);
@@ -142,81 +90,48 @@ class ImportNew extends Component
 
             $this->step = 2;
             $this->autoMapColumns();
-            
-        } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
-            Log::error('Error de lectura de Excel: ' . $e->getMessage());
-            session()->flash('error', 'Error al leer el archivo Excel: ' . $e->getMessage() . '. Por favor, verifique que el archivo no esté corrupto o protegido.');
         } catch (\Exception $e) {
             Log::error('Error procesando archivo: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            session()->flash('error', 'Error al procesar el archivo: ' . $e->getMessage() . '. Si el problema persiste, contacte al administrador.');
+            session()->flash('error', 'Error al procesar el archivo: ' . $e->getMessage());
         }
     }
 
     private function readExcel($path)
     {
-        try {
-            $spreadsheet = IOFactory::load($path);
-            $worksheet = $spreadsheet->getActiveSheet();
+        $spreadsheet = IOFactory::load($path);
+        $worksheet = $spreadsheet->getActiveSheet();
 
-            // Validar que haya datos en la hoja
-            $highestRow = $worksheet->getHighestRow();
-            if ($highestRow < 2) {
-                throw new \Exception('El archivo Excel está vacío o solo contiene encabezados.');
-            }
+        // Leer encabezados
+        $highestColumn = $worksheet->getHighestColumn();
+        $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
 
-            // Leer encabezados
-            $highestColumn = $worksheet->getHighestColumn();
-            $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
-
-            for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                $this->headers[] = $worksheet->getCellByColumnAndRow($col, 1)->getValue() ?? "Columna {$col}";
-            }
-
-            // Validar que haya al menos una columna con datos
-            if (empty(array_filter($this->headers))) {
-                throw new \Exception('No se encontraron encabezados válidos en el archivo.');
-            }
-
-            // Leer datos (máximo 500 filas para preview)
-            $highestRow = min($highestRow, 501);
-            $this->totalRows = $highestRow - 1;
-
-            for ($row = 2; $row <= min($highestRow, 102); $row++) {
-                $rowData = [];
-                for ($col = 1; $col <= $highestColumnIndex; $col++) {
-                    try {
-                        $cell = $worksheet->getCellByColumnAndRow($col, $row);
-                        $value = $cell->getValue();
-
-                        // Convertir fechas de Excel
-                        if ($cell->getDataType() === \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC &&
-                            \PhpOffice\PhpSpreadsheet\Shared\Date::isDateTime($cell)) {
-                            $value = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
-                        }
-
-                        $rowData[] = $value;
-                    } catch (\Exception $cellException) {
-                        Log::warning("Error leyendo celda fila {$row}, columna {$col}: " . $cellException->getMessage());
-                        $rowData[] = null;
-                    }
-                }
-                $this->previewData[] = $rowData;
-            }
-
-            // Validar que se hayan leído datos
-            if (empty($this->previewData)) {
-                throw new \Exception('No se pudieron leer datos del archivo Excel.');
-            }
-
-            // Seleccionar todas las filas por defecto
-            $this->selectedRows = range(0, count($this->previewData) - 1);
-            
-        } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
-            throw new \Exception('Error al leer el archivo Excel: ' . $e->getMessage());
-        } catch (\Exception $e) {
-            throw $e;
+        for ($col = 1; $col <= $highestColumnIndex; $col++) {
+            $this->headers[] = $worksheet->getCellByColumnAndRow($col, 1)->getValue() ?? "Columna {$col}";
         }
+
+        // Leer datos (máximo 500 filas para preview)
+        $highestRow = min($worksheet->getHighestRow(), 501);
+        $this->totalRows = $highestRow - 1;
+
+        for ($row = 2; $row <= min($highestRow, 102); $row++) {
+            $rowData = [];
+            for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                $cell = $worksheet->getCellByColumnAndRow($col, $row);
+                $value = $cell->getValue();
+
+                // Convertir fechas de Excel
+                if ($cell->getDataType() === \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC &&
+                    \PhpOffice\PhpSpreadsheet\Shared\Date::isDateTime($cell)) {
+                    $value = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
+                }
+
+                $rowData[] = $value;
+            }
+            $this->previewData[] = $rowData;
+        }
+
+        // Seleccionar todas las filas por defecto
+        $this->selectedRows = range(0, count($this->previewData) - 1);
     }
 
     private function readCsv($path)
@@ -329,26 +244,16 @@ class ImportNew extends Component
 
     public function startImport()
     {
-        $this->validateMapping();
-        
         $this->importing = true;
-        $this->step = 4;
-        $this->errors = [];
-        $this->progress = 0;
         $this->importedCount = 0;
         $this->updatedCount = 0;
         $this->failedCount = 0;
+        $this->errors = [];
+        $this->progress = 0;
 
         try {
             $path = $this->file->getRealPath();
             $extension = $this->file->getClientOriginalExtension();
-
-            Log::info('Iniciando importación de estudiantes', [
-                'extension' => $extension,
-                'total_filas' => count($this->selectedRows),
-                'actualizar_existentes' => $this->updateExisting,
-                'llenar_datos_faltantes' => $this->fillMissingWithNA
-            ]);
 
             if (in_array($extension, ['xlsx', 'xls'])) {
                 $this->importFromExcel($path);
@@ -356,29 +261,10 @@ class ImportNew extends Component
                 $this->importFromCsv($path);
             }
 
-            $mensajeExito = "Importación completada. Creados: {$this->importedCount}, Actualizados: {$this->updatedCount}";
-            if ($this->failedCount > 0) {
-                $mensajeExito .= ", Fallidos: {$this->failedCount}";
-            }
-            
-            session()->flash('success', $mensajeExito);
-            Log::info('Importación completada exitosamente', [
-                'creados' => $this->importedCount,
-                'actualizados' => $this->updatedCount,
-                'fallidos' => $this->failedCount
-            ]);
-        } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
-            Log::error('Error leyendo archivo durante importación: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            session()->flash('error', 'Error al leer el archivo durante la importación: ' . $e->getMessage());
-        } catch (\Illuminate\Database\QueryException $e) {
-            Log::error('Error de base de datos durante importación: ' . $e->getMessage());
-            Log::error('SQL: ' . $e->getSql());
-            Log::error('Bindings: ' . json_encode($e->getBindings()));
-            session()->flash('error', 'Error de base de datos durante la importación: ' . $e->getMessage());
+            $this->progress = 100;
+            session()->flash('success', "Importación completada: {$this->importedCount} creados, {$this->updatedCount} actualizados, {$this->failedCount} fallidos.");
         } catch (\Exception $e) {
-            Log::error('Error general en importación: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
+            Log::error('Error en importación: ' . $e->getMessage());
             session()->flash('error', 'Error durante la importación: ' . $e->getMessage());
         }
 
@@ -428,7 +314,6 @@ class ImportNew extends Component
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
-            //dd($e->getMessage());
         }
     }
 
@@ -468,14 +353,13 @@ class ImportNew extends Component
     private function processRow($rowData, $rowNumber)
     {
         try {
-            Log::debug("Procesando fila {$rowNumber}", ['rowData' => $rowData]);
-            
             $data = $this->mapRowData($rowData);
-            Log::debug("Datos mapeados para fila {$rowNumber}", ['mappedData' => $data]);
 
             // Validar datos mínimos
-            if (empty($data['nombres']) || empty($data['apellidos'])) {
-                throw new \Exception('Nombres y apellidos son requeridos');
+            if (empty($data['nombres']) && empty($data['apellidos']) && empty($data['documento_identidad'])) {
+                $this->failedCount++;
+                $this->errors[] = "Fila {$rowNumber}: Datos insuficientes";
+                return;
             }
 
             // Preparar datos para crear
@@ -503,6 +387,19 @@ class ImportNew extends Component
                 }
             }
 
+            // Asegurar que turno_id tenga un valor
+            if (empty($data['turno_id'])) {
+                $defaultTurno = Turno::where('empresa_id', auth()->user()->empresa_id)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if ($defaultTurno) {
+                    $data['turno_id'] = $defaultTurno->id;
+                } else {
+                    throw new \Exception('No hay turnos disponibles. Por favor crea uno primero.');
+                }
+            }
+
             // Buscar estudiante existente solo si updateExisting está activado
             $student = null;
             if ($this->updateExisting && !empty($data['documento_identidad'])) {
@@ -514,32 +411,14 @@ class ImportNew extends Component
             if ($student) {
                 $student->update($data);
                 $this->updatedCount++;
-                Log::info("Estudiante actualizado", ['documento' => $data['documento_identidad'], 'codigo' => $data['codigo']]);
             } else {
-                $student = Student::create($data);
+                Student::create($data);
                 $this->importedCount++;
-                Log::info("Estudiante creado", ['id' => $student->id, 'documento' => $data['documento_identidad'], 'codigo' => $data['codigo']]);
             }
-        } catch (\Illuminate\Database\QueryException $e) {
-            $this->failedCount++;
-            $errorMessage = "Fila {$rowNumber}: Error de base de datos - " . $e->getMessage();
-            if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-                $errorMessage = "Fila {$rowNumber}: Ya existe un estudiante con el mismo documento de identidad o código";
-            }
-            $this->errors[] = $errorMessage;
-            Log::error("Error de base de datos en fila {$rowNumber}", [
-                'error' => $e->getMessage(),
-                'documento' => $data['documento_identidad'] ?? 'N/A',
-                'codigo' => $data['codigo'] ?? 'N/A'
-            ]);
         } catch (\Exception $e) {
             $this->failedCount++;
             $this->errors[] = "Fila {$rowNumber}: " . $e->getMessage();
-            Log::error("Error procesando fila {$rowNumber}", [
-                'error' => $e->getMessage(),
-                'rowData' => $rowData,
-                'mappedData' => $data ?? 'N/A'
-            ]);
+            Log::error("Error fila {$rowNumber}: " . $e->getMessage());
         }
     }
 

@@ -197,3 +197,6 @@ Route::get('/reglas-morosidad', \App\Livewire\Admin\LatePaymentRules\Index::clas
 
 // Notificaciones
 Route::get('/notifications', \App\Livewire\Admin\Notifications\Index::class)->name('notifications.index');
+
+// Exportador de Base de Datos
+Route::get('/exportar-base-datos', \App\Livewire\Admin\DatabaseExport::class)->name('database-export');

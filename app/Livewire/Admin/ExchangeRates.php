@@ -7,13 +7,24 @@ use Livewire\Component;
 use App\Models\ExchangeRate;
 use App\Services\ExchangeRateService;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Validate;
 
 class ExchangeRates extends Component
 {
     use HasDynamicLayout;
 
-
     public $lastUpdate;
+    public $showEditModal = false;
+    public $editingRate;
+    
+    #[Validate('required|numeric|min:0.0001|max:999999.9999')]
+    public $usd_rate;
+    
+    #[Validate('required|numeric|min:0.0001|max:999999.9999')]
+    public $eur_rate;
+    
+    #[Validate('required|string|max:255')]
+    public $edit_reason;
 
     public function mount()
     {
@@ -44,6 +55,78 @@ class ExchangeRates extends Component
         }
 
         $this->refreshData();
+    }
+
+    public function editRate($rateId = null)
+    {
+        abort_unless(auth()->user()->can('edit exchange-rates'), 403);
+        
+        if ($rateId) {
+            $this->editingRate = ExchangeRate::findOrFail($rateId);
+        } else {
+            $this->editingRate = ExchangeRate::getTodayRate();
+        }
+        
+        if ($this->editingRate) {
+            $this->usd_rate = $this->editingRate->usd_rate;
+            $this->eur_rate = $this->editingRate->eur_rate;
+        }
+        
+        $this->edit_reason = '';
+        $this->showEditModal = true;
+    }
+    
+    public function saveRate()
+    {
+        abort_unless(auth()->user()->can('edit exchange-rates'), 403);
+        
+        $this->validate();
+        
+        if ($this->editingRate) {
+            // Update existing rate
+            $oldUsd = $this->editingRate->usd_rate;
+            $oldEur = $this->editingRate->eur_rate;
+            
+            $this->editingRate->update([
+                'usd_rate' => $this->usd_rate,
+                'eur_rate' => $this->eur_rate,
+                'source' => 'Modificado',
+                'raw_data' => [
+                    'edited_by' => auth()->user()->name,
+                    'edit_reason' => $this->edit_reason,
+                    'previous_usd' => $oldUsd,
+                    'previous_eur' => $oldEur,
+                    'edited_at' => now()->toISOString()
+                ]
+            ]);
+        } else {
+            // Create new rate for today
+            ExchangeRate::create([
+                'date' => today(),
+                'usd_rate' => $this->usd_rate,
+                'eur_rate' => $this->eur_rate,
+                'source' => 'Manual',
+                'fetch_time' => now(),
+                'raw_data' => [
+                    'created_by' => auth()->user()->name,
+                    'creation_reason' => $this->edit_reason,
+                    'created_at' => now()->toISOString()
+                ]
+            ]);
+        }
+        
+        $this->closeEditModal();
+        $this->refreshData();
+        
+        session()->flash('success', 'Tasa de cambio actualizada correctamente.');
+    }
+    
+    public function closeEditModal()
+    {
+        $this->showEditModal = false;
+        $this->editingRate = null;
+        $this->reset(['usd_rate', 'eur_rate', 'edit_reason']);
+        $this->resetValidation();
     }
 
     public function render()

@@ -238,8 +238,8 @@
                             </div>
                           </div>
                           <div class="flex-grow-1">
-                            <h6 class="mb-0 small">{{ Auth::user()->name }}</h6>
-                            <small class="text-body-secondary">{{ Auth::user()->email }}</small>
+                            <h6 class="mb-0 small">{{ Auth::check() && Auth::user() ? Auth::user()->name : 'Usuario' }}</h6>
+                            <small class="text-body-secondary">{{ Auth::check() && Auth::user() ? Auth::user()->email : '' }}</small>
                           </div>
                         </div>
                       </a>

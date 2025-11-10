@@ -388,6 +388,13 @@
         </a>
       </li>
       @endcan
+      @can('access database export')
+      <li class="menu-item {{ request()->routeIs('admin.database-export') ? 'active' : '' }}">
+        <a href="{{ route('admin.database-export') }}" class="menu-link">
+          <div>Exportar Base de Datos</div>
+        </a>
+      </li>
+      @endcan
     </ul>
   </li>
   @endcan
