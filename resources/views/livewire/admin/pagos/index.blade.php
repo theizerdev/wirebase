@@ -13,6 +13,239 @@
         </div>
     @endif
 
+    <!-- Vista previa del recibo -->
+    @if($showPreview)
+        @php
+            $pago = \App\Models\Pago::find($previewPagoId);
+            $exchangeRate = \App\Models\ExchangeRate::getLatestRate('USD');
+        @endphp
+        <div class="modal fade show" style="display: block; background-color: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Vista Previa del Recibo</h5>
+                        <button type="button" class="btn-close" wire:click="closePreview"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="border rounded p-3">
+                            <div class="text-center mb-4">
+                                <h5>RECIBO DE PAGO - ORIGINAL</h5>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Nro. Recibo:</strong> {{ $pago->numero_completo }}</p>
+                                    <p class="mb-1"><strong>Fecha:</strong> {{ $pago->fecha->format('d/m/Y') }}</p>
+
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Estudiante:</strong> {{ $pago->matricula->student->nombres }} {{ $pago->matricula->student->apellidos }}</p>
+                                    <p class="mb-1"><strong>Documento:</strong> {{ $pago->matricula->student->documento_identidad }}</p>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mb-3">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Concepto</th>
+                                            <th class="text-center">Cantidad</th>
+                                            <th class="text-end">Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($pago->detalles as $detalle)
+                                            <tr>
+                                                <td>{{ $detalle->descripcion }}</td>
+                                                <td class="text-center">{{ number_format($detalle->cantidad, 2, ',', '.') }}</td>
+                                                <td class="text-end">
+                                                    @if($exchangeRate)
+                                                        Bs. {{ number_format(($detalle->precio_unitario * $detalle->cantidad) * $exchangeRate, 2, ',', '.') }}
+                                                    @else
+                                                        ${{ number_format($detalle->precio_unitario * $detalle->cantidad, 2, ',', '.') }}
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6"></div>
+                                <div class="col-md-6">
+                                    <table class="table table-bordered table-sm">
+                                        <tr>
+                                            <td class="text-end"><strong>Subtotal:</strong></td>
+                                            <td class="text-end">
+                                                @if($exchangeRate)
+                                                    Bs. {{ number_format($pago->subtotal * $exchangeRate, 2, ',', '.') }}
+                                                @else
+                                                    ${{ number_format($pago->subtotal, 2, ',', '.') }}
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @if($pago->descuento > 0)
+                                            <tr>
+                                                <td class="text-end"><strong>Descuento:</strong></td>
+                                                <td class="text-end">
+                                                    @if($exchangeRate)
+                                                        Bs. {{ number_format($pago->descuento * $exchangeRate, 2, ',', '.') }}
+                                                    @else
+                                                        ${{ number_format($pago->descuento, 2, ',', '.') }}
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endif
+                                        <tr>
+                                            <td class="text-end"><strong>Total:</strong></td>
+                                            <td class="text-end">
+                                                <strong>
+                                                    @if($exchangeRate)
+                                                        Bs. {{ number_format($pago->total * $exchangeRate, 2, ',', '.') }}
+                                                    @else
+                                                        ${{ number_format($pago->total, 2, ',', '.') }}
+                                                    @endif
+                                                </strong>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Método:</strong> {{ ucfirst($pago->metodo_pago) }}</p>
+                                    @if($pago->referencia)
+                                        <p class="mb-1"><strong>Referencia:</strong> {{ $pago->referencia }}</p>
+                                    @endif
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <p class="mb-0">__________________________</p>
+                                    <p class="mb-0">Firma y Sello</p>
+                                </div>
+                            </div>
+
+                            <hr class="my-5">
+
+                            <div class="text-center mb-4">
+                                <h5>RECIBO DE PAGO - COPIA</h5>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Nro. Recibo:</strong> {{ $pago->numero_completo }}</p>
+                                    <p class="mb-1"><strong>Fecha:</strong> {{ $pago->fecha->format('d/m/Y') }}</p>
+                                    @if($exchangeRate)
+                                        <p class="mb-1"><strong>Tasa del día:</strong> Bs. {{ number_format($exchangeRate, 2, ',', '.') }}</p>
+                                        <p class="mb-1"><strong>Total Bs.:</strong> Bs. {{ number_format($pago->total * $exchangeRate, 2, ',', '.') }}</p>
+                                    @endif
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Estudiante:</strong> {{ $pago->matricula->student->nombres }} {{ $pago->matricula->student->apellidos }}</p>
+                                    <p class="mb-1"><strong>Documento:</strong> {{ $pago->matricula->student->documento_identidad }}</p>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mb-3">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Concepto</th>
+                                            <th class="text-center">Cantidad</th>
+                                            <th class="text-end">Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($pago->detalles as $detalle)
+                                            <tr>
+                                                <td>{{ $detalle->descripcion }}</td>
+                                                <td class="text-center">{{ number_format($detalle->cantidad, 2, ',', '.') }}</td>
+                                                <td class="text-end">
+                                                    @if($exchangeRate)
+                                                        Bs. {{ number_format(($detalle->precio_unitario * $detalle->cantidad) * $exchangeRate, 2, ',', '.') }}
+                                                    @else
+                                                        ${{ number_format($detalle->precio_unitario * $detalle->cantidad, 2, ',', '.') }}
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6"></div>
+                                <div class="col-md-6">
+                                    <table class="table table-bordered table-sm">
+                                        <tr>
+                                            <td class="text-end"><strong>Subtotal:</strong></td>
+                                            <td class="text-end">
+                                                @if($exchangeRate)
+                                                    Bs. {{ number_format($pago->subtotal * $exchangeRate, 2, ',', '.') }}
+                                                @else
+                                                    ${{ number_format($pago->subtotal, 2, ',', '.') }}
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @if($pago->descuento > 0)
+                                            <tr>
+                                                <td class="text-end"><strong>Descuento:</strong></td>
+                                                <td class="text-end">
+                                                    @if($exchangeRate)
+                                                        Bs. {{ number_format($pago->descuento * $exchangeRate, 2, ',', '.') }}
+                                                    @else
+                                                        ${{ number_format($pago->descuento, 2, ',', '.') }}
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endif
+                                        <tr>
+                                            <td class="text-end"><strong>Total:</strong></td>
+                                            <td class="text-end">
+                                                <strong>
+                                                    @if($exchangeRate)
+                                                        Bs. {{ number_format($pago->total * $exchangeRate, 2, ',', '.') }}
+                                                    @else
+                                                        ${{ number_format($pago->total, 2, ',', '.') }}
+                                                    @endif
+                                                </strong>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Método:</strong> {{ ucfirst($pago->metodo_pago) }}</p>
+                                    @if($pago->referencia)
+                                        <p class="mb-1"><strong>Referencia:</strong> {{ $pago->referencia }}</p>
+                                    @endif
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <p class="mb-0">__________________________</p>
+                                    <p class="mb-0">Firma y Sello</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closePreview">
+                            <i class="ri ri-close-line me-1"></i> Cerrar
+                        </button>
+                        <button type="button" class="btn btn-primary" wire:click="downloadReceipt({{ $pago->id }})">
+                            <i class="ri ri-download-line me-1"></i> Descargar PDF
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="window.print()">
+                            <i class="ri ri-printer-line me-1"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Stats Cards -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
@@ -242,8 +475,8 @@
                                                 </a>
                                                 @endcan
                                                 @can('edit pagos')
-                                                <a class="dropdown-item" href="#">
-                                                    <i class="ri ri-printer-line me-1"></i> Imprimir
+                                                <a class="dropdown-item" href="#" wire:click.prevent="printReceipt({{ $pago->id }})">
+                                                    <i class="ri ri-file-copy-line me-1"></i> Vista Previa
                                                 </a>
                                                 @endcan
                                                 @can('delete pagos')

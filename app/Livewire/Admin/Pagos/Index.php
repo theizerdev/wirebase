@@ -7,11 +7,16 @@ use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Pago;
+use App\Models\ExchangeRate;
 use App\Traits\Exportable;
+use Codedge\Fpdf\Fpdf\Fpdf;
 
 class Index extends Component
 {
     use WithPagination, Exportable, HasDynamicLayout, HasRegionalFormatting;
+
+    public $showPreview = false;
+    public $previewPagoId;
 
     public $search = '';
     public $status = '';
@@ -241,5 +246,139 @@ class Index extends Component
 
         return view('livewire.admin.pagos.index', compact('pagos'))
             ->layout($this->getLayout());
+    }
+
+    public function printReceipt(Pago $pago)
+    {
+        $this->previewPagoId = $pago->id;
+        $this->showPreview = true;
+    }
+
+    public function downloadReceipt(Pago $pago)
+    {
+        $pdf = new Fpdf('P', 'mm', 'Letter');
+        $pdf->AddPage();
+
+        // Configurar fuentes
+        $pdf->SetFont('Arial', 'B', 16);
+
+        // Mitad de la página (para el recibo original y copia)
+        $pageHeight = 279.4; // Altura de carta en mm
+        $halfPage = $pageHeight / 2;
+
+        // Generar recibo original en la mitad superior
+        $this->generateReceiptContent($pdf, $pago, 'ORIGINAL', 15);
+
+        // Generar copia en la mitad inferior
+        $this->generateReceiptContent($pdf, $pago, 'COPIA', $halfPage + 30);
+
+        // Salida del PDF
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->Output('S');
+        }, 'recibo_pago_' . $pago->numero_completo . '.pdf');
+    }
+
+    public function generateReceiptContent(Fpdf $pdf, Pago $pago, $tipo, $yPosition)
+    {
+        // Establecer posición Y inicial
+        $pdf->SetY($yPosition);
+
+        // Encabezado con tipo de recibo
+        $pdf->SetFont('Arial', 'B', 16);
+        //$pdf->Cell(0, 8, 'RECIBO DE PAGO - ' . $tipo, 0, 1, 'C');
+
+        // Línea divisoria
+        //$pdf->Line(10, $pdf->GetY() + 2, 200, $pdf->GetY() + 2);
+        $pdf->Ln(4);
+
+        // Obtener tasa de cambio
+        $exchangeRate = ExchangeRate::getLatestRate('USD');
+
+        // Información del pago (alineada a la izquierda)
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->Cell(30, 6, 'Nro. Recibo:', 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 10);
+        // Extraer solo el número después del guión
+        $numeroRecibo = explode('-', $pago->numero_completo);
+        $numeroMostrar = isset($numeroRecibo[1]) ? $numeroRecibo[1] : $pago->numero_completo;
+        $pdf->Cell(0, 6, $numeroMostrar, 0, 1, 'L');
+
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->Cell(30, 6, 'Fecha:', 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->Cell(0, 6, $pago->fecha->format('d/m/Y'), 0, 1, 'L');
+
+
+        // Información del estudiante
+        $student = $pago->matricula->student;
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->Cell(30, 6, 'Estudiante:', 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->Cell(0, 6, substr($student->nombres . ' ' . $student->apellidos, 0, 45), 0, 1, 'L');
+
+        // Detalles del pago
+        $pdf->Ln(3);
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->Cell(145, 6, 'Concepto', 1, 0, 'C');
+        $pdf->Cell(25, 6, 'Cantidad', 1, 0, 'C');
+        $pdf->Cell(25, 6, 'Monto', 1, 1, 'C');
+
+        $pdf->SetFont('Arial', '', 9);
+        foreach ($pago->detalles as $detalle) {
+            $pdf->Cell(145, 6, substr($detalle->descripcion, 0, 50), 1, 0);
+            $pdf->Cell(25, 6, number_format($detalle->cantidad, 2, ',', '.'), 1, 0, 'R');
+
+            // Convertir monto a bolívares si hay tasa de cambio
+            $monto = $detalle->precio_unitario * $detalle->cantidad;
+            if ($exchangeRate) {
+                $montoBs = $monto * $exchangeRate;
+                $pdf->Cell(25, 6, 'Bs. ' . number_format($montoBs, 2, ',', '.'), 1, 1, 'R');
+            } else {
+                $pdf->Cell(25, 6, '$' . number_format($monto, 2, ',', '.'), 1, 1, 'R');
+            }
+        }
+
+        // Totales
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->Cell(170, 6, 'Subtotal:', 1, 0, 'R');
+        if ($exchangeRate) {
+            $subtotalBs = $pago->subtotal * $exchangeRate;
+            $pdf->Cell(25, 6, 'Bs. ' . number_format($subtotalBs, 2, ',', '.'), 1, 1, 'R');
+        } else {
+            $pdf->Cell(25, 6, '$' . number_format($pago->subtotal, 2, ',', '.'), 1, 1, 'R');
+        }
+
+        if ($pago->descuento > 0) {
+            $pdf->Cell(170, 6, 'Descuento:', 1, 0, 'R');
+            if ($exchangeRate) {
+                $descuentoBs = $pago->descuento * $exchangeRate;
+                $pdf->Cell(25, 6, 'Bs. ' . number_format($descuentoBs, 2, ',', '.'), 1, 1, 'R');
+            } else {
+                $pdf->Cell(25, 6, '$' . number_format($pago->descuento, 2, ',', '.'), 1, 1, 'R');
+            }
+        }
+
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->Cell(170, 6, 'Total:', 1, 0, 'R');
+        if ($exchangeRate) {
+            $totalBs = $pago->total * $exchangeRate;
+            $pdf->Cell(25, 6, 'Bs. ' . number_format($totalBs, 2, ',', '.'), 1, 1, 'R');
+        } else {
+            $pdf->Cell(25, 6, '$' . number_format($pago->total, 2, ',', '.'), 1, 1, 'R');
+        }
+
+        // Firma
+        $pdf->Ln(4);
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->Cell(90, 6, '', 0, 0); // Espacio en blanco
+        $pdf->Cell(80, 6, '__________________________', 0, 1, 'C');
+        $pdf->Cell(90, 6, '', 0, 0); // Espacio en blanco
+        $pdf->Cell(80, 6, 'Firma y Sello', 0, 1, 'C');
+    }
+
+    public function closePreview()
+    {
+        $this->showPreview = false;
+        $this->previewPagoId = null;
     }
 }

@@ -44,11 +44,11 @@ class Create extends Component
     public $serie_actual;
     public $numero_documento;
     public $caja_abierta;
-    
+
     // Propiedades para búsqueda
     public $busqueda_estudiante = '';
     public $matriculas_filtradas = [];
-    
+
     // Propiedades para mejoras
     public $monto_recibido = 0;
     public $pagos_anteriores = [];
@@ -64,10 +64,7 @@ class Create extends Component
         'detalles.*.concepto_pago_id' => 'required|integer|exists:conceptos_pago,id',
         'detalles.*.descripcion' => 'required|string',
         'detalles.*.cantidad' => 'required|numeric|min:0.01',
-        'detalles.*.precio_unitario' => 'required|numeric|min:0',
-        'metodos_pago_mixto.*.metodo' => 'required_if:es_pago_mixto,true|string',
-        'metodos_pago_mixto.*.monto' => 'required_if:es_pago_mixto,true|numeric|min:0.01',
-        'metodos_pago_mixto.*.referencia' => 'nullable|string'
+        'detalles.*.precio_unitario' => 'nullable|numeric|min:0',
     ];
 
     public function mount()
@@ -120,7 +117,7 @@ class Create extends Component
         $this->conceptos = ConceptoPago::where('activo', true)->get();
         $this->cargarSerieActual();
     }
-    
+
     public function updatedBusquedaEstudiante($value)
     {
         if (strlen($value) >= 2) {
@@ -145,7 +142,7 @@ class Create extends Component
             $this->matriculas_filtradas = [];
         }
     }
-    
+
     public function seleccionarMatricula($matriculaId)
     {
         $this->matricula_id = $matriculaId;
@@ -154,7 +151,7 @@ class Create extends Component
         $this->updatedMatriculaId($matriculaId);
         $this->cargarPagosAnteriores($matriculaId);
     }
-    
+
     public function cargarPagosAnteriores($matriculaId)
     {
         $this->pagos_anteriores = Pago::where('matricula_id', $matriculaId)
@@ -163,7 +160,7 @@ class Create extends Component
             ->limit(5)
             ->get();
     }
-    
+
     public function cargarPlantillasPago()
     {
         $this->plantillas_pago = [
@@ -172,18 +169,18 @@ class Create extends Component
             'materiales' => ['nombre' => 'Materiales', 'conceptos' => ['Materiales Escolares']]
         ];
     }
-    
+
     public function aplicarPlantilla($tipo)
     {
         $this->detalles = [];
         $plantilla = $this->plantillas_pago[$tipo] ?? null;
-        
+
         if ($plantilla) {
             foreach ($plantilla['conceptos'] as $nombreConcepto) {
                 $concepto = ConceptoPago::where('nombre', 'like', '%' . $nombreConcepto . '%')
                     ->where('activo', true)
                     ->first();
-                    
+
                 if ($concepto) {
                     $this->detalles[] = [
                         'concepto_pago_id' => $concepto->id,
@@ -195,19 +192,19 @@ class Create extends Component
                 }
             }
         }
-        
+
         if (empty($this->detalles)) {
             $this->agregarDetalle();
         }
     }
-    
+
     public function updatedDetalles($value, $key)
     {
         if (str_contains($key, 'precio_unitario') || str_contains($key, 'cantidad')) {
             $this->validateOnly("detalles.{$key}");
         }
     }
-    
+
     public function getCambioProperty()
     {
         return max(0, $this->monto_recibido - $this->total);
@@ -260,7 +257,7 @@ class Create extends Component
             'payment_schedule_id' => null,
             'descripcion' => '',
             'cantidad' => 1,
-            'precio_unitario' => 0
+            'precio_unitario' => 0.01
         ];
     }
 
@@ -387,7 +384,7 @@ class Create extends Component
        try {
         DB::transaction(function () {
             $this->validate();
-            
+
             $matricula = Matricula::find($this->matricula_id);
 
             $pagoService = new PagoService();
@@ -410,12 +407,12 @@ class Create extends Component
             ]);
 
             $this->dispatch('pago-registrado', ['mensaje' => 'Pago registrado exitosamente: ' . $pago->numero_completo]);
-            
+
             session()->flash('message', 'Pago registrado exitosamente: ' . $pago->numero_completo);
             return redirect()->route('admin.pagos.index');
         });
         } catch (\Throwable $th) {
-
+            dd($th);
             session()->flash('error', 'Error al crear el pago: ' . $th->getMessage());
         }
     }
