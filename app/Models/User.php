@@ -72,14 +72,20 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getInitialsAttribute()
     {
-        $names = explode(' ', $this->name);
-        $initials = '';
+        $names = explode(' ', trim($this->name));
         
-        foreach ($names as $name) {
-            $initials .= strtoupper(substr($name, 0, 1));
+        if (count($names) < 2) {
+            // Si solo hay un nombre, devolver la inicial de ese nombre
+            return strtoupper(substr($names[0], 0, 1));
         }
         
-        return $initials;
+        // Obtener la inicial del primer nombre
+        $firstInitial = strtoupper(substr($names[0], 0, 1));
+        
+        // Obtener la inicial del primer apellido (última palabra)
+        $lastInitial = strtoupper(substr(end($names), 0, 1));
+        
+        return $firstInitial . $lastInitial;
     }
 
     /**
