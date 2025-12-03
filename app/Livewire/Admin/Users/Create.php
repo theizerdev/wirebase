@@ -27,11 +27,13 @@ class Create extends Component
     public $status = true;
     public $role;
     public $sucursales = [];
+    public $username;
 
     protected function rules()
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'unique:users'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'empresa_id' => ['required', 'exists:empresas,id'],
@@ -59,6 +61,80 @@ class Create extends Component
         $this->sucursal_id = null;
     }
 
+    /**
+     * Generar username automáticamente a partir del nombre
+     * Formato: primera letra del primer nombre + primer apellido
+     * Si existe, agregar inicial del segundo nombre
+     */
+    public function generateUsername()
+    {
+        if (empty($this->name)) {
+            return;
+        }
+
+        // Limpiar el nombre: eliminar acentos y convertir a minúsculas
+        $name = strtolower($this->name);
+        $name = $this->removeAccents($name);
+        
+        // Dividir el nombre en palabras
+        $words = explode(' ', trim($name));
+        
+        if (count($words) < 2) {
+            return;
+        }
+
+        // Obtener la primera letra del primer nombre
+        $firstInitial = substr($words[0], 0, 1);
+        
+        // Obtener el primer apellido (última palabra)
+        $lastName = end($words);
+        
+        // Generar el username base
+        $baseUsername = $firstInitial . $lastName;
+        
+        // Verificar si el username base existe
+        $username = $baseUsername;
+        $counter = 1;
+        
+        while (User::where('username', $username)->exists()) {
+            // Si existe y hay segundo nombre, agregar su inicial
+            if (count($words) > 2 && $counter === 1) {
+                $secondInitial = substr($words[1], 0, 1);
+                $username = $firstInitial . $secondInitial . $lastName;
+            } else {
+                // Si aún existe, agregar número incremental
+                $username = $baseUsername . $counter;
+            }
+            $counter++;
+            
+            // Prevenir bucle infinito
+            if ($counter > 10) {
+                break;
+            }
+        }
+        
+        $this->username = $username;
+    }
+
+    /**
+     * Eliminar acentos de una cadena
+     */
+    private function removeAccents($string)
+    {
+        $search = ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü'];
+        $replace = ['a', 'e', 'i', 'o', 'u', 'n', 'u'];
+        
+        return str_replace($search, $replace, $string);
+    }
+
+    /**
+     * Actualizar username cuando cambia el nombre
+     */
+    public function updatedName($value)
+    {
+        $this->generateUsername();
+    }
+
     public function save()
     {
         $this->validate();
@@ -67,6 +143,7 @@ class Create extends Component
 
         $user = new User();
         $user->name = $this->name;
+        $user->username = $this->username;
         $user->email = $this->email;
         $user->password = Hash::make($plainPassword);
         $user->empresa_id = $this->empresa_id;
@@ -116,6 +193,3 @@ class Create extends Component
         ]);
     }
 }
-
-
-

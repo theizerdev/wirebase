@@ -22,6 +22,12 @@
                 </div>
 
                 <div class="col-md-6 mb-3">
+                    <label class="form-label">Usuario (Username)</label>
+                    <input type="text" class="form-control" value="{{ $username }}" disabled>
+                    <small class="text-muted">El username no se puede editar</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Email <span class="text-danger">*</span></label>
                     <input type="email" class="form-control @error('email') is-invalid @enderror"
                            wire:model="email" placeholder="Ingrese el correo electrónico">
@@ -87,7 +93,7 @@
                     @enderror
                 </div>
 
-                <div class="col-md-6 mb-3">
+                <div class="col-md-12 mb-3">
                     <label class="form-label">Estado</label>
                     <select class="form-select @error('status') is-invalid @enderror" wire:model="status">
                         <option value="active">Activo</option>

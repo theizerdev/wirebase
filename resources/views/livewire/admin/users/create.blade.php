@@ -15,8 +15,18 @@
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Nombre <span class="text-danger">*</span></label>
                     <input type="text" class="form-control @error('name') is-invalid @enderror"
-                           wire:model="name" placeholder="Ingrese el nombre completo">
+                           wire:model.live="name" placeholder="Ingrese el nombre completo">
                     @error('name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Usuario (Username) <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control @error('username') is-invalid @enderror"
+                           wire:model="username" placeholder="Se genera automáticamente" readonly>
+                    <small class="text-muted">El username se genera automáticamente a partir del nombre</small>
+                    @error('username')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -87,7 +97,7 @@
                     @enderror
                 </div>
 
-                <div class="col-md-6 mb-3">
+                <div class="col-md-12 mb-3">
                     <label class="form-label">Estado</label>
                     <select class="form-select @error('status') is-invalid @enderror" wire:model="status">
                         <option value="1">Activo</option>

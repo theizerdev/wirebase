@@ -26,11 +26,13 @@ class Edit extends Component
     public $status;
     public $role;
     public $sucursales = [];
+    public $username; // Solo para mostrar, no se edita
 
     public function mount(User $user)
     {
         $this->user = $user;
         $this->name = $user->name;
+        $this->username = $user->username; // Cargar username para mostrar
         $this->email = $user->email;
         $this->empresa_id = $user->empresa_id;
         $this->sucursal_id = $user->sucursal_id;
@@ -108,14 +110,26 @@ class Edit extends Component
 
     public function render()
     {
+        \Gate::authorize('edit users');
+
+        $empresas = Empresa::forUser()->get();
+        $sucursales = Sucursal::forUser()->where('status', 'active')
+            ->when($this->empresa_id, function ($query) {
+                $query->where('empresa_id', $this->empresa_id);
+            })
+            ->get();
+
+        $roles = Role::all();
+
         return view('livewire.admin.users.edit', [
             'user' => $this->user ?? null,
-            'sessions' => $sessions ?? null
+            'sessions' => $sessions ?? null,
+            'username' => $this->username,
+            'empresas' => $empresas,
+            'sucursales' => $sucursales,
+            'roles' => $roles
         ])->layout($this->getLayout(), [
             'title' => 'Detalles del Usuario'
         ]);
     }
 }
-
-
-
