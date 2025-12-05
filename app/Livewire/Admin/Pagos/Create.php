@@ -53,6 +53,7 @@ class Create extends Component
     public $monto_recibido = 0;
     public $pagos_anteriores = [];
     public $plantillas_pago = [];
+    public $whatsappStatus = 'disconnected';
 
     protected $rules = [
         'matricula_id' => 'required|exists:matriculas,id',
@@ -77,6 +78,7 @@ class Create extends Component
         $this->agregarDetalle();
         $this->inicializarPagoMixto();
         $this->cargarPlantillasPago();
+        $this->checkWhatsAppStatus();
     }
 
     public function inicializarPagoMixto()
@@ -367,6 +369,136 @@ class Create extends Component
         return collect($this->metodos_pago_mixto)->sum('monto');
     }
 
+    private function enviarNotificacionWhatsApp($pago, $matricula)
+    {
+        $result = ['sent' => false, 'attempted' => false, 'destinatario' => null];
+        
+        if ($this->whatsappStatus !== 'connected') {
+            return $result;
+        }
+
+        try {
+            $estudiante = $matricula->student;
+            $esMayorDeEdad = $estudiante->fecha_nacimiento && $estudiante->fecha_nacimiento->age >= 18;
+            
+            $telefono = null;
+            $nombreDestino = null;
+
+            if ($esMayorDeEdad && $estudiante->phone) {
+                $telefono = $estudiante->phone;
+                $nombreDestino = $estudiante->nombres . ' ' . $estudiante->apellidos;
+            } elseif (!$esMayorDeEdad && $estudiante->representante_telefonos) {
+                $telefonos = $estudiante->representante_telefonos;
+                $telefono = is_array($telefonos) && count($telefonos) > 0 ? $telefonos[0] : null;
+                $nombreDestino = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
+            }
+
+            if (!$telefono) return $result;
+
+            $result['attempted'] = true;
+            $result['destinatario'] = $nombreDestino;
+            
+            $mensaje = $this->generarMensajePago($pago, $estudiante, $esMayorDeEdad);
+            $telefonoFormateado = $this->formatPhoneNumber($telefono);
+            
+            $whatsappService = app('App\Services\WhatsAppService');
+            $whatsappResult = $whatsappService->sendMessage($telefonoFormateado, $mensaje);
+            
+            $result['sent'] = $whatsappResult && ($whatsappResult['success'] ?? false);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación WhatsApp de pago: ' . $e->getMessage());
+            $result['attempted'] = true;
+        }
+        
+        return $result;
+    }
+
+    private function generarMensajePago($pago, $estudiante, $esMayorDeEdad)
+    {
+        $nombreEstudiante = $estudiante->nombres . ' ' . $estudiante->apellidos;
+        $totalFormateado = '$' . number_format($pago->total, 2, ',', '.');
+        
+        if ($esMayorDeEdad) {
+            $mensaje = "💳 *Pago Recibido - Instituto Vargas Centro*\n\n";
+            $mensaje .= "Estimado/a {$nombreEstudiante},\n\n";
+        } else {
+            $representante = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
+            $mensaje = "💳 *Pago Recibido - Instituto Vargas Centro*\n\n";
+            $mensaje .= "Estimado/a {$representante},\n\n";
+            $mensaje .= "Hemos recibido el pago del estudiante *{$nombreEstudiante}*.\n\n";
+        }
+        
+        $mensaje .= "📄 *Detalles del Pago:*\n";
+        $mensaje .= "• Número de Recibo: *{$pago->numero_completo}*\n";
+        $mensaje .= "• Fecha: {$pago->fecha->format('d/m/Y')}\n";
+        $mensaje .= "• Método: " . ucfirst(str_replace('_', ' ', $pago->metodo_pago)) . "\n";
+        if ($pago->referencia) {
+            $mensaje .= "• Referencia: {$pago->referencia}\n";
+        }
+        
+        $mensaje .= "\n📋 *Conceptos Pagados:*\n";
+        foreach ($pago->detalles as $detalle) {
+            $montoDetalle = '$' . number_format($detalle->precio_unitario * $detalle->cantidad, 2, ',', '.');
+            $mensaje .= "• {$detalle->descripcion}: {$montoDetalle}\n";
+        }
+        
+        $mensaje .= "\n💰 *Total Pagado: {$totalFormateado}*\n\n";
+        $mensaje .= "Gracias por su pago puntual.\n\n";
+        $mensaje .= "*Instituto Vargas Centro*";
+        
+        return $mensaje;
+    }
+
+    private function formatPhoneNumber($number)
+    {
+        $empresa = \DB::table('empresas')->where('id', 1)->first();
+        $pais = $empresa ? \DB::table('pais')->where('id', $empresa->pais_id)->first() : null;
+        $codigoPais = $pais ? $pais->codigo_telefonico : '58';
+        
+        $cleaned = preg_replace('/[^0-9]/', '', $number);
+        
+        if (strlen($cleaned) > 10 && str_starts_with($cleaned, $codigoPais)) {
+            return $cleaned;
+        }
+        
+        if (str_starts_with($cleaned, '0')) {
+            $cleaned = substr($cleaned, 1);
+        }
+        
+        return $codigoPais . $cleaned;
+    }
+
+    public function checkWhatsAppStatus()
+    {
+        try {
+            $apiUrl = config('whatsapp.api_url', 'http://localhost:3001');
+            $apiKey = config('whatsapp.api_key', 'test-api-key-vargas-centro');
+            
+            // Verificar si el servicio está disponible
+            $healthResponse = \Http::timeout(3)->get($apiUrl . '/health');
+            
+            if (!$healthResponse->successful()) {
+                $this->whatsappStatus = 'disconnected';
+                return;
+            }
+            
+            // Obtener estado de conexión
+            $response = \Http::withHeaders(['X-API-Key' => $apiKey])
+                ->timeout(5)
+                ->get($apiUrl . '/api/whatsapp/status');
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                $this->whatsappStatus = $data['connectionState'] ?? 'disconnected';
+            } else {
+                $this->whatsappStatus = 'disconnected';
+            }
+        } catch (\Exception $e) {
+            $this->whatsappStatus = 'disconnected';
+        }
+    }
+
     public function guardar()
     {
         // Validación especial para pago mixto
@@ -404,7 +536,17 @@ class Create extends Component
 
             $this->dispatch('pago-registrado', ['mensaje' => 'Pago registrado exitosamente: ' . $pago->numero_completo]);
 
-            session()->flash('message', 'Pago registrado exitosamente: ' . $pago->numero_completo);
+            // Enviar notificación por WhatsApp y esperar respuesta
+            $whatsappResult = $this->enviarNotificacionWhatsApp($pago, $matricula);
+            
+            $mensaje = 'Pago registrado exitosamente: ' . $pago->numero_completo;
+            if ($whatsappResult['sent']) {
+                $mensaje .= ' - Notificación WhatsApp enviada a ' . $whatsappResult['destinatario'];
+            } elseif ($whatsappResult['attempted']) {
+                $mensaje .= ' - No se pudo enviar notificación WhatsApp';
+            }
+            
+            session()->flash('message', $mensaje);
             return redirect()->route('admin.pagos.index');
         });
         } catch (\Throwable $th) {

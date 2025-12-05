@@ -1,4 +1,4 @@
-<div wire:poll.5s="loadStats">
+<div wire:poll.5s="loadStats" wire:init="checkWhatsAppStatus">
     <!-- Header -->
     <div class="row mb-6">
         <div class="col-12">
@@ -159,8 +159,11 @@
         
         <div class="col-lg-4">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Estado del Sistema</h5>
+                    <button wire:click="checkWhatsAppStatus" class="btn btn-sm btn-outline-secondary" title="Actualizar estado de WhatsApp">
+                        <i class="ri ri-refresh-line me-1"></i> Actualizar
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-4">
@@ -183,6 +186,27 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="text-body">Modo:</span>
                         <span class="badge bg-label-primary">{{ $scanMode === 'camera' ? 'Cámara' : 'Manual' }}</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-body">WhatsApp:</span>
+                        @if($whatsappStatus === 'checking')
+                            <span class="badge bg-label-warning">
+                                <i class="ri ri-time-line me-1"></i> Verificando...
+                            </span>
+                        @elseif($whatsappStatus === 'connected')
+                            <span class="badge bg-label-success">
+                                <i class="ri ri-whatsapp-line me-1"></i> Conectado
+                            </span>
+                        @elseif($whatsappStatus === 'disconnected')
+                            <span class="badge bg-label-danger">
+                                <i class="ri ri-whatsapp-line me-1"></i> Desconectado
+                            </span>
+                        @else
+                            <span class="badge bg-label-secondary">
+                                <i class="ri ri-error-warning-line me-1"></i> Error
+                            </span>
+                        @endif
                     </div>
                     
                     <div class="d-flex justify-content-between align-items-center">

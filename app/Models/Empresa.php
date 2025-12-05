@@ -21,7 +21,11 @@ class Empresa extends Model
         'status',
         'telefono',
         'email',
-        'pais_id'
+        'pais_id',
+        'api_key',
+        'whatsapp_api_key',
+        'whatsapp_rate_limit',
+        'whatsapp_active'
     ];
 
     protected $casts = [
@@ -48,6 +52,27 @@ class Empresa extends Model
             }
         }
         return $query;
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::creating(function ($empresa) {
+            if (!$empresa->api_key) {
+                $empresa->api_key = self::generateApiKey();
+            }
+        });
+    }
+
+    public static function generateApiKey(): string
+    {
+        return 'vg_' . bin2hex(random_bytes(24));
+    }
+
+    public function regenerateApiKey(): void
+    {
+        $this->update(['api_key' => self::generateApiKey()]);
     }
 
     public function getActivitylogOptions(): LogOptions

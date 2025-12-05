@@ -145,6 +145,80 @@ class Create extends Component
         return 'Fecha no especificada';
     }
 
+    private function enviarNotificacionBienvenida($student)
+    {
+        $result = ['sent' => false, 'attempted' => false, 'destinatario' => null];
+        
+        try {
+            $esMayorDeEdad = Carbon::parse($student->fecha_nacimiento)->age >= 18;
+            $telefono = null;
+            $nombreDestino = null;
+
+            if (!$esMayorDeEdad && $student->representante_telefonos) {
+                $telefonos = explode(',', $student->representante_telefonos);
+                $telefono = trim($telefonos[0] ?? '');
+                $nombreDestino = $student->representante_nombres . ' ' . $student->representante_apellidos;
+            }
+
+            if (!$telefono) return $result;
+
+            $result['attempted'] = true;
+            $result['destinatario'] = $nombreDestino;
+            
+            $mensaje = $this->generarMensajeBienvenida($student, $nombreDestino);
+            $telefonoFormateado = $this->formatPhoneNumber($telefono);
+            
+            $whatsappService = app('App\\Services\\WhatsAppService');
+            $whatsappResult = $whatsappService->sendMessage($telefonoFormateado, $mensaje);
+            
+            $result['sent'] = $whatsappResult && ($whatsappResult['success'] ?? false);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación WhatsApp de bienvenida: ' . $e->getMessage());
+            $result['attempted'] = true;
+        }
+        
+        return $result;
+    }
+
+    private function generarMensajeBienvenida($student, $nombreDestino)
+    {
+        $nombreEstudiante = $student->nombres . ' ' . $student->apellidos;
+        
+        $mensaje = "🎉 *¡Bienvenidos al Instituto Vargas Centro!*\n\n";
+        $mensaje .= "Estimado/a {$nombreDestino},\n\n";
+        $mensaje .= "Nos complace informarle que el estudiante *{$nombreEstudiante}* ha sido registrado exitosamente en nuestra institución.\n\n";
+        $mensaje .= "📝 *Datos del Estudiante:*\n";
+        $mensaje .= "• Código: {$student->codigo}\n";
+        $mensaje .= "• Documento: {$student->documento_identidad}\n";
+        $mensaje .= "• Grado: {$student->grado} - Sección: {$student->seccion}\n";
+        $mensaje .= "\n📚 Estamos comprometidos con brindar una educación de calidad y acompañar a nuestros estudiantes en su crecimiento académico y personal.\n\n";
+        $mensaje .= "Próximamente recibirá información sobre el proceso de matrícula y demás detalles importantes.\n\n";
+        $mensaje .= "Gracias por confiar en nosotros.\n\n";
+        $mensaje .= "*Instituto Vargas Centro*";
+        
+        return $mensaje;
+    }
+
+    private function formatPhoneNumber($number)
+    {
+        $empresa = \DB::table('empresas')->where('id', 1)->first();
+        $pais = $empresa ? \DB::table('pais')->where('id', $empresa->pais_id)->first() : null;
+        $codigoPais = $pais ? $pais->codigo_telefonico : '58';
+        
+        $cleaned = preg_replace('/[^0-9]/', '', $number);
+        
+        if (strlen($cleaned) > 10 && str_starts_with($cleaned, $codigoPais)) {
+            return $cleaned;
+        }
+        
+        if (str_starts_with($cleaned, '0')) {
+            $cleaned = substr($cleaned, 1);
+        }
+        
+        return $codigoPais . $cleaned;
+    }
+
     public function save()
     {
         $this->validate();
@@ -199,6 +273,16 @@ class Create extends Component
             }
         }
 
+        // Enviar notificación WhatsApp de bienvenida
+        $whatsappResult = $this->enviarNotificacionBienvenida($student);
+        
+        $mensaje = 'Estudiante creado correctamente.';
+        if ($whatsappResult['sent']) {
+            $mensaje .= ' Mensaje de bienvenida enviado por WhatsApp a ' . $whatsappResult['destinatario'] . '.';
+        } elseif ($whatsappResult['attempted']) {
+            $mensaje .= ' No se pudo enviar mensaje de bienvenida por WhatsApp.';
+        }
+
         // Crear notificación
         Notification::create([
             'user_id' => auth()->id(),
@@ -211,7 +295,7 @@ class Create extends Component
         // Disparar evento para actualizar en tiempo real
         $this->dispatch('notification-created');
 
-        session()->flash('message', 'Estudiante creado correctamente.');
+        session()->flash('message', $mensaje);
         return redirect()->route('admin.students.index');
     }
 

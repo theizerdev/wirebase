@@ -38,6 +38,8 @@ class QrAccess extends Component
     public $processing = false;
     public $lastProcessedCode = null;
     public $lastProcessedTime = null;
+    public $whatsappStatus = 'checking';
+    public $whatsappConnected = false;
 
     protected $listeners = ['qr-scanned' => 'processQrScan'];
 
@@ -51,6 +53,9 @@ class QrAccess extends Component
         // Cargar estadísticas iniciales
         $this->loadStats();
         $this->loadTodayLogs();
+        
+        // Verificar estado de WhatsApp
+        $this->checkWhatsAppStatus();
     }
 
     public function loadStats()
@@ -296,42 +301,123 @@ class QrAccess extends Component
 
     private function sendAccessNotification($accessLog)
     {
-        if (!$this->selectedStudent->representante_correo) {
-            return;
-        }
+        // Enviar notificación por correo electrónico
+        if ($this->selectedStudent->representante_correo) {
+            try {
+                $student = Student::with(['nivelEducativo', 'turno'])->find($this->selectedStudent->id);
+                $timeInSchool = null;
 
-        try {
-            $student = Student::with(['nivelEducativo', 'turno'])->find($this->selectedStudent->id);
-            $timeInSchool = null;
+                if ($accessLog->type === 'salida') {
+                    $entryLog = StudentAccessLog::where('student_id', $student->id)
+                        ->whereDate('access_time', Carbon::today())
+                        ->where('type', 'entrada')
+                        ->orderBy('access_time', 'desc')
+                        ->first();
 
-            if ($accessLog->type === 'salida') {
-                $entryLog = StudentAccessLog::where('student_id', $student->id)
-                    ->whereDate('access_time', Carbon::today())
-                    ->where('type', 'entrada')
-                    ->orderBy('access_time', 'desc')
-                    ->first();
+                    if ($entryLog) {
+                        $entryTime = Carbon::parse($entryLog->access_time);
+                        $exitTime = Carbon::parse($accessLog->access_time);
+                        $diff = $entryTime->diff($exitTime);
 
-                if ($entryLog) {
-                    $entryTime = Carbon::parse($entryLog->access_time);
-                    $exitTime = Carbon::parse($accessLog->access_time);
-                    $diff = $entryTime->diff($exitTime);
+                        $hours = $diff->h;
+                        $minutes = $diff->i;
 
-                    $hours = $diff->h;
-                    $minutes = $diff->i;
-
-                    if ($hours > 0) {
-                        $timeInSchool = "{$hours} hora" . ($hours != 1 ? 's' : '') . " y {$minutes} minuto" . ($minutes != 1 ? 's' : '');
-                    } else {
-                        $timeInSchool = "{$minutes} minuto" . ($minutes != 1 ? 's' : '');
+                        if ($hours > 0) {
+                            $timeInSchool = "{$hours} hora" . ($hours != 1 ? 's' : '') . " y {$minutes} minuto" . ($minutes != 1 ? 's' : '');
+                        } else {
+                            $timeInSchool = "{$minutes} minuto" . ($minutes != 1 ? 's' : '');
+                        }
                     }
                 }
+
+                \Mail::to($student->representante_correo)
+                    ->send(new \App\Mail\StudentAccessNotificationMail($student, $accessLog, $timeInSchool));
+
+            } catch (\Exception $e) {
+                \Log::error('Error enviando notificación por correo: ' . $e->getMessage());
             }
+        }
 
-            \Mail::to($student->representante_correo)
-                ->send(new \App\Mail\StudentAccessNotificationMail($student, $accessLog, $timeInSchool));
+        // Enviar notificación por WhatsApp si el estudiante es menor de edad
+        if ($this->selectedStudent->es_menor_de_edad && $this->selectedStudent->representante_telefonos) {
+            try {
+                // Obtener la empresa del estudiante o del usuario autenticado
+                $company = $this->selectedStudent->empresa ?? auth()->user()->empresa;
+                
+                if ($company) {
+                    // Enviar notificación WhatsApp directamente (sin usar colas)
+                    $whatsappService = app(\App\Services\WhatsAppService::class);
+                    $sentCount = 0;
+                    $failedCount = 0;
 
-        } catch (\Exception $e) {
-            \Log::error('Error enviando notificación: ' . $e->getMessage());
+                    // Procesar teléfonos (manejar string o array)
+                    $telefonos = $this->selectedStudent->representante_telefonos;
+                    if (is_string($telefonos)) {
+                        // Si es string, intentar decodificar JSON o separar por comas
+                        $decoded = json_decode($telefonos, true);
+                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                            $telefonos = $decoded;
+                        } else {
+                            $telefonos = array_map('trim', explode(',', $telefonos));
+                        }
+                    }
+
+                    foreach ($telefonos as $telefono) {
+                        try {
+                            // Formatear el número con el código de país
+                            $telefonoFormateado = $this->formatPhoneNumber($telefono, $company);
+                            
+                            // Construir mensaje
+                            $message = $this->buildWhatsAppMessage($this->selectedStudent, $accessLog);
+                            
+                            // Enviar mensaje
+                            $resultado = $whatsappService->sendMessage($telefonoFormateado, $message);
+                            
+                            if ($resultado['success']) {
+                                $sentCount++;
+                                \Log::info('Notificación WhatsApp enviada exitosamente', [
+                                    'student_id' => $this->selectedStudent->id,
+                                    'phone' => $telefonoFormateado,
+                                    'message_id' => $resultado['message_id'] ?? null
+                                ]);
+                            } else {
+                                $failedCount++;
+                                \Log::error('Error al enviar notificación WhatsApp', [
+                                    'student_id' => $this->selectedStudent->id,
+                                    'phone' => $telefonoFormateado,
+                                    'error' => $resultado['error'] ?? 'Error desconocido'
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            $failedCount++;
+                            \Log::error('Excepción al enviar notificación WhatsApp', [
+                                'student_id' => $this->selectedStudent->id,
+                                'phone' => $telefono,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+
+                    \Log::info('Resumen de envío de notificaciones WhatsApp', [
+                        'student_id' => $this->selectedStudent->id,
+                        'student_name' => $this->selectedStudent->nombres . ' ' . $this->selectedStudent->apellidos,
+                        'access_type' => $accessLog->type,
+                        'total_phones' => count($telefonos),
+                        'sent_count' => $sentCount,
+                        'failed_count' => $failedCount
+                    ]);
+
+                } else {
+                    \Log::warning('No se pudo obtener la empresa para la notificación WhatsApp', [
+                        'student_id' => $this->selectedStudent->id
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error enviando notificación WhatsApp: ' . $e->getMessage(), [
+                    'student_id' => $this->selectedStudent->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
     }
 
@@ -374,6 +460,36 @@ class QrAccess extends Component
         }
     }
 
+    /**
+     * Verificar el estado de conexión de WhatsApp
+     */
+    public function checkWhatsAppStatus()
+    {
+        try {
+            $whatsappService = app(\App\Services\WhatsAppService::class);
+            $status = $whatsappService->getStatus();
+            
+            \Log::info('WhatsApp Status Response:', ['status' => $status]);
+            
+            if ($status && isset($status['connected'])) {
+                $this->whatsappConnected = $status['connected'];
+                $this->whatsappStatus = $status['connected'] ? 'connected' : 'disconnected';
+            } elseif ($status && isset($status['isConnected'])) {
+                // Algunas versiones usan isConnected en lugar de connected
+                $this->whatsappConnected = $status['isConnected'];
+                $this->whatsappStatus = $status['isConnected'] ? 'connected' : 'disconnected';
+            } else {
+                $this->whatsappConnected = false;
+                $this->whatsappStatus = 'error';
+                \Log::warning('WhatsApp status no válido:', ['status' => $status]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al verificar estado de WhatsApp: ' . $e->getMessage());
+            $this->whatsappConnected = false;
+            $this->whatsappStatus = 'error';
+        }
+    }
+
     public function render()
     {
         return $this->renderWithLayout('livewire.admin.students.qr-access', [], [
@@ -384,5 +500,51 @@ class QrAccess extends Component
                 'admin.students.qr-access' => 'Control QR'
             ]
         ]);
+    }
+
+    /**
+     * Formatear número de teléfono con código de país
+     */
+    private function formatPhoneNumber($phone, $company)
+    {
+        // Limpiar el número de teléfono
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // Si el número empieza con 0, quitarlo
+        if (substr($phone, 0, 1) === '0') {
+            $phone = substr($phone, 1);
+        }
+        
+        // Si el número no tiene código de país y la empresa tiene país asociado
+        if (strlen($phone) <= 10 && $company->pais && $company->pais->codigo_telefonico) {
+            $phone = $company->pais->codigo_telefonico . $phone;
+        }
+        
+        return $phone;
+    }
+
+    /**
+     * Construir mensaje de WhatsApp para notificación de acceso
+     */
+    private function buildWhatsAppMessage($student, $accessLog)
+    {
+        $studentName = $student->nombres . ' ' . $student->apellidos;
+        $accessTime = Carbon::parse($accessLog->access_time)->format('H:i');
+        $accessDate = Carbon::parse($accessLog->access_time)->format('d/m/Y');
+        
+        $emoji = $accessLog->type === 'entrada' ? '📥' : '📤';
+        $action = $accessLog->type === 'entrada' ? 'ingreso' : 'salida';
+        $actionCapitalized = ucfirst($action);
+
+        $message = "¡Hola! 👋\n\n";
+        $message .= "{$emoji} **{$actionCapitalized} registrada** 📚\n\n";
+        $message .= "**Estudiante:** {$studentName}\n";
+        $message .= "**Código:** {$student->codigo}\n";
+        $message .= "**Fecha:** {$accessDate}\n";
+        $message .= "**Hora:** {$accessTime}\n";
+        $message .= "\n🏫 Instituto Vargas Centro\n";
+        $message .= "💡 Este es un mensaje automático";
+
+        return $message;
     }
 }

@@ -16,6 +16,13 @@ class Kernel extends ConsoleKernel
         Commands\SendAccessNotificationJob::class,
         Commands\SendAutomaticNotificationsCommand::class,
         Commands\FetchExchangeRates::class,
+        Commands\ProcessWhatsAppScheduledMessages::class,
+        Commands\RetryFailedWhatsAppMessages::class,
+        Commands\ScheduleWhatsAppRetry::class,
+        Commands\SetupWhatsAppAutoRetry::class,
+        Commands\WhatsAppRetryStatus::class,
+        Commands\DevRetryWhatsApp::class, // Comando de desarrollo
+        Commands\TestStudentWhatsAppNotification::class, // Comando de prueba para notificaciones de estudiantes
     ];
 
     /**
@@ -36,6 +43,26 @@ class Kernel extends ConsoleKernel
         $schedule->command('exchange:fetch')
             ->dailyAt('14:00')
             ->timezone('America/Caracas');
+
+        // Procesar mensajes programados de WhatsApp cada minuto
+        $schedule->command('whatsapp:process-scheduled')
+            ->everyMinute()
+            ->timezone('America/Caracas')
+            ->withoutOverlapping()
+            ->onOneServer();
+
+        // Reenvío automático de mensajes fallidos cada hora
+        $schedule->command('whatsapp:schedule-retry')
+            ->hourly()
+            ->timezone('America/Caracas')
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->when(function () {
+                // Solo ejecutar si hay mensajes fallidos para reenviar
+                return \App\Models\WhatsAppMessage::where('direction', 'outbound')
+                    ->retryable()
+                    ->exists();
+            });
     }
 
     /**

@@ -269,7 +269,17 @@ class Create extends Component
                 $this->createPaymentSchedule($matricula);
             }
 
-            session()->flash('message', 'Matrícula creada correctamente.');
+            // Enviar notificación WhatsApp de matrícula
+            $whatsappResult = $this->enviarNotificacionMatricula($matricula);
+            
+            $mensaje = 'Matrícula creada correctamente.';
+            if ($whatsappResult['sent']) {
+                $mensaje .= ' Notificación enviada por WhatsApp a ' . $whatsappResult['destinatario'] . '.';
+            } elseif ($whatsappResult['attempted']) {
+                $mensaje .= ' No se pudo enviar notificación por WhatsApp.';
+            }
+
+            session()->flash('message', $mensaje);
             return redirect()->route('admin.matriculas.index');
         } catch (\Exception $e) {
             session()->flash('error', 'Error al crear la matrícula: ' . $e->getMessage());
@@ -294,6 +304,104 @@ class Create extends Component
         } catch (\Exception $e) {
             \Log::error('Error creating payment schedule: ' . $e->getMessage());
         }
+    }
+
+    private function enviarNotificacionMatricula($matricula)
+    {
+        $result = ['sent' => false, 'attempted' => false, 'destinatario' => null];
+        
+        try {
+            $estudiante = $matricula->student;
+            $esMayorDeEdad = \Carbon\Carbon::parse($estudiante->fecha_nacimiento)->age >= 18;
+            
+            $telefono = null;
+            $nombreDestino = null;
+
+            if ($esMayorDeEdad && $estudiante->phone) {
+                $telefono = $estudiante->phone;
+                $nombreDestino = $estudiante->nombres . ' ' . $estudiante->apellidos;
+            } elseif (!$esMayorDeEdad && $estudiante->representante_telefonos) {
+                $telefonos = explode(',', $estudiante->representante_telefonos);
+                $telefono = trim($telefonos[0] ?? '');
+                $nombreDestino = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
+            }
+
+            if (!$telefono) return $result;
+
+            $result['attempted'] = true;
+            $result['destinatario'] = $nombreDestino;
+            
+            $mensaje = $this->generarMensajeMatricula($matricula, $estudiante, $esMayorDeEdad);
+            $telefonoFormateado = $this->formatPhoneNumber($telefono);
+            
+            $whatsappService = app('App\\Services\\WhatsAppService');
+            $whatsappResult = $whatsappService->sendMessage($telefonoFormateado, $mensaje);
+            
+            $result['sent'] = $whatsappResult && ($whatsappResult['success'] ?? false);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación WhatsApp de matrícula: ' . $e->getMessage());
+            $result['attempted'] = true;
+        }
+        
+        return $result;
+    }
+
+    private function generarMensajeMatricula($matricula, $estudiante, $esMayorDeEdad)
+    {
+        $nombreEstudiante = $estudiante->nombres . ' ' . $estudiante->apellidos;
+        $costoFormateado = '$' . number_format($matricula->costo, 2, ',', '.');
+        
+        if ($esMayorDeEdad) {
+            $mensaje = "🎓 *Matrícula Confirmada - Instituto Vargas Centro*\n\n";
+            $mensaje .= "Estimado/a {$nombreEstudiante},\n\n";
+            $mensaje .= "Su matrícula ha sido procesada exitosamente.\n\n";
+        } else {
+            $representante = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
+            $mensaje = "🎓 *Matrícula Confirmada - Instituto Vargas Centro*\n\n";
+            $mensaje .= "Estimado/a {$representante},\n\n";
+            $mensaje .= "La matrícula del estudiante *{$nombreEstudiante}* ha sido procesada exitosamente.\n\n";
+        }
+        
+        $mensaje .= "📝 *Detalles de la Matrícula:*\n";
+        $mensaje .= "• Programa: {$matricula->programa->nombre}\n";
+        $mensaje .= "• Período: {$matricula->schoolPeriod->name}\n";
+        $mensaje .= "• Fecha de Matrícula: " . \Carbon\Carbon::parse($matricula->fecha_matricula)->format('d/m/Y') . "\n";
+        $mensaje .= "• Costo Total: {$costoFormateado}\n";
+        
+        if ($matricula->cuota_inicial > 0) {
+            $cuotaInicialFormateada = '$' . number_format($matricula->cuota_inicial, 2, ',', '.');
+            $mensaje .= "• Cuota Inicial: {$cuotaInicialFormateada}\n";
+        }
+        
+        if ($matricula->numero_cuotas > 0) {
+            $mensaje .= "• Número de Cuotas: {$matricula->numero_cuotas}\n";
+        }
+        
+        $mensaje .= "\n💳 Próximamente recibirá información sobre las fechas de pago y métodos disponibles.\n\n";
+        $mensaje .= "Gracias por confiar en nuestra institución.\n\n";
+        $mensaje .= "*Instituto Vargas Centro*";
+        
+        return $mensaje;
+    }
+
+    private function formatPhoneNumber($number)
+    {
+        $empresa = \DB::table('empresas')->where('id', 1)->first();
+        $pais = $empresa ? \DB::table('pais')->where('id', $empresa->pais_id)->first() : null;
+        $codigoPais = $pais ? $pais->codigo_telefonico : '58';
+        
+        $cleaned = preg_replace('/[^0-9]/', '', $number);
+        
+        if (strlen($cleaned) > 10 && str_starts_with($cleaned, $codigoPais)) {
+            return $cleaned;
+        }
+        
+        if (str_starts_with($cleaned, '0')) {
+            $cleaned = substr($cleaned, 1);
+        }
+        
+        return $codigoPais . $cleaned;
     }
 
     public function render()

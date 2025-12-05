@@ -475,8 +475,9 @@
                                                 </a>
                                                 @endcan
                                                 @can('edit pagos')
-                                                <a class="dropdown-item" href="#" wire:click.prevent="printReceipt({{ $pago->id }})">
-                                                    <i class="ri ri-file-copy-line me-1"></i> Vista Previa
+                                               
+                                                <a class="dropdown-item" href="{{ route('admin.pagos.print', $pago->id) }}" target="_blank">
+                                                    <i class="ri ri-printer-line me-1"></i> Imprimir
                                                 </a>
                                                 @endcan
                                                 @can('delete pagos')

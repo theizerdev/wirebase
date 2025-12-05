@@ -26,13 +26,15 @@
       rel="stylesheet" />
 
     <link rel="stylesheet" href="/materialize/assets/vendor/fonts/iconify-icons.css" />
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Core CSS -->
     <link rel="stylesheet" href="/materialize/assets/vendor/libs/node-waves/node-waves.css" />
     <script src="/materialize/assets/vendor/libs/@algolia/autocomplete-js.js"></script>
     <link rel="stylesheet" href="/materialize/assets/vendor/libs/pickr/pickr-themes.css" />
     <link rel="stylesheet" href="/materialize/assets/vendor/css/core.css" />
     <link rel="stylesheet" href="/materialize/assets/css/demo.css" />
+
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css" rel="stylesheet">
 
     <!-- Vendors CSS -->
     <link rel="stylesheet" href="/materialize/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
@@ -142,6 +144,10 @@
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Toast Container -->
+  
+    @include('components.toast-container')
 
     @stack('scripts')
   </body>

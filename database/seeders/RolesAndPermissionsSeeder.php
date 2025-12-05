@@ -229,6 +229,20 @@ class RolesAndPermissionsSeeder extends Seeder
                 'edit late payment rules',
                 'delete late payment rules',
             ],
+            // Módulo de WhatsApp
+            'whatsapp' => [
+                'access whatsapp',
+                'create whatsapp templates',
+                'edit whatsapp templates',
+                'delete whatsapp templates',
+                'send whatsapp messages',
+                'schedule whatsapp messages',
+                'view whatsapp statistics',
+                'export whatsapp reports',
+                'retry failed whatsapp messages',
+                'view whatsapp retry statistics',
+                'manage whatsapp auto retry',
+            ],
         ];
 
         // Crear permisos organizados por módulos
@@ -269,7 +283,7 @@ class RolesAndPermissionsSeeder extends Seeder
         ])->get();
         $recepcionistaRole->syncPermissions($recepcionistaPermissions);
 
-        // Asignar permisos de mensajería, biblioteca, series, cajas, reuniones, países y exportación de base de datos a Administradores y Super Administradores
+        // Asignar permisos de mensajería, biblioteca, series, cajas, reuniones, países, exportación de base de datos y WhatsApp a Administradores y Super Administradores
         $mensajeriaBibliotecaSeriesCajasPaisesExportPermissions = Permission::whereIn('module', [
             'mensajeria',
             'biblioteca',
@@ -277,7 +291,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'cajas',
             'reuniones',
             'paises',
-            'database_export'
+            'database_export',
+            'whatsapp'
         ])->get();
 
         $superAdminRole->givePermissionTo($mensajeriaBibliotecaSeriesCajasPaisesExportPermissions);

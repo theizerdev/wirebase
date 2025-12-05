@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Mail\DebtNotification;
+use App\Services\WhatsAppService;
 
 class Morosidad extends Component
 {
@@ -25,22 +26,29 @@ class Morosidad extends Component
     public $programas;
     public $nivel_educativo_id;
     public $programa_id;
+    public $fecha_desde;
+    public $fecha_hasta;
     public $morosos = [];
     public $totales = [];
     public $detalleDeuda = [];
     public $mostrarModal = false;
     public $estudianteSeleccionado = null;
+    public $whatsappStatus = 'disconnected';
 
     public function mount()
     {
         $this->nivelesEducativos = EducationalLevel::all();
         $this->programas = collect(); // Inicialmente vacío
+        $this->fecha_hasta = now()->format('Y-m-d');
         // Inicializar totales con valores por defecto
         $this->totales = [
             'total_estudiantes' => 0,
             'total_morosos' => 0,
             'porcentaje_morosidad' => 0
         ];
+        
+        // Verificar estado de WhatsApp
+        $this->checkWhatsAppStatus();
     }
 
     public function updatedNivelEducativoId()
@@ -63,7 +71,7 @@ class Morosidad extends Component
 
     public function cargarReporte()
     {
-        $query = Matricula::with(['student', 'programa.nivelEducativo'])
+        $query = Matricula::with(['student', 'programa.nivelEducativo', 'cronogramaPagos'])
             ->where('matriculas.estado', 'activo');
 
         if ($this->programa_id) {
@@ -74,11 +82,24 @@ class Morosidad extends Component
         }
 
         $matriculas = $query->get();
+        $fechaCorte = $this->fecha_hasta ? \Carbon\Carbon::parse($this->fecha_hasta) : now();
 
         // Calcular morosidad para cada matrícula
         $this->morosos = [];
         foreach ($matriculas as $matricula) {
-            // Obtener el total pagado usando la nueva estructura
+            // Obtener cuotas vencidas hasta la fecha de corte
+            $cuotasVencidas = $matricula->cronogramaPagos
+                ->where('fecha_vencimiento', '<=', $fechaCorte)
+                ->where('estado', 'pendiente');
+
+            if ($this->fecha_desde) {
+                $fechaDesde = \Carbon\Carbon::parse($this->fecha_desde);
+                $cuotasVencidas = $cuotasVencidas->where('fecha_vencimiento', '>=', $fechaDesde);
+            }
+
+            $montoVencido = $cuotasVencidas->sum('monto');
+            
+            // Obtener el total pagado
             $totalPagado = Pago::where('matricula_id', $matricula->id)
                 ->where('estado', 'aprobado')
                 ->sum('total');
@@ -86,13 +107,22 @@ class Morosidad extends Component
             $costoTotal = $matricula->costo ?? 0;
             $saldoPendiente = $costoTotal - $totalPagado;
 
-            // Considerar moroso si tiene saldo pendiente mayor a 0
-            if ($saldoPendiente > 0 && $costoTotal > 0) {
+            // Considerar moroso si tiene cuotas vencidas en el rango de fechas
+            if ($montoVencido > 0) {
+                $montoPagadoRango = $cuotasVencidas->sum('monto_pagado');
+                $saldoPendienteRango = $montoVencido - $montoPagadoRango;
+                $porcentajePagadoRango = $montoVencido > 0 ? ($montoPagadoRango / $montoVencido) * 100 : 0;
+                
                 $this->morosos[] = [
                     'matricula' => $matricula,
                     'total_pagado' => $totalPagado,
                     'saldo_pendiente' => $saldoPendiente,
-                    'porcentaje_pagado' => ($totalPagado / $costoTotal) * 100
+                    'monto_vencido' => $montoVencido,
+                    'cantidad_cuotas' => $cuotasVencidas->count(),
+                    'monto_pagado_rango' => $montoPagadoRango,
+                    'saldo_pendiente_rango' => $saldoPendienteRango,
+                    'porcentaje_pagado_rango' => $porcentajePagadoRango,
+                    'porcentaje_pagado' => $costoTotal > 0 ? ($totalPagado / $costoTotal) * 100 : 0
                 ];
             }
         }
@@ -124,8 +154,21 @@ class Morosidad extends Component
         }
 
         $this->estudianteSeleccionado = $matricula;
-        // Mostrar solo cuotas pendientes
-        $this->detalleDeuda = $matricula->cronogramaPagos->where('estado', 'pendiente');
+        
+        // Filtrar cuotas según el rango de fechas
+        $cuotas = $matricula->cronogramaPagos->where('estado', 'pendiente');
+        
+        if ($this->fecha_hasta) {
+            $fechaCorte = \Carbon\Carbon::parse($this->fecha_hasta);
+            $cuotas = $cuotas->where('fecha_vencimiento', '<=', $fechaCorte);
+        }
+        
+        if ($this->fecha_desde) {
+            $fechaDesde = \Carbon\Carbon::parse($this->fecha_desde);
+            $cuotas = $cuotas->where('fecha_vencimiento', '>=', $fechaDesde);
+        }
+        
+        $this->detalleDeuda = $cuotas;
         $this->mostrarModal = true;
 
         // Emitir evento para mostrar la modal
@@ -207,6 +250,125 @@ class Morosidad extends Component
         $this->estudianteSeleccionado = null;
     }
 
+    public function checkWhatsAppStatus()
+    {
+        try {
+            $whatsappService = app(WhatsAppService::class);
+            $status = $whatsappService->getStatus();
+            $this->whatsappStatus = $status['connectionState'] ?? 'disconnected';
+        } catch (\Exception $e) {
+            $this->whatsappStatus = 'disconnected';
+        }
+    }
+
+    public function enviarWhatsAppMorosidad()
+    {
+        if (!$this->estudianteSeleccionado) {
+            session()->flash('error', 'No se ha seleccionado un estudiante.');
+            return;
+        }
+
+        $estudiante = $this->estudianteSeleccionado->student;
+        
+    
+        $esMayorDeEdad = $estudiante->fecha_nacimiento && $estudiante->fecha_nacimiento->age >= 18;
+       
+        $telefono = null;
+        $nombreDestino = null;
+
+        if ($esMayorDeEdad && $estudiante->phone) {
+            $telefono = $estudiante->phone;
+            $nombreDestino = $estudiante->nombres . ' ' . $estudiante->apellidos;
+        } elseif (!$esMayorDeEdad && $estudiante->representante_telefonos) {
+            // Decodificar JSON y tomar el primer teléfono
+            $telefonos = $estudiante->representante_telefonos;
+            
+            $telefono = is_array($telefonos) && count($telefonos) > 0 ? $telefonos[0] : null;
+            
+            $nombreDestino = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
+            //dd(!$telefono);
+        }
+        if (!$telefono) {
+            session()->flash('error', 'No se encontró un teléfono válido para enviar el mensaje.');
+            return;
+        }
+       
+        // Crear mensaje de morosidad
+        $saldoPendiente = ($this->estudianteSeleccionado->costo ?? 0) - $this->estudianteSeleccionado->pagos->sum('total');
+        $mensaje = $this->generarMensajeMorosidad($estudiante, $saldoPendiente, $esMayorDeEdad);
+        // Formatear teléfono según el país de la empresa
+        $telefonoFormateado = $this->formatPhoneNumber($telefono);
+        //dd($telefonoFormateado);
+        try {
+            $whatsappService = app(WhatsAppService::class);
+            $result = $whatsappService->sendMessage($telefonoFormateado, $mensaje);
+            
+            if ($result && ($result['success'] ?? false)) {
+                session()->flash('success', 'Mensaje de WhatsApp enviado correctamente a ' . $nombreDestino);
+            } else {
+                session()->flash('error', 'Error al enviar el mensaje de WhatsApp.');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al enviar mensaje: ' . $e->getMessage());
+        }
+    }
+
+    private function generarMensajeMorosidad($estudiante, $saldoPendiente, $esMayorDeEdad)
+    {
+        $nombreEstudiante = $estudiante->nombres . ' ' . $estudiante->apellidos;
+        $saldoFormateado = '$' . number_format($saldoPendiente, 2, ',', '.');
+        
+        if ($esMayorDeEdad) {
+            $mensaje = "🔔 *Recordatorio de Pago - Instituto Vargas Centro*\n\n";
+            $mensaje .= "Estimado/a {$nombreEstudiante},\n\n";
+            $mensaje .= "Le recordamos que tiene un saldo pendiente de *{$saldoFormateado}* en su matrícula.\n\n";
+        } else {
+            $representante = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
+            $mensaje = "🔔 *Recordatorio de Pago - Instituto Vargas Centro*\n\n";
+            $mensaje .= "Estimado/a {$representante},\n\n";
+            $mensaje .= "Le recordamos que el estudiante *{$nombreEstudiante}* tiene un saldo pendiente de *{$saldoFormateado}* en su matrícula.\n\n";
+        }
+        
+        $mensaje .= "📅 *Cuotas vencidas:*\n";
+        foreach ($this->detalleDeuda as $cuota) {
+            $fechaVencimiento = \Carbon\Carbon::parse($cuota->fecha_vencimiento)->format('d/m/Y');
+            $montoCuota = '$' . number_format($cuota->monto, 2, ',', '.');
+            $mensaje .= "• {$cuota->descripcion}: {$montoCuota} (Vence: {$fechaVencimiento})\n";
+        }
+        
+        $mensaje .= "\n💳 Para realizar su pago, puede acercarse a nuestras oficinas o contactarnos.\n\n";
+        $mensaje .= "📞 Teléfono: [NÚMERO DE CONTACTO]\n";
+        $mensaje .= "📍 Dirección: [DIRECCIÓN DEL INSTITUTO]\n\n";
+        $mensaje .= "Gracias por su atención.\n\n";
+        $mensaje .= "*Instituto Vargas Centro*";
+        
+        return $mensaje;
+    }
+
+    private function formatPhoneNumber($number)
+    {
+        // Obtener el código del país de la empresa
+        $empresa = \DB::table('empresas')->where('id', 1)->first();
+        $pais = $empresa ? \DB::table('pais')->where('id', $empresa->pais_id)->first() : null;
+        $codigoPais = $pais ? $pais->codigo_telefonico : '58'; // Default Venezuela
+        
+        // Limpiar número
+        $cleaned = preg_replace('/[^0-9]/', '', $number);
+        
+        // Si ya tiene código de país, devolverlo
+        if (strlen($cleaned) > 10 && str_starts_with($cleaned, $codigoPais)) {
+            return $cleaned;
+        }
+        
+        // Quitar el 0 inicial si existe
+        if (str_starts_with($cleaned, '0')) {
+            $cleaned = substr($cleaned, 1);
+        }
+        
+        // Agregar código de país
+        return $codigoPais . $cleaned;
+    }
+
     public function exportarExcel()
     {
         if (count($this->morosos) == 0) {
@@ -231,25 +393,30 @@ class Morosidad extends Component
             // Información del reporte
             $sheet->setCellValue('A3', 'Fecha de generación:');
             $sheet->setCellValue('B3', now()->format('d/m/Y H:i:s'));
-            $sheet->setCellValue('A4', 'Total estudiantes:');
-            $sheet->setCellValue('B4', $this->totales['total_estudiantes']);
+            $sheet->setCellValue('A4', 'Rango de fechas:');
+            $rangoFechas = ($this->fecha_desde ? \Carbon\Carbon::parse($this->fecha_desde)->format('d/m/Y') : 'Inicio') . 
+                          ' - ' . 
+                          ($this->fecha_hasta ? \Carbon\Carbon::parse($this->fecha_hasta)->format('d/m/Y') : 'Hoy');
+            $sheet->setCellValue('B4', $rangoFechas);
+            $sheet->setCellValue('A5', 'Total estudiantes:');
+            $sheet->setCellValue('B5', $this->totales['total_estudiantes']);
             $sheet->setCellValue('D3', 'Total morosos:');
             $sheet->setCellValue('E3', $this->totales['total_morosos']);
             $sheet->setCellValue('D4', 'Porcentaje morosidad:');
             $sheet->setCellValue('E4', number_format($this->totales['porcentaje_morosidad'], 2) . '%');
 
-            $sheet->getStyle('A3:A4')->getFont()->setBold(true);
+            $sheet->getStyle('A3:A5')->getFont()->setBold(true);
             $sheet->getStyle('D3:D4')->getFont()->setBold(true);
             $sheet->getStyle('E3:E4')->getFont()->setBold(true)->getColor()->setRGB('DC3545');
 
             // Encabezados de la tabla
-            $headers = ['Estudiante', 'Documento', 'Programa', 'Nivel', 'Costo Total', 'Total Pagado', 'Saldo Pendiente', '% Pagado'];
+            $headers = ['Estudiante', 'Documento', 'Programa', 'Nivel', 'Cuotas Vencidas', 'Costo Total (Rango)', 'Total Pagado (Rango)', 'Saldo Pendiente (Rango)', '% Pagado (Rango)'];
             foreach ($headers as $index => $header) {
                 $column = chr(65 + $index);
-                $sheet->setCellValue($column . '6', $header);
+                $sheet->setCellValue($column . '7', $header);
             }
 
-            $sheet->getStyle('A6:H6')->applyFromArray([
+            $sheet->getStyle('A7:I7')->applyFromArray([
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'color' => ['rgb' => 'DC3545']],
                 'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
@@ -257,7 +424,7 @@ class Morosidad extends Component
             ]);
 
             // Datos de morosos
-            $row = 7;
+            $row = 8;
             foreach ($this->morosos as $moroso) {
                 $matricula = $moroso['matricula'];
                 $estudiante = $matricula->student;
@@ -266,18 +433,19 @@ class Morosidad extends Component
                 $sheet->setCellValue('B' . $row, $estudiante->documento_identidad ?? 'N/A');
                 $sheet->setCellValue('C' . $row, $matricula->programa->nombre ?? 'N/A');
                 $sheet->setCellValue('D' . $row, $matricula->programa->nivelEducativo->nombre ?? 'N/A');
-                $sheet->setCellValue('E' . $row, $matricula->costo ?? 0);
-                $sheet->setCellValue('F' . $row, $moroso['total_pagado']);
-                $sheet->setCellValue('G' . $row, $moroso['saldo_pendiente']);
-                $sheet->setCellValue('H' . $row, $moroso['porcentaje_pagado'] / 100);
+                $sheet->setCellValue('E' . $row, $moroso['cantidad_cuotas']);
+                $sheet->setCellValue('F' . $row, $moroso['monto_vencido']);
+                $sheet->setCellValue('G' . $row, $moroso['monto_pagado_rango']);
+                $sheet->setCellValue('H' . $row, $moroso['saldo_pendiente_rango']);
+                $sheet->setCellValue('I' . $row, $moroso['porcentaje_pagado_rango'] / 100);
                 $row++;
             }
 
             // Formato de la tabla
-            $rangeData = 'A7:H' . ($row - 1);
+            $rangeData = 'A8:I' . ($row - 1);
             $sheet->getStyle($rangeData)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-            $sheet->getStyle('E7:G' . ($row - 1))->getNumberFormat()->setFormatCode('$#,##0.00');
-            $sheet->getStyle('H7:H' . ($row - 1))->getNumberFormat()->setFormatCode('0.00%');
+            $sheet->getStyle('F8:H' . ($row - 1))->getNumberFormat()->setFormatCode('$#,##0.00');
+            $sheet->getStyle('I8:I' . ($row - 1))->getNumberFormat()->setFormatCode('0.00%');
 
             // Configuración de columnas
             $sheet->getColumnDimension('A')->setWidth(30);
@@ -285,9 +453,10 @@ class Morosidad extends Component
             $sheet->getColumnDimension('C')->setWidth(25);
             $sheet->getColumnDimension('D')->setWidth(20);
             $sheet->getColumnDimension('E')->setWidth(15);
-            $sheet->getColumnDimension('F')->setWidth(15);
-            $sheet->getColumnDimension('G')->setWidth(15);
-            $sheet->getColumnDimension('H')->setWidth(12);
+            $sheet->getColumnDimension('F')->setWidth(18);
+            $sheet->getColumnDimension('G')->setWidth(18);
+            $sheet->getColumnDimension('H')->setWidth(18);
+            $sheet->getColumnDimension('I')->setWidth(15);
 
             $filename = 'reporte_morosidad_' . now()->format('Y-m-d') . '.xlsx';
 
@@ -314,8 +483,33 @@ class Morosidad extends Component
 
     public function exportarPDF()
     {
-        // Lógica para exportar a PDF
-        session()->flash('message', 'Funcionalidad de exportación en desarrollo.');
+        if (count($this->morosos) == 0) {
+            session()->flash('error', 'No hay datos de morosidad para exportar.');
+            return;
+        }
+
+        try {
+            $rangoFechas = ($this->fecha_desde ? \Carbon\Carbon::parse($this->fecha_desde)->format('d/m/Y') : 'Inicio') . 
+                          ' - ' . 
+                          ($this->fecha_hasta ? \Carbon\Carbon::parse($this->fecha_hasta)->format('d/m/Y') : 'Hoy');
+
+            $data = [
+                'morosos' => $this->morosos,
+                'totales' => $this->totales,
+                'rango_fechas' => $rangoFechas,
+                'fecha_generacion' => now()->format('d/m/Y H:i:s')
+            ];
+
+            $pdf = \PDF::loadView('admin.reportes.morosidad-pdf', $data);
+            $filename = 'reporte_morosidad_' . now()->format('Y-m-d') . '.pdf';
+            
+            session()->flash('success', 'Archivo PDF generado correctamente.');
+            return $pdf->download($filename);
+        } catch (\Exception $e) {
+            \Log::error('Error exportando PDF morosidad: ' . $e->getMessage());
+            session()->flash('error', 'Error al generar el archivo PDF: ' . $e->getMessage());
+            return;
+        }
     }
 
     public function enviarNotificaciones()

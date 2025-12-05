@@ -272,10 +272,11 @@ class Index extends Component
         // Generar copia en la mitad inferior
         $this->generateReceiptContent($pdf, $pago, 'COPIA', $halfPage + 30);
 
-        // Salida del PDF
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->Output('S');
-        }, 'recibo_pago_' . $pago->numero_completo . '.pdf');
+        // Mostrar PDF en el navegador en lugar de descargarlo
+        return response($pdf->Output('S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="recibo_pago_' . $pago->numero_completo . '.pdf"'
+        ]);
     }
 
     public function generateReceiptContent(Fpdf $pdf, Pago $pago, $tipo, $yPosition)

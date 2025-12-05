@@ -323,6 +323,28 @@
   </li>
   @endcan
 
+  @canany(['view whatsapp dashboard', 'view whatsapp connection', 'view whatsapp templates', 'view whatsapp send messages', 'view whatsapp scheduled messages', 'view whatsapp history', 'view whatsapp statistics'])
+  <!-- WhatsApp -->
+  <li class="menu-item {{ request()->routeIs('admin.whatsapp.*') ? 'active open' : '' }}">
+    <a href="javascript:void(0);" class="menu-link menu-toggle">
+      <i class="menu-icon tf-icons ri ri-whatsapp-line"></i>
+      <div>WhatsApp</div>
+    </a>
+    <ul class="menu-sub">
+     
+      @can('view whatsapp connection')
+      <li class="menu-item {{ request()->routeIs('admin.whatsapp.connection') ? 'active' : '' }}">
+        <a href="{{ route('admin.whatsapp.connection') }}" class="menu-link">
+          <div>Conexión</div>
+        </a>
+      </li>
+      @endcan
+    
+    </ul>
+  </li>
+  @endcan
+
+
   @can('access biblioteca')
   <!-- Biblioteca Digital -->
   <li class="menu-item {{ request()->routeIs('admin.biblioteca.*') ? 'active' : '' }}">

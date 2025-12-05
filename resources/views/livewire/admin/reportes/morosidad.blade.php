@@ -29,6 +29,12 @@
         <div>
             <h4 class="mb-0">Reporte de Morosidad</h4>
             <p class="text-muted mb-0">Morosidad por nivel/programa</p>
+            <div class="mt-2">
+                <span class="badge bg-{{ $whatsappStatus === 'connected' ? 'success' : 'secondary' }}">
+                    <i class="ri ri-whatsapp-line me-1"></i>
+                    WhatsApp: {{ $whatsappStatus === 'connected' ? 'Conectado' : 'Desconectado' }}
+                </span>
+            </div>
         </div>
         <div>
             <button
@@ -81,6 +87,22 @@
                                 <option value="{{ $programa->id }}">{{ $programa->nombre }}</option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                        <input type="date" wire:model="fecha_desde" class="form-control" id="fecha_desde">
+                        <div class="form-text">Opcional: Filtrar cuotas vencidas desde esta fecha</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                        <input type="date" wire:model="fecha_hasta" class="form-control" id="fecha_hasta">
+                        <div class="form-text">Filtrar cuotas vencidas hasta esta fecha</div>
                     </div>
                 </div>
             </div>
@@ -138,10 +160,11 @@
                                 <th>Estudiante</th>
                                 <th>Programa</th>
                                 <th>Nivel</th>
-                                <th class="text-end">Costo Total</th>
-                                <th class="text-end">Pagado</th>
-                                <th class="text-end">Saldo Pendiente</th>
-                                <th class="text-end">Porcentaje Pagado</th>
+                                <th class="text-end">Cuotas</th>
+                                <th class="text-end">Costo (Rango)</th>
+                                <th class="text-end">Pagado (Rango)</th>
+                                <th class="text-end">Saldo (Rango)</th>
+                                <th class="text-end">% Pagado (Rango)</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -158,14 +181,15 @@
                                     </td>
                                     <td>{{ $moroso['matricula']->programa->nombre ?? '' }}</td>
                                     <td>{{ $moroso['matricula']->programa->nivelEducativo->nombre ?? '' }}</td>
-                                    <td class="text-end"><x-dual-currency :amount="$moroso['matricula']->costo ?? 0" /></td>
-                                    <td class="text-end"><x-dual-currency :amount="$moroso['total_pagado']" /></td>
-                                    <td class="text-end"><x-dual-currency :amount="$moroso['saldo_pendiente']" /></td>
-                                    <td class="text-end">{{ number_format($moroso['porcentaje_pagado'], 2) }}%</td>
+                                    <td class="text-end">{{ $moroso['cantidad_cuotas'] }}</td>
+                                    <td class="text-end"><x-dual-currency :amount="$moroso['monto_vencido']" /></td>
+                                    <td class="text-end"><x-dual-currency :amount="$moroso['monto_pagado_rango']" /></td>
+                                    <td class="text-end"><x-dual-currency :amount="$moroso['saldo_pendiente_rango']" /></td>
+                                    <td class="text-end">{{ number_format($moroso['porcentaje_pagado_rango'], 2) }}%</td>
                                     <td>
-                                        @if($moroso['porcentaje_pagado'] < 30)
+                                        @if($moroso['porcentaje_pagado_rango'] < 30)
                                             <span class="badge bg-danger">Alto Riesgo</span>
-                                        @elseif($moroso['porcentaje_pagado'] < 60)
+                                        @elseif($moroso['porcentaje_pagado_rango'] < 60)
                                             <span class="badge bg-warning">Medio Riesgo</span>
                                         @else
                                             <span class="badge bg-info">Bajo Riesgo</span>
@@ -226,21 +250,21 @@
                     <div class="row mb-4">
                         <div class="col-md-4">
                             <div class="border rounded p-3 text-center">
-                                <p class="mb-1 text-muted">Costo Total</p>
-                                <h4 class="mb-0"><x-dual-currency :amount="$estudianteSeleccionado->costo ?? 0" /></h4>
+                                <p class="mb-1 text-muted">Costo Total (Rango)</p>
+                                <h4 class="mb-0"><x-dual-currency :amount="$detalleDeuda->sum('monto')" /></h4>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border rounded p-3 text-center">
-                                <p class="mb-1 text-muted">Total Pagado</p>
-                                <h4 class="mb-0 text-success"><x-dual-currency :amount="$estudianteSeleccionado->pagos->sum('total')" /></h4>
+                                <p class="mb-1 text-muted">Total Pagado (Rango)</p>
+                                <h4 class="mb-0 text-success"><x-dual-currency :amount="$detalleDeuda->sum('monto_pagado')" /></h4>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border rounded p-3 text-center bg-warning bg-opacity-10">
-                                <p class="mb-1 text-muted">Saldo Pendiente</p>
+                                <p class="mb-1 text-muted">Saldo Pendiente (Rango)</p>
                                 <h4 class="mb-0 text-warning">
-                                    <x-dual-currency :amount="($estudianteSeleccionado->costo ?? 0) - $estudianteSeleccionado->pagos->sum('total')" />
+                                    <x-dual-currency :amount="$detalleDeuda->sum('monto') - $detalleDeuda->sum('monto_pagado')" />
                                 </h4>
                             </div>
                         </div>
@@ -248,9 +272,20 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="mb-0">Detalle de Pagos</h6>
-                        <button wire:click="enviarNotificacionDeuda" class="btn btn-sm btn-warning">
-                            <i class="ri ri-mail-send-line me-1"></i> Enviar Notificación
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button wire:click="enviarNotificacionDeuda" class="btn btn-sm btn-warning">
+                                <i class="ri ri-mail-send-line me-1"></i> Enviar Email
+                            </button>
+                            @if($whatsappStatus === 'connected')
+                                <button wire:click="enviarWhatsAppMorosidad" class="btn btn-sm btn-success">
+                                    <i class="ri ri-whatsapp-line me-1"></i> Enviar WhatsApp
+                                </button>
+                            @else
+                                <button class="btn btn-sm btn-outline-success" disabled title="WhatsApp no conectado">
+                                    <i class="ri ri-whatsapp-line me-1"></i> WhatsApp
+                                </button>
+                            @endif
+                        </div>
                     </div>
 
                     @if(count($detalleDeuda) > 0)

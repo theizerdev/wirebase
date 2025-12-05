@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\Dashboard;
 use App\Livewire\Auth\TwoFactorLogin;
 use App\Livewire\SuperAdmin\Dashboard as SuperAdminDashboard;
+use Illuminate\Support\Facades\Http;
 
 
 Route::get('/lang/{locale}', function ($locale) {
@@ -70,6 +71,43 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
 Route::get('/admin/template-customization', \App\Livewire\Admin\TemplateCustomization\Index::class)
     ->middleware(['auth'])
     ->name('admin.template-customization');
+
+// Test WhatsApp API
+Route::get('/test-whatsapp', function () {
+    try {
+        $health = Http::timeout(5)->get('http://localhost:3001/health');
+        $status = Http::withHeaders(['X-API-Key' => 'test-api-key-vargas-centro'])->timeout(10)->get('http://localhost:3001/api/whatsapp/status');
+        
+        return response()->json([
+            'health' => ['success' => $health->successful(), 'status' => $health->status(), 'body' => $health->json()],
+            'status' => ['success' => $status->successful(), 'status' => $status->status(), 'body' => $status->json()]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()]);
+    }
+});
+
+// Test send message
+Route::get('/test-send-message', function () {
+    try {
+        $response = Http::withHeaders([
+            'X-API-Key' => 'test-api-key-vargas-centro',
+            'Content-Type' => 'application/json'
+        ])->timeout(30)->post('http://localhost:3001/api/whatsapp/send', [
+            'to' => '584121234567',
+            'message' => 'Mensaje de prueba desde Laravel',
+            'type' => 'text'
+        ]);
+        
+        return response()->json([
+            'success' => $response->successful(),
+            'status' => $response->status(),
+            'body' => $response->json()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()]);
+    }
+});
 
 // Ruta de prueba para configuración regional
 Route::get('/test/regional-configuration', \App\Livewire\TestRegionalConfiguration::class)

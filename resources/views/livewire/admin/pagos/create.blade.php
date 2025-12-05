@@ -13,6 +13,22 @@
         </div>
     @endif
 
+    @if (session()->has('whatsapp_success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="ri ri-whatsapp-line me-2"></i>
+            {{ session('whatsapp_success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if (session()->has('whatsapp_error'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="ri ri-whatsapp-line me-2"></i>
+            {{ session('whatsapp_error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     @if(!$caja_abierta)
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
             <div class="d-flex align-items-center">
@@ -42,17 +58,20 @@
         </div>
     @endif
 
-    {{-- Estado de conexión --}}
-    <div wire:offline class="alert alert-warning alert-dismissible fade show" role="alert">
-        <i class="ri ri-wifi-off-line me-2"></i>
-        <strong>Sin conexión a internet</strong> - Los cambios se guardarán cuando se restablezca la conexión
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="mb-0">Nuevo Pago</h4>
-
+            <div class="mt-2">
+                <span class="badge bg-{{ $whatsappStatus === 'connected' ? 'success' : 'secondary' }} me-2">
+                    <i class="ri ri-whatsapp-line me-1"></i>
+                    WhatsApp: {{ $whatsappStatus === 'connected' ? 'Conectado' : 'Desconectado' }}
+                </span>
+                <button wire:click="checkWhatsAppStatus" class="btn btn-sm btn-outline-secondary" title="Refrescar estado">
+                    <i class="ri ri-refresh-line"></i>
+                </button>
+            </div>
         </div>
         <a href="{{ route('admin.pagos.index') }}" class="btn btn-secondary">
             <i class="ri ri-arrow-left-line me-1"></i> Volver
