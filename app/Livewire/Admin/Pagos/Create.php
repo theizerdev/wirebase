@@ -71,7 +71,7 @@ class Create extends Component
     public function mount()
     {
         $this->fecha = now()->format('Y-m-d');
-        $this->fecha_pago = now()->format('Y-m-d');
+        //$this->fecha_pago = now()->format('Y-m-d');
         $this->cargarTasaCambio();
         $this->cargarDatos();
         $this->verificarCajaAbierta();
@@ -518,7 +518,7 @@ class Create extends Component
             $pagoService = new PagoService();
             $pago = $pagoService->crearPago([
                 'tipo_pago' => $this->tipo_pago,
-                'fecha' => $this->fecha,
+                'fecha' => $this->fecha_pago,
                 'matricula_id' => $this->matricula_id,
                 'serie_id' => $this->serie_actual?->id,
                 'metodo_pago' => $this->metodo_pago,
@@ -530,6 +530,7 @@ class Create extends Component
                 'detalles_pago_mixto' => $this->es_pago_mixto ? $this->metodos_pago_mixto : null,
                 'empresa_id' => auth()->user()->empresa_id,
                 'sucursal_id' => auth()->user()->sucursal_id,
+                'caja_id' => $this->caja_abierta->id,
                 'estado' => Pago::ESTADO_APROBADO,
                 'detalles' => $this->detalles
             ]);
@@ -550,7 +551,6 @@ class Create extends Component
             return redirect()->route('admin.pagos.index');
         });
         } catch (\Throwable $th) {
-            dd($th);
             session()->flash('error', 'Error al crear el pago: ' . $th->getMessage());
         }
     }

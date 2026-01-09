@@ -112,7 +112,7 @@ class Caja extends Model
         $this->total_transferencias = $totalTransferencias;
         $this->total_tarjetas = $totalTarjetas;
         $this->total_ingresos = $totalEfectivo + $totalTransferencias + $totalTarjetas;
-        $this->monto_final = $this->monto_inicial + $totalEfectivo;
+        $this->monto_final = $this->monto_inicial + $this->total_ingresos;
 
         $this->save();
     }

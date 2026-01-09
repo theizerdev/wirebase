@@ -81,7 +81,7 @@ class Pais extends Model
             'USD' => '$',
             'EUR' => '€',
             'GBP' => '£',
-            'VES' => 'Bs.',
+            'VES' => '$',
             'COP' => '$',
             'ARS' => '$',
             'BRL' => 'R$',

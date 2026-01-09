@@ -25,6 +25,7 @@ class Show extends Component
     public Caja $caja;
     public $observaciones_cierre = '';
     public $showCerrarModal = false;
+    public $showRecalcularModal = false;
 
     protected $rules = [
         'observaciones_cierre' => 'nullable|string|max:500',
@@ -60,6 +61,38 @@ class Show extends Component
         }
  else {
             session()->flash('error', 'No se pudo cerrar la caja.');
+        }
+    }
+
+    public function recalcularMontos()
+    {
+        if ($this->caja->estado !== 'cerrada') {
+            session()->flash('error', 'Solo se pueden recalcular montos de cajas cerradas.');
+            return;
+        }
+
+        $this->showRecalcularModal = true;
+    }
+
+    public function confirmarRecalcular()
+    {
+        if ($this->caja->estado !== 'cerrada') {
+            session()->flash('error', 'Solo se pueden recalcular montos de cajas cerradas.');
+            $this->showRecalcularModal = false;
+            return;
+        }
+
+        try {
+            // Recalcular los totales
+            $this->caja->calcularTotales();
+            
+            session()->flash('message', 'Montos recalculados exitosamente. El monto de cierre se ha actualizado.');
+            $this->caja->refresh();
+            $this->showRecalcularModal = false;
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error al recalcular los montos: ' . $e->getMessage());
+            $this->showRecalcularModal = false;
         }
     }
 

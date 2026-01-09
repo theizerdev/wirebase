@@ -215,7 +215,7 @@ if (!function_exists('format_dual_currency')) {
         
         if ($exchangeRate) {
             $bsAmount = $amountValue * $exchangeRate;
-            $bsFormatted = 'Bs. ' . number_format($bsAmount, 2, ',', '.');
+            $bsFormatted = '$. ' . number_format($bsAmount, 2, ',', '.');
             return $usdFormatted . ' / ' . $bsFormatted;
         }
         

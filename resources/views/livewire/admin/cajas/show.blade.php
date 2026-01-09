@@ -40,6 +40,12 @@
                                     <i class="ri ri-lock-line"></i> Cerrar Caja
                                 </button>
                                 @endcan
+                            @else
+                                @can('edit cajas')
+                                <button type="button" class="btn btn-info" wire:click="recalcularMontos">
+                                    <i class="ri ri-calculator-line"></i> Recalcular Montos
+                                </button>
+                                @endcan
                             @endif
                             <a href="{{ route('admin.cajas.index') }}" class="btn btn-secondary">
                                 <i class="ri ri-arrow-left-line"></i> Volver
@@ -318,6 +324,46 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Modal Recalcular Montos -->
+    @if($showRecalcularModal)
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Recalcular Montos</h5>
+                    <button type="button" class="btn-close" wire:click="$set('showRecalcularModal', false)"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="ri ri-calculator-line me-2"></i>
+                        <strong>¿Deseas recalcular los montos de esta caja?</strong><br>
+                        Esto actualizará el monto final de cierre basándose en los pagos actuales.
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Monto Actual:</label>
+                            <div class="fw-bold">$ {{ number_format($caja->monto_final, 2, '.', ',') }}</div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Total Ingresos:</label>
+                            <div class="fw-bold">$ {{ number_format($caja->total_ingresos, 2, '.', ',') }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="$set('showRecalcularModal', false)">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-info" wire:click="confirmarRecalcular">
+                        <i class="ri ri-calculator-line"></i> Recalcular Montos
+                    </button>
+                </div>
             </div>
         </div>
     </div>

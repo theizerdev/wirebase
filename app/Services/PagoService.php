@@ -14,12 +14,7 @@ class PagoService
     public function crearPago(array $data)
     {
         return DB::transaction(function () use ($data) {
-            // Obtener caja abierta del día
-            $caja = Caja::obtenerCajaAbierta(
-                $data['empresa_id'],
-                $data['sucursal_id'],
-                $data['fecha'] ?? now()->toDateString()
-            );
+            
 
             // Crear pago (cabecera)
             $pago = Pago::create([
@@ -27,7 +22,7 @@ class PagoService
                 'fecha' => $data['fecha'],
                 'matricula_id' => $data['matricula_id'],
                 'serie_id' => $data['serie_id'] ?? null,
-                'caja_id' => $caja?->id,
+                'caja_id' => $data['caja_id'],
                 'user_id' => auth()->id(),
                 'metodo_pago' => $data['metodo_pago'] ?? null,
                 'referencia' => $data['referencia'] ?? null,

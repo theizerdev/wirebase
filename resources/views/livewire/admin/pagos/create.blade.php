@@ -133,6 +133,7 @@
                                     <option value="efectivo Bs.">Efectivo Bs.</option>
                                     <option value="efectivo Divisas.">Efectivo Divisas</option>
                                     <option value="transferencia">Transferencia</option>
+                                    <option value="punto de venta">Punto de Venta</option>
                                     <option value="pago mixto">Pago Mixto</option>
                                     <option value="pago movil">Pago Móvil</option>
                                 </select>
