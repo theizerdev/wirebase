@@ -55,18 +55,7 @@ class Create extends Component
     public $plantillas_pago = [];
     public $whatsappStatus = 'disconnected';
 
-    protected $rules = [
-        'matricula_id' => 'required|exists:matriculas,id',
-        'tipo_pago' => 'required|in:factura,boleta,nota_credito,recibo',
-        'fecha' => 'required|date',
-        'metodo_pago' => 'nullable|string',
-        'referencia' => 'nullable|string|unique:pagos,referencia',
-        'descuento' => 'nullable|numeric|min:0',
-        'detalles.*.concepto_pago_id' => 'nullable|integer|exists:conceptos_pago,id',
-        'detalles.*.descripcion' => 'nullable|string',
-        'detalles.*.cantidad' => 'nullable|numeric|min:0.01',
-        'detalles.*.precio_unitario' => 'nullable|numeric|min:0',
-    ];
+   
 
     public function mount()
     {
@@ -86,8 +75,8 @@ class Create extends Component
     public function inicializarPagoMixto()
     {
         $this->metodos_pago_mixto = [
-            ['metodo' => 'efectivo_dolares', 'monto' => 0, 'referencia' => ''],
-            ['metodo' => 'transferencia', 'monto' => 0, 'referencia' => '']
+            ['metodo' => 'efectivo_dolares', 'monto' => 0, 'referencia' => '-'],
+            ['metodo' => 'transferencia', 'monto' => 0, 'referencia' => '-']
         ];
     }
 
@@ -494,7 +483,6 @@ class Create extends Component
                 $this->whatsappStatus = 'disconnected';
             }
         } catch (\Exception $e) {
-            dd($e);
             $this->whatsappStatus = 'disconnected';
         }
     }
@@ -507,11 +495,51 @@ class Create extends Component
             return;
         }
 
+        // Validar referencias duplicadas antes de guardar
+        if ($this->es_pago_mixto) {
+            foreach ($this->metodos_pago_mixto as $index => $metodo) {
+                if (!empty($metodo['referencia'])) {
+                    $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $metodo['referencia']);
+                    
+                    // Buscar en el campo referencia directo
+                    $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
+                        ->where('estado', 'aprobado')
+                        ->exists();
+                    
+                    // Buscar en el campo detalles_pago_mixto (JSON)
+                    $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
+                        ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
+                        ->exists();
+                    
+                    if ($existeReferenciaDirecta || $existeEnDetalles) {
+                        session()->flash('error', 'La referencia "' . $metodo['referencia'] . '" ya fue utilizada en otro pago.');
+                        return;
+                    }
+                }
+            }
+        } elseif (!empty($this->referencia)) {
+            // Validar referencia para pago no mixto
+            $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $this->referencia);
+            
+            $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
+                ->where('estado', 'aprobado')
+                ->exists();
+            
+            $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
+                ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
+                ->exists();
+            
+            if ($existeReferenciaDirecta || $existeEnDetalles) {
+                session()->flash('error', 'La referencia "' . $this->referencia . '" ya fue utilizada en otro pago.');
+                return;
+            }
+        }
+
 
 
        try {
         DB::transaction(function () {
-            //$this->validate();
+            
 
             $matricula = Matricula::find($this->matricula_id);
 
@@ -554,6 +582,59 @@ class Create extends Component
         }
     }
 
+    /**
+     * Método updated general para detectar cambios en metodos_pago_mixto
+     */
+    public function updatedMetodosPagoMixto($value, $key)
+    {
+       
+        
+        // Si el cambio es en una referencia, procesar la validación
+        if (str_contains($key, 'referencia')) {
+            $this->validarReferenciaMixto($value, $key);
+        }
+    }
+    
+    /**
+     * Validar referencia en tiempo real
+     */
+    private function validarReferenciaMixto($value, $key)
+    {
+        // Extraer el índice del array
+        $parts = explode('.', $key);
+        $index = $parts[0] ?? null;
+        
+        if ($index !== null && isset($this->metodos_pago_mixto[$index])) {
+            // Limpiar la referencia
+            $valorLimpio = trim($value);
+            $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $valorLimpio);
+            
+            // Validar que la referencia no exista en la base de datos
+            if (!empty($valorLimpio)) {
+                // Buscar en el campo referencia directo
+                $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
+                    ->where('estado', 'aprobado')
+                    ->exists();
+                
+                // Buscar en el campo detalles_pago_mixto (JSON)
+                $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
+                    ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
+                    ->exists();
+                
+                // Verificar si existe en cualquiera de los dos lugares
+                if ($existeReferenciaDirecta || $existeEnDetalles) {
+                    // Usar $this->addError para mostrar el error en el campo específico
+                    $this->addError('metodos_pago_mixto.' . $index . '.referencia', 'Esta referencia ya fue utilizada en otro pago.');
+                    $this->metodos_pago_mixto[$index]['referencia'] = '';
+                } else {
+                    $this->metodos_pago_mixto[$index]['referencia'] = $valorLimpio;
+                    // Limpiar el error si existe
+                    $this->resetErrorBag('metodos_pago_mixto.' . $index . '.referencia');
+                }
+            }
+        }
+    }
+
     public function render()
     {
         $tipos = [
@@ -567,4 +648,61 @@ class Create extends Component
 
         return view('livewire.admin.pagos.create', compact('tipos'))->layout($this->getLayout());
     }
+
+    function updatedReferencia($value)
+    {
+        if (!$this->es_pago_mixto) {
+            // Limpiar la referencia
+            $valorLimpio = trim($value);
+            $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $valorLimpio);
+            
+            if (!empty($valorLimpio)) {
+                // Buscar en el campo referencia directo
+                $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
+                    ->where('estado', 'aprobado')
+                    ->exists();
+                
+                // Buscar en el campo detalles_pago_mixto (JSON)
+                $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
+                    ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
+                    ->exists();
+                
+                // Verificar si existe en cualquiera de los dos lugares
+                if ($existeReferenciaDirecta || $existeEnDetalles) {
+                    $this->addError('referencia', 'Esta referencia ya fue utilizada en otro pago.');
+                    $this->referencia = '';
+                } else {
+                    $this->referencia = $valorLimpio;
+                    $this->resetErrorBag('referencia');
+                }
+            }
+        }
+    }
+
+    /**
+     * Función updated para manejar cambios en referencias de pago mixto
+     * Se ejecuta cuando se actualiza cualquier referencia en metodos_pago_mixto
+     */
+    public function updatedMetodosPagoMixtoReferencia($value, $key)
+    {
+        // Usar el método de validación
+        $this->validarReferenciaMixto($value, $key);
+
+            // Actualizar el valor limpio
+            $this->metodos_pago_mixto[$index]['referencia'] = $valorLimpio;
+            
+            // Si el método de pago es efectivo, la referencia debe estar vacía
+            $metodoPago = $this->metodos_pago_mixto[$index]['metodo'] ?? '';
+            if (in_array($metodoPago, ['efectivo_bolivares', 'efectivo_dolares'])) {
+                $this->metodos_pago_mixto[$index]['referencia'] = '';
+            }
+            
+            // Emitir evento para notificar cambios
+            $this->dispatch('referencia-mixto-actualizada', [
+                'index' => $index,
+                'valor' => $valorLimpio,
+                'metodo' => $metodoPago
+            ]);
+        }
+    
 }

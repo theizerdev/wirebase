@@ -148,7 +148,7 @@
                                     <i class="ri ri-hashtag text-secondary me-2"></i>
                                     <label class="form-label mb-0 fw-medium">Referencia</label>
                                 </div>
-                                <input type="text" wire:model="referencia" class="form-control form-control-sm @error('referencia') is-invalid @enderror" placeholder="Opcional" @if($es_pago_mixto) disabled @endif>
+                                <input type="text" wire:model.live="referencia" class="form-control form-control-sm @error('referencia') is-invalid @enderror" placeholder="Opcional" @if($es_pago_mixto) disabled @endif>
                                 @error('referencia') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
@@ -208,7 +208,13 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Referencia</label>
-                            <input type="text" wire:model="metodos_pago_mixto.{{ $index }}.referencia" class="form-control" placeholder="Número de referencia">
+                            <input type="text" 
+                                   wire:model.live="metodos_pago_mixto.{{ $index }}.referencia" 
+                                   class="form-control @error('metodos_pago_mixto.' . $index . '.referencia') is-invalid @enderror" 
+                                   placeholder="Número de referencia">
+                            @error('metodos_pago_mixto.' . $index . '.referencia')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-md-2">
                             @if(count($metodos_pago_mixto) > 1)

@@ -267,10 +267,10 @@ class Index extends Component
         $halfPage = $pageHeight / 2;
 
         // Generar recibo original en la mitad superior
-        $this->generateReceiptContent($pdf, $pago, 'ORIGINAL', 7);
+        $this->generateReceiptContent($pdf, $pago, 'ORIGINAL', 5);
 
         // Generar copia en la mitad inferior
-        $this->generateReceiptContent($pdf, $pago, 'COPIA', $halfPage + 9);
+        $this->generateReceiptContent($pdf, $pago, 'COPIA', $halfPage + 7);
 
         // Mostrar PDF en el navegador en lugar de descargarlo
         return response($pdf->Output('S'), 200, [
@@ -297,26 +297,53 @@ class Index extends Component
         //dd($exchangeRate);
 
         // Información del pago (alineada a la izquierda)
-        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(30, 5, 'Nro. Recibo:', 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
+        $pdf->SetFont('Arial', '', 8);
         // Extraer solo el número después del guión
         $numeroRecibo = explode('-', $pago->numero_completo);
         $numeroMostrar = isset($numeroRecibo[1]) ? $numeroRecibo[1] : $pago->numero_completo;
         $pdf->Cell(0, 5, $numeroMostrar, 0, 1, 'L');
 
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(30, 5, 'Fecha:', 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->Cell(30, 5, 'Fecha de pago:', 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 8);
         $pdf->Cell(0, 5, $pago->fecha->format('d/m/Y'), 0, 1, 'L');
+
+    
 
 
         // Información del estudiante
         $student = $pago->matricula->student;
-        $pdf->SetFont('Arial', 'B', 10);
-        $pdf->Cell(30, 5, 'Estudiante:', 0, 0, 'L');
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->Cell(0, 5, substr($student->nombres . ' ' . $student->apellidos, 0, 45), 0, 1, 'L');
+       
+        $fechaNacimiento = \Carbon\Carbon::parse($student->fecha_nacimiento);
+        $esMenorEdad = $fechaNacimiento->age < 18;
+    
+        $pdf->SetFont('Arial', 'B', 8);
+        if ($esMenorEdad != true) {
+             $pdf->Cell(30, 5, 'Estudiante:', 0, 0, 'L');
+             $pdf->SetFont('Arial', '', 8);
+             $pdf->Cell(0, 5, substr(utf8_decode($student->nombres . ' ' . $student->apellidos), 0, 45), 0, 1, 'L');
+        } else {
+             $pdf->Cell(30, 5, 'Estudiante:', 0, 0, 'L');
+             $pdf->SetFont('Arial', '', 8);
+             $pdf->Cell(0, 5, utf8_decode($student->nombres . ' ' . $student->apellidos.' ('.$student->grado.' - '.$student->seccion.') Representante: '.$student->representante_nombres.' '.$student->representante_apellidos), 0, 1, 'L');
+        }
+       
+        
+
+
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->Cell(30, 5, 'Fecha de emision:', 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(0, 5, $pago->created_at->format('d/m/Y'), 0, 1, 'L');
+
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->Cell(30, 5, utf8_decode('Método de pago:'), 0, 0, 'L');
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->Cell(0, 5, strtoupper($pago->metodo_pago), 0, 1, 'L');
+
+        
 
         // Detalles del pago
         $pdf->Ln(3);
@@ -341,7 +368,7 @@ class Index extends Component
         }
 
         // Totales
-        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(170, 5, 'Subtotal:', 1, 0, 'R');
         if ($exchangeRate) {
             $subtotalBs = $pago->subtotal * $exchangeRate->usd_rate;
@@ -360,7 +387,7 @@ class Index extends Component
             }
         }
 
-        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(170, 5, 'Total:', 1, 0, 'R');
         if ($exchangeRate) {
             $totalBs = $pago->total * $exchangeRate->usd_rate;
@@ -371,7 +398,7 @@ class Index extends Component
 
         // Firma
         $pdf->Ln(4);
-        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->SetFont('Arial', 'B', 8);
         $pdf->Cell(90, 5, '', 0, 0); // Espacio en blanco
         $pdf->Cell(80, 5, '__________________________', 0, 1, 'C');
         $pdf->Cell(90, 5, '', 0, 0); // Espacio en blanco
