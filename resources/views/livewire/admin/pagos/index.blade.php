@@ -429,6 +429,8 @@
                                                 $iconClass = match($pago->metodo_pago) {
                                                     'efectivo' => 'ri ri-money-dollar-circle-line text-success',
                                                     'transferencia' => 'ri ri-bank-line text-info',
+                                                    'pago_movil' => 'ri ri-smartphone-line text-primary',
+                                                    'punto de venta' => 'ri ri-bank-card-line text-primary',
                                                     'tarjeta' => 'ri ri-bank-card-line text-primary',
                                                     default => 'ri ri-question-line text-muted'
                                                 };
@@ -436,7 +438,7 @@
                                             <i class="{{ $iconClass }} me-2" style="font-size: 1.2rem;"></i>
                                             <div>
                                                 <div>{{ ucfirst($pago->metodo_pago ?? 'N/A') }}</div>
-                                                @if($pago->referencia)
+                                                @if($pago->referencia && in_array($pago->metodo_pago, ['pago_movil', 'transferencia', 'punto de venta']))
                                                     <small class="text-muted">Ref: {{ $pago->referencia }}</small>
                                                 @endif
                                             </div>
