@@ -141,6 +141,19 @@ Route::get('/programas/crear', ProgramasCreate::class)->name('programas.create')
 Route::get('/programas/{programa}/editar', ProgramasEdit::class)->name('programas.edit');
 Route::get('/programas/{programa}', ProgramasShow::class)->name('programas.show');
 
+// Materias (Subjects)
+Route::get('/materias', \App\Livewire\Admin\Subjects\Index::class)->name('subjects.index');
+Route::get('/materias/crear', \App\Livewire\Admin\Subjects\Create::class)->name('subjects.create');
+Route::get('/materias/{subject}/editar', \App\Livewire\Admin\Subjects\Edit::class)->name('subjects.edit');
+Route::get('/materias/{subject}', \App\Livewire\Admin\Subjects\Show::class)->name('subjects.show');
+Route::get('/materias/{subject}/asignar-profesores', \App\Livewire\Admin\Subjects\AssignTeachers::class)->name('subjects.assign-teachers');
+
+// Profesores (Teachers)
+Route::get('/profesores', \App\Livewire\Admin\Teachers\Index::class)->name('teachers.index');
+Route::get('/profesores/crear', \App\Livewire\Admin\Teachers\Create::class)->name('teachers.create');
+Route::get('/profesores/{teacher}/editar', \App\Livewire\Admin\Teachers\Edit::class)->name('teachers.edit');
+Route::get('/profesores/{teacher}', \App\Livewire\Admin\Teachers\Show::class)->name('teachers.show');
+
 // Conceptos de Pago
 Route::get('/conceptos-pago', ConceptosPagoIndex::class)->name('conceptos-pago.index');
 Route::get('/conceptos-pago/crear', ConceptosPagoCreate::class)->name('conceptos-pago.create');

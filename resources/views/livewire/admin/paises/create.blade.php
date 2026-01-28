@@ -89,11 +89,44 @@
                                 @enderror
                             </div>
 
+                            <div class="col-md-3 mb-3">
+                                <label for="latitud" class="form-label">Latitud de la Capital</label>
+                                <input type="number" class="form-control @error('latitud') is-invalid @enderror"
+                                       id="latitud" wire:model="latitud" placeholder="Ej: 10.4806" 
+                                       step="0.000001" min="-90" max="90">
+                                @error('latitud')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Coordenada latitudinal de la capital</small>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="longitud" class="form-label">Longitud de la Capital</label>
+                                <input type="number" class="form-control @error('longitud') is-invalid @enderror"
+                                       id="longitud" wire:model="longitud" placeholder="Ej: -66.9036"
+                                       step="0.000001" min="-180" max="180">
+                                @error('longitud')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">Coordenada longitudinal de la capital</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="zona_horaria" class="form-label">Zona Horaria <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('zona_horaria') is-invalid @enderror"
                                        id="zona_horaria" wire:model="zona_horaria" placeholder="Ej: America/Caracas">
                                 @error('zona_horaria')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="formato_fecha" class="form-label">Formato de Fecha <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('formato_fecha') is-invalid @enderror"
+                                       id="formato_fecha" wire:model="formato_fecha" placeholder="Ej: d/m/Y">
+                                @error('formato_fecha')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>

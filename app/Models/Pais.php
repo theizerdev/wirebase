@@ -21,6 +21,8 @@ class Pais extends Model
         'moneda_principal',
         'idioma_principal',
         'continente',
+        'latitud',
+        'longitud',
         'zona_horaria',
         'formato_fecha',
         'formato_moneda',
@@ -81,12 +83,58 @@ class Pais extends Model
             'USD' => '$',
             'EUR' => '€',
             'GBP' => '£',
-            'VES' => '$',
+            'VES' => 'Bs.S',
             'COP' => '$',
             'ARS' => '$',
             'BRL' => 'R$',
             'MXN' => '$',
+            'PEN' => 'S/.',
+            'PYG' => '₲',
+            'UYU' => '$U',
+            'DOP' => 'RD$',
+            'NIO' => 'C$',
+            'HNL' => 'L',
+            'PAB' => 'B/.',
+            'CRC' => '₡',
+            'GTQ' => 'Q',
+            'BOB' => 'Bs.',
+            'CLP' => '$',
+            'CUP' => '$',
+            'CLF' => 'UF',
             default => '$'
         };
+    }
+
+    /**
+     * Obtener las coordenadas de la capital como array
+     */
+    public function getCoordenadasAttribute()
+    {
+        if ($this->latitud && $this->longitud) {
+            return [
+                'lat' => (float) $this->latitud,
+                'lng' => (float) $this->longitud
+            ];
+        }
+        return null;
+    }
+
+    /**
+     * Generar URL de Google Maps para la capital
+     */
+    public function getGoogleMapsUrlAttribute()
+    {
+        if ($this->latitud && $this->longitud) {
+            return "https://www.google.com/maps?q={$this->latitud},{$this->longitud}";
+        }
+        return null;
+    }
+
+    /**
+     * Verificar si el país tiene coordenadas registradas
+     */
+    public function tieneCoordenadas(): bool
+    {
+        return !is_null($this->latitud) && !is_null($this->longitud);
     }
 }

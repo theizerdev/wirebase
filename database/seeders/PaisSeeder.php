@@ -30,7 +30,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => -34.6118,
+                'longitud' => -58.3960
             ],
             [
                 'nombre' => 'Bolivia',
@@ -47,7 +49,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => -16.5000,
+                'longitud' => -68.1193
             ],
             [
                 'nombre' => 'Brasil',
@@ -81,7 +85,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => '',
                 'decimales_moneda' => 0,
-                'activo' => true
+                'activo' => true,
+                'latitud' => -33.4489,
+                'longitud' => -70.6693
             ],
             [
                 'nombre' => 'Colombia',
@@ -98,7 +104,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 4.7110,
+                'longitud' => -74.0721
             ],
             [
                 'nombre' => 'Costa Rica',
@@ -132,7 +140,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 23.1136,
+                'longitud' => -82.3666
             ],
             [
                 'nombre' => 'Ecuador',
@@ -149,7 +159,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => -0.1807,
+                'longitud' => -78.4678
             ],
             [
                 'nombre' => 'El Salvador',
@@ -166,7 +178,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 13.6929,
+                'longitud' => -89.2182
             ],
             [
                 'nombre' => 'Guatemala',
@@ -183,7 +197,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 14.6349,
+                'longitud' => -90.5069
             ],
             [
                 'nombre' => 'Honduras',
@@ -200,7 +216,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 14.0723,
+                'longitud' => -87.1921
             ],
             [
                 'nombre' => 'México',
@@ -217,7 +235,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => ',',
                 'separador_decimales' => '.',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 19.4326,
+                'longitud' => -99.1332
             ],
             [
                 'nombre' => 'Nicaragua',
@@ -234,7 +254,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 12.1146,
+                'longitud' => -86.2807
             ],
             [
                 'nombre' => 'Panamá',
@@ -251,7 +273,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 8.9824,
+                'longitud' => -79.5199
             ],
             [
                 'nombre' => 'Paraguay',
@@ -268,7 +292,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => -25.2637,
+                'longitud' => -57.5759
             ],
             [
                 'nombre' => 'Perú',
@@ -302,7 +328,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => ',',
                 'separador_decimales' => '.',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 18.4655,
+                'longitud' => -66.1057
             ],
             [
                 'nombre' => 'República Dominicana',
@@ -319,7 +347,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 18.4861,
+                'longitud' => -69.9312
             ],
             [
                 'nombre' => 'Uruguay',
@@ -336,7 +366,9 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => -34.9011,
+                'longitud' => -56.1645
             ],
             [
                 'nombre' => 'Venezuela',
@@ -353,16 +385,21 @@ class PaisSeeder extends Seeder
                 'separador_miles' => '.',
                 'separador_decimales' => ',',
                 'decimales_moneda' => 2,
-                'activo' => true
+                'activo' => true,
+                'latitud' => 10.4806,
+                'longitud' => -66.9036
             ]
         ];
 
-        // Insertar los países
+        // Insertar o actualizar los países
         foreach ($paisesLatinoamericanos as $pais) {
-            Pais::create($pais);
+            Pais::updateOrCreate(
+                ['codigo_iso2' => $pais['codigo_iso2']], // Buscar por código ISO2
+                $pais // Datos a actualizar o crear
+            );
         }
 
-        $this->command->info('✅ Países latinoamericanos insertados exitosamente');
-        $this->command->info('📊 Total de países: ' . count($paisesLatinoamericanos));
+        $this->command->info('✅ Países latinoamericanos procesados exitosamente');
+        $this->command->info('📊 Total de países procesados: ' . count($paisesLatinoamericanos));
     }
 }

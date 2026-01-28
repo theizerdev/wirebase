@@ -36,7 +36,7 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">País <span class="text-danger">*</span></label>
-                                <select class="form-select @error('pais_id') is-invalid @enderror" wire:model="pais_id">
+                                <select class="form-select @error('pais_id') is-invalid @enderror" wire:model.live="pais_id">
                                     <option value="">Seleccione un país</option>
                                     @foreach($paises as $pais)
                                         <option value="{{ $pais->id }}">{{ $pais->nombre }}</option>
@@ -58,7 +58,7 @@
                                         <div class="row">
                                             <div class="col-md-3">
                                                 <strong>Moneda:</strong><br>
-                                                <span class="badge bg-primary">{{ $moneda_principal }}</span>
+                                                <span class="badge bg-primary">{{ $moneda }}</span>
                                                 <small class="text-muted">({{ $simbolo_moneda }})</small>
                                             </div>
                                             <div class="col-md-3">
@@ -71,7 +71,7 @@
                                             </div>
                                             <div class="col-md-3">
                                                 <strong>Idioma:</strong><br>
-                                                <span class="badge bg-warning">{{ $idioma_principal }}</span>
+                                                <span class="badge bg-warning">{{ $idioma }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -235,6 +235,15 @@
                 alert('Tu navegador no soporta geolocalización.');
             }
         };
+
+        // Listener para cuando cambie el país y se quiera centrar el mapa
+        Livewire.on('map-center-changed', (data) => {
+            var lat = data.latitud;
+            var lng = data.longitud;
+            marker.setLatLng([lat, lng]);
+            map.setView([lat, lng], 13);
+            updateLocation(lat, lng);
+        });
     });
 </script>
 @endpush

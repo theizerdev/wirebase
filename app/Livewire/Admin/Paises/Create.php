@@ -19,6 +19,8 @@ class Create extends Component
     public $moneda_principal = 'USD';
     public $idioma_principal = 'es';
     public $continente = 'América';
+    public $latitud = '';
+    public $longitud = '';
     public $zona_horaria = 'UTC';
     public $formato_fecha = 'd/m/Y';
     public $formato_moneda = '#,##0.00';
@@ -36,6 +38,8 @@ class Create extends Component
         'moneda_principal' => 'required|string|size:3',
         'idioma_principal' => 'required|string|size:2',
         'continente' => 'required|string|max:50',
+        'latitud' => 'nullable|numeric|between:-90,90',
+        'longitud' => 'nullable|numeric|between:-180,180',
         'zona_horaria' => 'required|string|max:50',
         'formato_fecha' => 'required|string|max:20',
         'formato_moneda' => 'required|string|max:20',
@@ -66,6 +70,8 @@ class Create extends Component
                 'moneda_principal' => strtoupper($this->moneda_principal),
                 'idioma_principal' => $this->idioma_principal,
                 'continente' => $this->continente,
+                'latitud' => $this->latitud ? (float) $this->latitud : null,
+                'longitud' => $this->longitud ? (float) $this->longitud : null,
                 'zona_horaria' => $this->zona_horaria,
                 'formato_fecha' => $this->formato_fecha,
                 'formato_moneda' => $this->formato_moneda,

@@ -101,7 +101,7 @@ class PaisIndex extends Component
 
     protected function getExportHeaders(): array
     {
-        return ['ID', 'Nombre', 'Código ISO2', 'Código ISO3', 'Moneda', 'Continente', 'Activo'];
+        return ['ID', 'Nombre', 'Código ISO2', 'Código ISO3', 'Moneda', 'Continente', 'Latitud', 'Longitud', 'Activo'];
     }
 
     protected function formatExportRow($pais): array
@@ -113,6 +113,8 @@ class PaisIndex extends Component
             $pais->codigo_iso3,
             $pais->moneda_principal,
             $pais->continente,
+            $pais->latitud,
+            $pais->longitud,
             $pais->activo ? 'Activo' : 'Inactivo'
         ];
     }

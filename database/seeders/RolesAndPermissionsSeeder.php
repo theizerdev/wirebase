@@ -243,6 +243,30 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view whatsapp retry statistics',
                 'manage whatsapp auto retry',
             ],
+
+            // Materias (Subjects)
+            'subjects' => [
+                'access subjects',
+                'view subjects',
+                'create subjects',
+                'edit subjects',
+                'delete subjects',
+                'assign teachers',
+                'assign students',
+                'manage subject schedules',
+            ],
+            // Profesores (Teachers)
+            'teachers' => [
+                'access teachers',
+                'view teachers',
+                'create teachers',
+                'edit teachers',
+                'delete teachers',
+                'export teachers',
+                'manage teacher assignments',
+                'view teacher schedules',
+                'manage teacher schedules',
+            ],
         ];
 
         // Crear permisos organizados por módulos
@@ -259,6 +283,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $superAdminRole = Role::firstOrCreate(['name' => 'Super Administrador']);
         $adminRole = Role::firstOrCreate(['name' => 'Administrador']);
         $recepcionistaRole = Role::firstOrCreate(['name' => 'Recepcionista']);
+        $profesorRole = Role::firstOrCreate(['name' => 'Profesor']);
 
         // Asignar todos los permisos al Super Administrador
         $superAdminRole->syncPermissions(Permission::all());
@@ -270,11 +295,12 @@ class RolesAndPermissionsSeeder extends Seeder
         ])->get();
         $adminRole->syncPermissions($adminPermissions);
 
-        // Asignar permisos al Recepcionista (solo de estudiantes, matrículas, pagos y dashboard básico)
+        // Asignar permisos al Recepcionista (solo de estudiantes, matrículas, pagos, profesores y dashboard básico)
         $recepcionistaPermissions = Permission::whereIn('module', [
             'students',
             'matriculas',
-            'pagos'
+            'pagos',
+            'teachers'
         ])->orWhereIn('name', [
             'access dashboard',
             'dashboard.alerts',
@@ -282,6 +308,16 @@ class RolesAndPermissionsSeeder extends Seeder
             'dashboard.access'
         ])->get();
         $recepcionistaRole->syncPermissions($recepcionistaPermissions);
+
+        // Asignar permisos básicos al Profesor (solo acceso a profesores y dashboard básico)
+        $profesorPermissions = Permission::whereIn('module', [
+            'teachers'
+        ])->orWhereIn('name', [
+            'access dashboard',
+            'dashboard.academic',
+            'dashboard.access'
+        ])->get();
+        $profesorRole->syncPermissions($profesorPermissions);
 
         // Asignar permisos de mensajería, biblioteca, series, cajas, reuniones, países, exportación de base de datos y WhatsApp a Administradores y Super Administradores
         $mensajeriaBibliotecaSeriesCajasPaisesExportPermissions = Permission::whereIn('module', [

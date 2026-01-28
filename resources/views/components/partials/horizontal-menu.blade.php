@@ -117,18 +117,32 @@
   </li>
   @endcan
 
-  @canany(['access matriculas', 'access programas'])
-  <!-- Matrículas -->
-  <li class="menu-item {{ request()->routeIs('admin.matriculas.*') || request()->routeIs('admin.programas.*') ? 'active open' : '' }}">
+  @canany(['access matriculas', 'access programas', 'access subjects'])
+  <!-- Matrículas y Materias -->
+  <li class="menu-item {{ request()->routeIs('admin.matriculas.*') || request()->routeIs('admin.programas.*') || request()->routeIs('admin.subjects.*') ? 'active open' : '' }}">
     <a href="javascript:void(0);" class="menu-link menu-toggle">
       <i class="menu-icon tf-icons ri ri-graduation-cap-line"></i>
-      <div>Matrículas</div>
+      <div>Matrículas y Materias</div>
     </a>
     <ul class="menu-sub">
       @can('access programas')
       <li class="menu-item {{ request()->routeIs('admin.programas.*') ? 'active' : '' }}">
         <a href="{{ route('admin.programas.index') }}" class="menu-link">
           <div>Programas</div>
+        </a>
+      </li>
+      @endcan
+      @can('access subjects')
+      <li class="menu-item {{ request()->routeIs('admin.subjects.index') ? 'active' : '' }}">
+        <a href="{{ route('admin.subjects.index') }}" class="menu-link">
+          <div>Materias</div>
+        </a>
+      </li>
+      @endcan
+      @can('access teachers')
+      <li class="menu-item {{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.teachers.index') }}" class="menu-link">
+          <div>Profesores</div>
         </a>
       </li>
       @endcan

@@ -212,6 +212,14 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    /**
+     * Get the teacher profile for the user.
+     */
+    public function teacher()
+    {
+        return $this->hasOne(Teacher::class);
+    }
+
     public function scopeForUser($query)
     {
         if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {

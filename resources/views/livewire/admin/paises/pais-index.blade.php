@@ -137,6 +137,9 @@
                                 <th wire:click="sortBy('continente')" style="cursor: pointer;">
                                     Continente @if($sortBy === 'continente') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
+                                <th>
+                                    Coordenadas
+                                </th>
                                 <th wire:click="sortBy('activo')" style="cursor: pointer;">
                                     Estado @if($sortBy === 'activo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
@@ -162,6 +165,17 @@
                                     </td>
                                     <td>{{ $pais->moneda_principal }}</td>
                                     <td>{{ $pais->continente }}</td>
+                                    <td>
+                                        @if($pais->tieneCoordenadas())
+                                            <span class="badge bg-success bg-opacity-10 text-success" title="Lat: {{ $pais->latitud }}, Lng: {{ $pais->longitud }}">
+                                                <i class="ri ri-map-pin-line me-1"></i>Sí
+                                            </span>
+                                        @else
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                                <i class="ri ri-map-pin-line me-1"></i>No
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox"
@@ -197,7 +211,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center">
+                                    <td colspan="7" class="text-center">
                                         <i class="ri ri-folder-open-line ri-3x text-muted mb-3"></i>
                                         <p class="text-muted">No se encontraron países</p>
                                     </td>

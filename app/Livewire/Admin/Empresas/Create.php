@@ -25,6 +25,18 @@ class Create extends Component
     public $telefono = '';
     public $email = '';
     public $pais_id = '';
+    public $paisSeleccionado = null;
+
+    public function mount()
+    {
+        // Inicializar configuración regional con valores por defecto
+        $this->moneda = 'USD';
+        $this->zona_horaria = 'UTC';
+        $this->formato_fecha = 'd/m/Y';
+        $this->formato_moneda = '#,##0.00';
+        $this->simbolo_moneda = '$';
+        $this->idioma = 'es';
+    }
 
     protected $rules = [
         'razon_social' => 'required|string|max:255',
@@ -46,6 +58,47 @@ class Create extends Component
         $this->longitud = $longitude;
         $this->address = $address;
         $this->direccion = $address;
+    }
+
+    public function updatedPaisId($value)
+    {
+        if ($value) {
+            $pais = Pais::find($value);
+            if ($pais) {
+                // Actualizar configuración regional
+                $this->moneda = $pais->moneda_principal ?? 'USD';
+                $this->zona_horaria = $pais->zona_horaria ?? 'UTC';
+                $this->formato_fecha = $pais->formato_fecha ?? 'd/m/Y';
+                $this->formato_moneda = $pais->formato_moneda ?? '#,##0.00';
+                $this->simbolo_moneda = $pais->simbolo_moneda ?? '$';
+                $this->idioma = $pais->idioma_principal ?? 'es';
+
+                // Actualizar coordenadas si el país las tiene
+                if ($pais->tieneCoordenadas()) {
+                    $this->latitud = $pais->latitud;
+                    $this->longitud = $pais->longitud;
+                    $this->dispatch('map-center-changed', latitud: $pais->latitud, longitud: $pais->longitud);
+                }
+
+                // Disparar evento de configuración regional actualizada
+                $this->dispatch('regional-configuration-updated', [
+                    'currency' => $this->moneda,
+                    'timezone' => $this->zona_horaria,
+                    'date_format' => $this->formato_fecha,
+                    'currency_format' => $this->formato_moneda,
+                    'currency_symbol' => $this->simbolo_moneda,
+                    'locale' => $this->idioma,
+                ]);
+            }
+        } else {
+            // Restablecer valores por defecto si no hay país seleccionado
+            $this->moneda = 'USD';
+            $this->zona_horaria = 'UTC';
+            $this->formato_fecha = 'd/m/Y';
+            $this->formato_moneda = '#,##0.00';
+            $this->simbolo_moneda = '$';
+            $this->idioma = 'es';
+        }
     }
 
     public function save()

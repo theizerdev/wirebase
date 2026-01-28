@@ -101,7 +101,7 @@ class Create extends Component
     {
         $query = Matricula::with(['student', 'programa']);
 
-        if (!auth()->user()->hasRole('Super Administrador')) {
+        if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
             $query->where('empresa_id', auth()->user()->empresa_id)
                   ->where('sucursal_id', auth()->user()->sucursal_id);
         }
@@ -125,7 +125,7 @@ class Create extends Component
                     $q->where('nombre', 'like', '%' . $value . '%');
                 });
 
-            if (!auth()->user()->hasRole('Super Administrador')) {
+            if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
                 $query->where('empresa_id', auth()->user()->empresa_id)
                       ->where('sucursal_id', auth()->user()->sucursal_id);
             }

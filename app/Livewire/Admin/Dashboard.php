@@ -32,6 +32,12 @@ class Dashboard extends Component
 
     public function mount()
     {
+        // Verificar si hay usuario autenticado
+        if (!auth()->check()) {
+            // Si no hay usuario autenticado, redirigir al login
+            return redirect()->route('login');
+        }
+
         // Verificar permisos para cada sección del dashboard
         $this->showAlerts = auth()->user()->can('dashboard.alerts');
         $this->showFinancial = auth()->user()->can('dashboard.financial');
@@ -43,13 +49,17 @@ class Dashboard extends Component
             ->where('fecha_vencimiento', '<', today())
             ->count();
 
-        // Limpiar cache para forzar recarga de datos
-        Cache::forget('dashboard_stats_' . auth()->id() . '_' . $this->dateRange);
+        // Limpiar cache para forzar recarga de datos (solo si hay usuario autenticado)
+        if (auth()->check()) {
+            Cache::forget('dashboard_stats_' . auth()->id() . '_' . $this->dateRange);
+        }
     }
 
     public function updatedDateRange()
     {
-        Cache::forget('dashboard_stats_' . auth()->id() . '_' . $this->dateRange);
+        if (auth()->check()) {
+            Cache::forget('dashboard_stats_' . auth()->id() . '_' . $this->dateRange);
+        }
         $this->dispatch('dateRangeChanged');
     }
 
@@ -96,7 +106,7 @@ class Dashboard extends Component
             $sheet->setCellValue('A4', 'Período de análisis:');
             $sheet->setCellValue('B4', ucfirst($this->dateRange));
             $sheet->setCellValue('A5', 'Usuario:');
-            $sheet->setCellValue('B5', auth()->user()->name);
+            $sheet->setCellValue('B5', auth()->check() ? auth()->user()->name : 'Usuario no autenticado');
 
             $sheet->getStyle('A3:A5')->getFont()->setBold(true);
 
@@ -246,6 +256,11 @@ class Dashboard extends Component
 
     public function render()
     {
+        // Verificar autenticación antes de procesar
+        if (!auth()->check()) {
+            return redirect()->route('login');
+        }
+
         $cacheKey = 'dashboard_stats_' . auth()->id() . '_' . $this->dateRange;
 
         $stats = Cache::remember($cacheKey, 300, function() {
@@ -710,6 +725,3 @@ class Dashboard extends Component
     }
 
 }
-
-
-
