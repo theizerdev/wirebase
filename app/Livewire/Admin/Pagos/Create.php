@@ -55,6 +55,20 @@ class Create extends Component
     public $plantillas_pago = [];
     public $whatsappStatus = 'disconnected';
 
+    protected $rules = [
+        'matricula_id' => 'required|exists:matriculas,id',
+        'tipo_pago' => 'required|in:factura,boleta,nota_credito,recibo,comunidad educativa,educacion adulto',
+        'fecha' => 'required|date',
+        'metodo_pago' => 'required',
+        'detalles' => 'required|array|min:1',
+        'detalles.*.concepto_pago_id' => 'required|exists:conceptos_pago,id',
+        'detalles.*.descripcion' => 'required|string',
+        'detalles.*.cantidad' => 'required|numeric|min:0.01',
+        'detalles.*.precio_unitario' => 'required|numeric|min:0',
+        'metodos_pago_mixto.*.metodo' => 'required',
+        'metodos_pago_mixto.*.monto' => 'required|numeric|min:0',
+    ];
+
    
 
     public function mount()
