@@ -3,10 +3,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-gradient-primary text-white">
+                    <div class="card-header border-bottom">
                         <div class="d-flex align-items-center">
-                            <i class="fas fa-file-import me-2"></i>
-                            <h3 class="card-title mb-0">Importar Estudiantes</h3>
+                            <i class="ri ri-upload-2-line me-2"></i>
+                            <h5 class="card-title mb-0">Importar Estudiantes</h5>
                         </div>
                     </div>
                     <div class="card-body">

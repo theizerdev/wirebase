@@ -3,8 +3,10 @@
         <div class="row">
             <div class="col-lg-4">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Información del Profesor</h3>
+                    <div class="card-header border-bottom">
+                        <h5 class="card-title mb-0">
+                            <i class="ri ri-user-line me-2"></i>Información del Profesor
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
@@ -57,7 +59,7 @@
 
                         <div class="mb-3">
                             <strong>Estado:</strong>
-                            <span class="badge bg-{{ $teacher->is_active ? 'success' : 'danger' }}">
+                            <span class="badge bg-label-{{ $teacher->is_active ? 'success' : 'danger' }}">
                                 {{ $teacher->is_active ? 'Activo' : 'Inactivo' }}
                             </span>
                         </div>
@@ -81,10 +83,10 @@
 
                         <div class="d-grid gap-2">
                             <a href="{{ route('admin.teachers.edit', $teacher) }}" class="btn btn-primary">
-                                <i class="fas fa-edit"></i> Editar Profesor
+                                <i class="ri ri-pencil-line me-1"></i> Editar Profesor
                             </a>
-                            <a href="{{ route('admin.teachers.index') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Volver a la lista
+                            <a href="{{ route('admin.teachers.index') }}" class="btn btn-label-secondary">
+                                <i class="ri ri-arrow-left-line me-1"></i> Volver a la lista
                             </a>
                         </div>
                     </div>
@@ -93,8 +95,8 @@
 
             <div class="col-lg-8">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Materias Asignadas</h3>
+                    <div class="card-header border-bottom">
+                        <h5 class="card-title mb-0">Materias Asignadas</h5>
                     </div>
                     <div class="card-body">
                         @if($currentAssignments->count() > 0)
@@ -120,7 +122,7 @@
                                                 <td>{{ $subject->programa->nombre ?? 'N/A' }}</td>
                                                 <td>{{ $subject->educationalLevel->nombre ?? 'N/A' }}</td>
                                                 <td>
-                                                    <span class="badge bg-info">
+                                                    <span class="badge bg-label-info">
                                                         {{ $subject->pivot->academic_period ?? 'N/A' }}
                                                     </span>
                                                 </td>
@@ -155,12 +157,12 @@
                                                 <td>{{ $subject->programa->nombre ?? 'N/A' }}</td>
                                                 <td>{{ $subject->educationalLevel->nombre ?? 'N/A' }}</td>
                                                 <td>
-                                                    <span class="badge bg-secondary">
+                                                    <span class="badge bg-label-secondary">
                                                         {{ $subject->pivot->academic_period ?? 'N/A' }}
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-{{ $subject->pivot->is_primary ? 'success' : 'warning' }}">
+                                                    <span class="badge bg-label-{{ $subject->pivot->is_primary ? 'success' : 'warning' }}">
                                                         {{ $subject->pivot->is_primary ? 'Principal' : 'Suplente' }}
                                                     </span>
                                                 </td>
@@ -171,10 +173,10 @@
                             </div>
                         @else
                             <div class="text-center text-muted py-4">
-                                <i class="fas fa-chalkboard-teacher fa-3x mb-3"></i>
+                                <i class="ri ri-user-line ri-3x mb-3"></i>
                                 <p>Este profesor no tiene materias asignadas actualmente.</p>
                                 <a href="{{ route('admin.subjects.index') }}" class="btn btn-outline-primary">
-                                    <i class="fas fa-plus"></i> Asignar Materias
+                                    <i class="ri ri-add-line me-1"></i> Asignar Materias
                                 </a>
                             </div>
                         @endif

@@ -26,6 +26,11 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
+                    <div class="card-header border-bottom">
+                        <h5 class="card-title mb-0">
+                            <i class="ri ri-user-line me-2"></i>Datos del Profesor
+                        </h5>
+                    </div>
                     <div class="card-body">
                         <form wire:submit.prevent="save">
                             <div class="row">
@@ -181,11 +186,11 @@
                             <div class="row">
                                 <div class="col-12">
                                     <div class="text-end">
-                                        <a href="{{ route('admin.teachers.index') }}" class="btn btn-light me-2">
-                                            <i class="bx bx-x"></i> Cancelar
+                                        <a href="{{ route('admin.teachers.index') }}" class="btn btn-label-secondary me-2">
+                                            <i class="ri ri-arrow-left-line me-1"></i> Cancelar
                                         </a>
                                         <button type="submit" class="btn btn-primary">
-                                            <i class="bx bx-save"></i> Crear Profesor y Usuario
+                                            <i class="ri ri-save-line me-1"></i> Crear Profesor y Usuario
                                         </button>
                                     </div>
                                 </div>

@@ -171,6 +171,36 @@
   </li>
   @endcan
 
+  <!-- Control de Estudios -->
+  <li class="menu-item {{ request()->routeIs('admin.evaluation-periods.*') || request()->routeIs('admin.evaluation-types.*') || request()->routeIs('admin.evaluations.*') || request()->routeIs('admin.grades.*') ? 'active open' : '' }}">
+    <a href="javascript:void(0);" class="menu-link menu-toggle">
+      <i class="menu-icon tf-icons ri ri-file-list-2-line"></i>
+      <div>Control de Estudios</div>
+    </a>
+    <ul class="menu-sub">
+      <li class="menu-item {{ request()->routeIs('admin.evaluation-periods.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.evaluation-periods.index') }}" class="menu-link">
+          <div>Lapsos</div>
+        </a>
+      </li>
+      <li class="menu-item {{ request()->routeIs('admin.evaluation-types.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.evaluation-types.index') }}" class="menu-link">
+          <div>Tipos de Evaluación</div>
+        </a>
+      </li>
+      <li class="menu-item {{ request()->routeIs('admin.evaluations.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.evaluations.index') }}" class="menu-link">
+          <div>Evaluaciones</div>
+        </a>
+      </li>
+      <li class="menu-item {{ request()->routeIs('admin.grades.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.grades.index') }}" class="menu-link">
+          <div>Calificaciones</div>
+        </a>
+      </li>
+    </ul>
+  </li>
+
   @canany(['access pagos', 'access conceptos pago', 'access cajas'])
   <!-- Pagos y Finanzas -->
   <li class="menu-item {{ request()->routeIs('admin.pagos.*') || request()->routeIs('admin.conceptos-pago.*') || request()->routeIs('admin.cajas.*') ? 'active open' : '' }}">

@@ -3,8 +3,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Editar Profesor</h3>
+                    <div class="card-header border-bottom">
+                        <h5 class="card-title mb-0">
+                            <i class="ri ri-pencil-line me-2"></i>Editar Profesor
+                        </h5>
                     </div>
                     <div class="card-body">
                         <form wire:submit.prevent="save">
@@ -101,11 +103,11 @@
 
                             <div class="row">
                                 <div class="col-12">
-                                    <a href="{{ route('admin.teachers.show', $teacher) }}" class="btn btn-secondary">
-                                        <i class="fas fa-arrow-left"></i> Cancelar
+                                    <a href="{{ route('admin.teachers.show', $teacher) }}" class="btn btn-label-secondary">
+                                        <i class="ri ri-arrow-left-line me-1"></i> Cancelar
                                     </a>
                                     <button type="submit" class="btn btn-primary ms-2">
-                                        <i class="fas fa-save"></i> Guardar Cambios
+                                        <i class="ri ri-save-line me-1"></i> Guardar Cambios
                                     </button>
                                 </div>
                             </div>

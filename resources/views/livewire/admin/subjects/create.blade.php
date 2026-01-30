@@ -7,8 +7,10 @@
     @endif
 
     <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">Crear Nueva Materia</h5>
+        <div class="card-header border-bottom">
+            <h5 class="card-title mb-0">
+                <i class="ri ri-book-2-line me-2"></i>Crear Nueva Materia
+            </h5>
         </div>
         <div class="card-body">
             <form wire:submit.prevent="save">
@@ -116,11 +118,11 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <a href="{{ route('admin.subjects.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancelar
+                    <a href="{{ route('admin.subjects.index') }}" class="btn btn-label-secondary">
+                        <i class="ri ri-arrow-left-line me-1"></i> Cancelar
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar Materia
+                        <i class="ri ri-save-line me-1"></i> Guardar Materia
                     </button>
                 </div>
             </form>

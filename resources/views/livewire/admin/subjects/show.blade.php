@@ -1,7 +1,9 @@
 <div>
     <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">Detalles de la Materia: {{ $subject->name }}</h5>
+        <div class="card-header border-bottom">
+            <h5 class="card-title mb-0">
+                <i class="ri ri-book-2-line me-2"></i>Detalles de la Materia: {{ $subject->name }}
+            </h5>
         </div>
         <div class="card-body">
             <div class="row">
@@ -42,7 +44,7 @@
                         <tr>
                             <th>Estado:</th>
                             <td>
-                                <span class="badge bg-{{ $subject->is_active ? 'success' : 'danger' }}">
+                                <span class="badge bg-label-{{ $subject->is_active ? 'success' : 'danger' }}">
                                     {{ $subject->is_active ? 'Activa' : 'Inactiva' }}
                                 </span>
                             </td>
@@ -96,9 +98,9 @@
                                             <td>{{ $teacher->pivot->assigned_date ? \Carbon\Carbon::parse($teacher->pivot->assigned_date)->format('d/m/Y') : '-' }}</td>
                                             <td>
                                                 @if($teacher->pivot->is_primary)
-                                                    <span class="badge bg-primary">Principal</span>
+                                                    <span class="badge bg-label-primary">Principal</span>
                                                 @else
-                                                    <span class="badge bg-secondary">Auxiliar</span>
+                                                    <span class="badge bg-label-secondary">Auxiliar</span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -118,18 +120,18 @@
             <div class="row mt-4">
                 <div class="col-md-12">
                     <div class="d-flex justify-content-between">
-                        <a href="{{ route('admin.subjects.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
+                        <a href="{{ route('admin.subjects.index') }}" class="btn btn-label-secondary">
+                            <i class="ri ri-arrow-left-line me-1"></i> Volver
                         </a>
                         <div>
                             @can('edit subjects')
-                                <a href="{{ route('admin.subjects.edit', $subject->id) }}" class="btn btn-warning">
-                                    <i class="fas fa-edit"></i> Editar
+                                <a href="{{ route('admin.subjects.edit', $subject->id) }}" class="btn btn-primary">
+                                    <i class="ri ri-pencil-line me-1"></i> Editar
                                 </a>
                             @endcan
                             @can('assign teachers')
                                 <a href="{{ route('admin.subjects.assign-teachers', $subject->id) }}" class="btn btn-info">
-                                    <i class="fas fa-chalkboard-teacher"></i> Asignar Profesores
+                                    <i class="ri ri-user-settings-line me-1"></i> Asignar Profesores
                                 </a>
                             @endcan
                         </div>

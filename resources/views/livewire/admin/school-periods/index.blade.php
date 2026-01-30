@@ -13,56 +13,48 @@
         </div>
     @endif
 
-    <div class="row">
-        <!-- Estadísticas -->
-        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
-            <div class="card">
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-start border-primary border-4 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-1">{{ $schoolPeriods->count() }}</h4>
-                            <p class="mb-0">Total Períodos</p>
+                            <h6 class="text-muted mb-2">Total Períodos</h6>
+                            <h2 class="mb-0">{{ $schoolPeriods->count() }}</h2>
                         </div>
-                        <div class="avatar">
-                            <span class="avatar-initial rounded bg-label-primary">
-                                <i class="ri ri-calendar-line ri-24px"></i>
-                            </span>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-calendar-line text-primary" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
-            <div class="card">
+        <div class="col-md-4">
+            <div class="card border-start border-success border-4 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-1">{{ \App\Models\SchoolPeriod::where('is_active', true)->count() }}</h4>
-                            <p class="mb-0">Períodos Activos</p>
+                            <h6 class="text-muted mb-2">Períodos Activos</h6>
+                            <h2 class="mb-0">{{ \App\Models\SchoolPeriod::where('is_active', true)->count() }}</h2>
                         </div>
-                        <div class="avatar">
-                            <span class="avatar-initial rounded bg-label-success">
-                                <i class="ri ri-checkbox-circle-line ri-24px"></i>
-                            </span>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-checkbox-circle-line text-success" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
-            <div class="card">
+        <div class="col-md-4">
+            <div class="card border-start border-info border-4 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-1">{{ \App\Models\SchoolPeriod::where('is_current', true)->count() }}</h4>
-                            <p class="mb-0">Período Actual</p>
+                            <h6 class="text-muted mb-2">Período Actual</h6>
+                            <h2 class="mb-0">{{ \App\Models\SchoolPeriod::where('is_current', true)->count() }}</h2>
                         </div>
-                        <div class="avatar">
-                            <span class="avatar-initial rounded bg-label-info">
-                                <i class="ri ri-star-line ri-24px"></i>
-                            </span>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="ri ri-star-line text-info" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
                 </div>

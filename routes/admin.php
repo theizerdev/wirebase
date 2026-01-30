@@ -245,3 +245,26 @@ Route::get('/exportar-base-datos', \App\Livewire\Admin\DatabaseExport::class)->n
 
 // WhatsApp
 Route::get('/whatsapp', \App\Livewire\Admin\Whatsapp\Index::class)->name('whatsapp.index');
+
+// ===== CONTROL DE ESTUDIOS =====
+
+// Lapsos de Evaluación
+Route::get('/lapsos-evaluacion', \App\Livewire\Admin\EvaluationPeriods\Index::class)->name('evaluation-periods.index');
+Route::get('/lapsos-evaluacion/crear', \App\Livewire\Admin\EvaluationPeriods\Create::class)->name('evaluation-periods.create');
+Route::get('/lapsos-evaluacion/{evaluationPeriod}/editar', \App\Livewire\Admin\EvaluationPeriods\Edit::class)->name('evaluation-periods.edit');
+
+// Tipos de Evaluación
+Route::get('/tipos-evaluacion', \App\Livewire\Admin\EvaluationTypes\Index::class)->name('evaluation-types.index');
+Route::get('/tipos-evaluacion/crear', \App\Livewire\Admin\EvaluationTypes\Create::class)->name('evaluation-types.create');
+Route::get('/tipos-evaluacion/{evaluationType}/editar', \App\Livewire\Admin\EvaluationTypes\Edit::class)->name('evaluation-types.edit');
+
+// Evaluaciones
+Route::get('/evaluaciones', \App\Livewire\Admin\Evaluations\Index::class)->name('evaluations.index');
+Route::get('/evaluaciones/crear', \App\Livewire\Admin\Evaluations\Create::class)->name('evaluations.create');
+Route::get('/evaluaciones/{evaluation}/editar', \App\Livewire\Admin\Evaluations\Edit::class)->name('evaluations.edit');
+Route::get('/evaluaciones/{evaluation}', \App\Livewire\Admin\Evaluations\Show::class)->name('evaluations.show');
+
+// Calificaciones
+Route::get('/calificaciones', \App\Livewire\Admin\Grades\Index::class)->name('grades.index');
+Route::get('/calificaciones/registrar/{evaluation}', \App\Livewire\Admin\Grades\Register::class)->name('grades.register');
+Route::get('/calificaciones/estudiante/{student}', \App\Livewire\Admin\Grades\StudentGrades::class)->name('grades.student');

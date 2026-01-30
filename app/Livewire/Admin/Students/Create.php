@@ -55,7 +55,7 @@ class Create extends Component
         'codigo' => 'required|string|unique:students,codigo|size:8',
         'documento_identidad' => 'required|string|unique:students,documento_identidad',
         'grado' => 'required|string|max:50',
-        'telefono' => 'required|string|max:50',
+        
         'seccion' => 'required|string|max:10',
         'nivel_educativo_id' => 'required|exists:niveles_educativos,id',
         'turno_id' => 'required|exists:turnos,id',
@@ -228,7 +228,8 @@ class Create extends Component
 
     public function save()
     {
-        $this->validate();
+       try {
+         $this->validate();
 
         $fotoPath = null;
         if ($this->foto) {
@@ -258,6 +259,8 @@ class Create extends Component
             'representante_correo' => $this->representante_correo,
             'representante_direccion' => $this->representante_direccion,
         ]);
+
+       
 
         // Enviar correo de bienvenida si el estudiante es mayor de edad y tiene correo
         if (!$this->esMenorDeEdad && $this->correo_electronico) {
@@ -305,6 +308,9 @@ class Create extends Component
 
         session()->flash('message', $mensaje);
         return redirect()->route('admin.students.index');
+       } catch (\Throwable $th) {
+        throw $th;
+       }
     }
 
     public function render()
