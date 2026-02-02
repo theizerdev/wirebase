@@ -424,11 +424,11 @@ class Create extends Component
         $totalFormateado = '$' . number_format($pago->total, 2, ',', '.');
         
         if ($esMayorDeEdad) {
-            $mensaje = "💳 *Pago Recibido - U.E Vargas II*\n\n";
+            $mensaje = "💳 *Pago Recibido - U.E JOSE MARIA VARGAS*\n\n";
             $mensaje .= "Estimado/a {$nombreEstudiante},\n\n";
         } else {
             $representante = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
-            $mensaje = "💳 *Pago Recibido - U.E Vargas II*\n\n";
+            $mensaje = "💳 *Pago Recibido - U.E JOSE MARIA VARGAS*\n\n";
             $mensaje .= "Estimado/a {$representante},\n\n";
             $mensaje .= "Hemos recibido el pago del estudiante *{$nombreEstudiante}*.\n\n";
         }
@@ -449,7 +449,7 @@ class Create extends Component
         
         $mensaje .= "\n💰 *Total Pagado: {$totalFormateado}*\n\n";
         $mensaje .= "Gracias por su pago puntual.\n\n";
-        $mensaje .= "*U.E Vargas II*";
+        $mensaje .= "*U.E JOSE MARIA VARGAS*";
         
         return $mensaje;
     }
