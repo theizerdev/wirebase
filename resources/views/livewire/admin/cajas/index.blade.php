@@ -13,63 +13,70 @@
         </div>
     @endif
 
-    <!-- Stats Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-start border-primary border-4 shadow-sm h-100">
+    <div class="row mb-3">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Cajas</h6>
-                            <h2 class="mb-0">{{ format_money($this->stats['total'], false) }}</h2>
+                            <h4 class="mb-1">{{ format_money($this->stats['total'], false) }}</h4>
+                            <p class="mb-0">Total Cajas</p>
                         </div>
-                        <div class="bg-primary bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-safe-line text-primary" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ri ri-safe-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-success border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Cajas Abiertas</h6>
-                            <h2 class="mb-0">{{ format_money($this->stats['abiertas'], false) }}</h2>
+                            <h4 class="mb-1">{{ format_money($this->stats['abiertas'], false) }}</h4>
+                            <p class="mb-0">Cajas Abiertas</p>
                         </div>
-                        <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-lock-unlock-line text-success" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ri ri-lock-unlock-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-warning border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Cajas Cerradas</h6>
-                            <h2 class="mb-0">{{ format_money($this->stats['cerradas'], false) }}</h2>
+                            <h4 class="mb-1">{{ format_money($this->stats['cerradas'], false) }}</h4>
+                            <p class="mb-0">Cajas Cerradas</p>
                         </div>
-                        <div class="bg-warning bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-lock-line text-warning" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-warning">
+                                <i class="ri ri-lock-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-info border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Ingresos Hoy</h6>
-                            <h2 class="mb-0"><x-dual-currency :amount="$this->stats['ingresos_hoy']" /></h2>
+                            <h4 class="mb-1"><x-dual-currency :amount="$this->stats['ingresos_hoy']" /></h4>
+                           
                         </div>
-                        <div class="bg-info bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-money-dollar-circle-line text-info" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-info">
+                                <i class="ri ri-money-dollar-circle-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -175,10 +182,8 @@
                                     </td>
                                     <td>@money($caja->monto_inicial)</td>
                                     <td>
-                                        <div class="fw-semibold">@money($caja->total_ingresos)</div>
-                                        <small class="text-muted d-inline">
-                                            E: @money($caja->total_efectivo) | T: @money($caja->total_transferencias) | TC: @money($caja->total_tarjetas)
-                                        </small>
+                                        <div class="fw-semibold">@money($caja->total_ingresos_actual ?? $caja->total_ingresos)</div>
+                                       
                                     </td>
                                     <td>@money($caja->monto_final)</td>
                                     <td>

@@ -60,9 +60,15 @@
         <!-- /Logo -->
 
         <div class="card-body mt-1">
-          <h4 class="mb-1">{{ __('auth_ui.verify_email_title') }} ✉️</h4>
+          <h4 class="mb-1">Verificación en dos pasos 💬</h4>
           <p class="text-start mb-5">
-            {{ __('auth_ui.verify_email_subtitle') }} <span class="fw-medium">{{ Auth::user()->email }}</span>.
+            Enviamos un código de verificación a tu WhatsApp.
+            @php
+              $telefono = optional(Auth::user()->cliente)->telefono;
+              $digits = preg_replace('/\\D+/', '', $telefono ?? '');
+              $mask = $digits ? '*****' . substr($digits, -4) : 'N/A';
+            @endphp
+            <span class="d-block mt-1 h6">{{ $mask }}</span>
           </p>
 
           @if (session('resent'))
@@ -80,6 +86,8 @@
                     type="text"
                     class="form-control text-center @if($hasError('code')) is-invalid @endif"
                     maxlength="1"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
                     wire:model="codeInputs.{{ $i }}"
                     wire:key="code-input-{{ $i }}"
                     style="flex: 1; min-width: 40px; max-width: 50px; height: 3rem; font-size: 1.5rem; text-transform: uppercase;"
@@ -110,11 +118,11 @@
             <div class="mb-5">
               @if($canResend)
                 <button class="btn btn-outline-primary d-grid w-100" type="submit">
-                  {{ __('auth_ui.resend_code') }}
+                  Reenviar código
                 </button>
               @else
                 <button class="btn btn-outline-secondary d-grid w-100" type="button" disabled>
-                  {{ __('auth_ui.resend_code') }} ({{ floor($resendCountdown/60) }}:{{ str_pad($resendCountdown%60, 2, '0', STR_PAD_LEFT) }})
+                  Reenviar código ({{ floor($resendCountdown/60) }}:{{ str_pad($resendCountdown%60, 2, '0', STR_PAD_LEFT) }})
                 </button>
               @endif
             </div>

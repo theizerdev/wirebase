@@ -14,55 +14,108 @@
         </div>
     @endif
 
-    <!-- Card Principal -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <div>
-                <h5 class="mb-0">Conceptos de Pago</h5>
-                <small class="text-muted">Gestión de conceptos de facturación</small>
-            </div>
-            @can('create conceptos pago')
-            <a href="{{ route('admin.conceptos-pago.create') }}" class="btn btn-primary">
-                <i class="ri ri-add-line me-1"></i> Nuevo Concepto
-            </a>
-            @endcan
-        </div>
-
-        <div class="card-body">
-            <!-- Filtros -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="ri ri-search-line"></i></span>
-                        <input type="text" wire:model.live="search" class="form-control" placeholder="Buscar conceptos...">
+    <div class="row mb-3">
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ $totalConceptos }}</h4>
+                            <p class="mb-0">Total Conceptos</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ri ri-price-tag-3-line ri-24px"></i>
+                            </span>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ $conceptosActivos }}</h4>
+                            <p class="mb-0">Activos</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ri ri-checkbox-circle-line ri-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ $conceptosInactivos }}</h4>
+                            <p class="mb-0">Inactivos</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-danger">
+                                <i class="ri ri-close-circle-line ri-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+        <div class="card-header border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-1">Conceptos de Pago</h5>
+                    <p class="mb-0">Gestión de conceptos de facturación</p>
+                </div>
+                @can('create conceptos pago')
+                <a href="{{ route('admin.conceptos-pago.create') }}" class="btn btn-primary">
+                    <i class="ri ri-add-line"></i> Nuevo Concepto
+                </a>
+                @endcan
+            </div>
+        </div>
+        <div class="card-header border-bottom">
+            <div class="row g-3">
                 <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" wire:model.live.debounce.300ms="search" class="form-control" placeholder="Nombre o descripción...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
                     <select wire:model.live="status" class="form-select">
                         <option value="">Todos</option>
                         <option value="1">Activo</option>
                         <option value="0">Inactivo</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
+                    <label class="form-label">Mostrar</label>
                     <select wire:model.live="perPage" class="form-select">
                         <option value="10">10</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
+                        <option value="100">100</option>
                     </select>
                 </div>
-                <div class="col-md-3 text-end">
-                    <div class="d-flex gap-2 justify-content-end">
-                        <span class="badge bg-label-primary">Total: {{ $conceptos->total() }}</span>
-                        <button wire:click="clearFilters" class="btn btn-outline-secondary">
-                            <i class="ri ri-eraser-line me-1"></i> Limpiar
-                        </button>
-                        <button wire:click="export" class="btn btn-outline-success">
-                            <i class="ri ri-file-excel-line me-1"></i> Exportar
-                        </button>
-                    </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button wire:click="clearFilters" class="btn btn-label-secondary">
+                        <i class="ri ri-eraser-line"></i> Limpiar
+                    </button>
+                    <button wire:click="export" class="btn btn-label-success">
+                        <i class="mdi mdi-file-excel"></i> Exportar
+                    </button>
                 </div>
             </div>
+        </div>
             <!-- Tabla -->
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -152,10 +205,11 @@
             </table>
         </div>
 
-            <!-- Paginación -->
-             <div class="card-footer">
-                   {{ $conceptos->links('livewire.pagination')}}
-                </div>
+            <div class="card-footer">
+                {{ $conceptos->links('livewire.pagination')}}
+            </div>
+        
+            </div>
         </div>
     </div>
 </div>

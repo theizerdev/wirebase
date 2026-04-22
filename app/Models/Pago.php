@@ -11,6 +11,8 @@ class Pago extends Model
 {
     use HasFactory, Multitenantable, SoftDeletes;
 
+    protected $table = 'pagos'; // Explicitly define the table name
+
     const TIPO_FACTURA = 'factura';
     const TIPO_BOLETA = 'boleta';
     const TIPO_NOTA_CREDITO = 'nota_credito';
@@ -27,7 +29,7 @@ class Pago extends Model
         'numero',
         'tipo_pago',
         'fecha',
-        'matricula_id',
+        'cliente_id',
         'user_id',
         'subtotal',
         'descuento',
@@ -66,9 +68,9 @@ class Pago extends Model
         return $this->hasMany(PagoDetalle::class);
     }
 
-    public function matricula()
+    public function cliente()
     {
-        return $this->belongsTo(Matricula::class);
+        return $this->belongsTo(Cliente::class);
     }
 
     public function user()

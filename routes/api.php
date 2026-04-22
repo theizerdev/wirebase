@@ -31,3 +31,11 @@ Route::prefix('whatsapp')->group(function () {
     Route::post('/disconnect', [WhatsAppController::class, 'disconnect']);
     Route::post('/webhook', [WhatsAppController::class, 'webhook']);
 });
+
+// Sorteo API Routes
+Route::prefix('sorteo')->group(function () {
+    Route::post('/ejecutar', [\App\Http\Controllers\Api\SorteoController::class, 'ejecutar']);
+    Route::get('/historial', [\App\Http\Controllers\Api\SorteoController::class, 'historial']);
+    Route::get('/verificar/{id}', [\App\Http\Controllers\Api\SorteoController::class, 'verificar']);
+    Route::get('/elegibles', [\App\Http\Controllers\Api\SorteoController::class, 'contratosElegibles']);
+});

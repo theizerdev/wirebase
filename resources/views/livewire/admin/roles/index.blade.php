@@ -14,62 +14,70 @@
     @endif
 
     <!-- Stats Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-start border-primary border-4 shadow-sm h-100">
+    <div class="row mb-3">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Roles</h6>
-                            <h2 class="mb-0">{{ $totalRoles }}</h2>
+                            <h4 class="mb-1">{{ $totalRoles }}</h4>
+                            <p class="mb-0">Total Roles</p>
                         </div>
-                        <div class="bg-primary bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-user-star-line text-primary" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ri ri-user-star-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-success border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Con Permisos</h6>
-                            <h2 class="mb-0">{{ $rolesWithPermissions }}</h2>
+                            <h4 class="mb-1">{{ $rolesWithPermissions }}</h4>
+                            <p class="mb-0">Con Permisos</p>
                         </div>
-                        <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-shield-check-line text-success" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ri ri-shield-check-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-warning border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Sin Permisos</h6>
-                            <h2 class="mb-0">{{ $rolesWithoutPermissions }}</h2>
+                            <h4 class="mb-1">{{ $rolesWithoutPermissions }}</h4>
+                            <p class="mb-0">Sin Permisos</p>
                         </div>
-                        <div class="bg-warning bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-shield-line text-warning" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-warning">
+                                <i class="ri ri-shield-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-info border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Permisos</h6>
-                            <h2 class="mb-0">{{ $totalPermissions }}</h2>
+                            <h4 class="mb-1">{{ $totalPermissions }}</h4>
+                            <p class="mb-0">Total Permisos</p>
                         </div>
-                        <div class="bg-info bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-shield-keyhole-line text-info" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-info">
+                                <i class="ri ri-shield-keyhole-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>

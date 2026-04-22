@@ -13,48 +13,53 @@
         </div>
     @endif
 
-    <!-- Stats Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card border-start border-primary border-4 shadow-sm h-100">
+    <div class="row mb-3">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Empresas</h6>
-                            <h2 class="mb-0">{{ $totalEmpresas }}</h2>
+                            <h4 class="mb-1">{{ $totalEmpresas }}</h4>
+                            <p class="mb-0">Total Empresas</p>
                         </div>
-                        <div class="bg-primary bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-building-line text-primary" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ri ri-building-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-start border-success border-4 shadow-sm h-100">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Activas</h6>
-                            <h2 class="mb-0">{{ $empresasActivas }}</h2>
+                            <h4 class="mb-1">{{ $empresasActivas }}</h4>
+                            <p class="mb-0">Empresas Activas</p>
                         </div>
-                        <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-check-circle-line text-success" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ri ri-checkbox-circle-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-start border-danger border-4 shadow-sm h-100">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Inactivas</h6>
-                            <h2 class="mb-0">{{ $empresasInactivas }}</h2>
+                            <h4 class="mb-1">{{ $empresasInactivas }}</h4>
+                            <p class="mb-0">Empresas Inactivas</p>
                         </div>
-                        <div class="bg-danger bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-close-circle-line text-danger" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-danger">
+                                <i class="ri ri-close-circle-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>

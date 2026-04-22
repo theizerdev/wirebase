@@ -6,16 +6,20 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\ConceptoPago;
 use App\Traits\HasDynamicLayout;
+use App\Traits\Exportable;
 
 class Index extends Component
 {
-    use WithPagination, HasDynamicLayout;
+    use WithPagination, HasDynamicLayout, Exportable;
 
     public $search = '';
     public $status = '';
     public $sortBy = 'created_at';
     public $sortDirection = 'desc';
     public $perPage = 10;
+    public $totalConceptos = 0;
+    public $conceptosActivos = 0;
+    public $conceptosInactivos = 0;
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -45,6 +49,32 @@ class Index extends Component
 
         $this->sortBy = $field;
         $this->resetPage();
+    }
+
+    private function getBaseQuery()
+    {
+        $query = ConceptoPago::query();
+        if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
+            $query = ConceptoPago::withoutGlobalScope('multitenancy')
+                ->where(function ($q) {
+                    if (auth()->user()->empresa_id) {
+                        $q->where('empresa_id', auth()->user()->empresa_id);
+                    }
+                    if (auth()->user()->sucursal_id) {
+                        $q->where('sucursal_id', auth()->user()->sucursal_id);
+                    }
+                });
+        }
+        return $query
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nombre', 'like', '%' . $this->search . '%')
+                      ->orWhere('descripcion', 'like', '%' . $this->search . '%');
+                });
+            })
+            ->when($this->status !== '', function ($query) {
+                $query->where('activo', $this->status);
+            });
     }
 
     public function delete(ConceptoPago $concepto)
@@ -94,15 +124,14 @@ class Index extends Component
 
     public function render()
     {
-        $conceptos = ConceptoPago::when($this->search, function ($query) {
-                $query->where('nombre', 'like', '%' . $this->search . '%')
-                    ->orWhere('descripcion', 'like', '%' . $this->search . '%');
-            })
-            ->when($this->status !== '', function ($query) {
-                $query->where('activo', $this->status);
-            })
+        $conceptos = $this->getBaseQuery()
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate($this->perPage);
+
+        $base = $this->getBaseQuery();
+        $this->totalConceptos = (clone $base)->count();
+        $this->conceptosActivos = (clone $base)->where('activo', 1)->count();
+        $this->conceptosInactivos = (clone $base)->where('activo', 0)->count();
 
         return $this->renderWithLayout('livewire.admin.conceptos-pago.index', compact('conceptos'), [
             'title' => 'Lista de Conceptos de Pago',
@@ -112,5 +141,28 @@ class Index extends Component
                 'admin.conceptos-pago.index' => 'Conceptos de Pago'
             ]
         ]);
+    }
+
+    protected function getExportQuery()
+    {
+        return $this->getBaseQuery()->orderBy($this->sortBy, $this->sortDirection);
+    }
+
+    protected function getExportHeaders(): array
+    {
+        return ['ID', 'Nombre', 'Descripción', 'Activo', 'Empresa', 'Sucursal', 'Fecha'];
+    }
+
+    protected function formatExportRow($row): array
+    {
+        return [
+            $row->id,
+            $row->nombre,
+            $row->descripcion,
+            $row->activo ? 'Sí' : 'No',
+            $row->empresa_id,
+            $row->sucursal_id,
+            optional($row->created_at)->format('d/m/Y H:i')
+        ];
     }
 }

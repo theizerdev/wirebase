@@ -3,51 +3,6 @@
 * File include item demo only specific css only
 ******************************************************************************/
 
-/* Icon sizing utilities */
-.ri-16px {
-  font-size: 16px !important;
-}
-
-.ri-18px {
-  font-size: 18px !important;
-}
-
-.ri-20px {
-  font-size: 20px !important;
-}
-
-.ri-22px {
-  font-size: 22px !important;
-}
-
-.ri-24px {
-  font-size: 24px !important;
-}
-
-.ri-26px {
-  font-size: 26px !important;
-}
-
-.ri-28px {
-  font-size: 28px !important;
-}
-
-.ri-30px {
-  font-size: 30px !important;
-}
-
-.ri-32px {
-  font-size: 32px !important;
-}
-
-.ri-36px {
-  font-size: 36px !important;
-}
-
-.ri-48px {
-  font-size: 48px !important;
-}
-
 .menu .app-brand.demo {
   height: 64px;
 }

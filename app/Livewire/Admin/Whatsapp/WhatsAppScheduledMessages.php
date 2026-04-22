@@ -41,7 +41,7 @@ class WhatsAppScheduledMessages extends Component
     public $perPage = 10;
 
     protected $rules = [
-        'recipient' => 'required|regex:/^[0-9]{10}$/',
+        'recipient' => 'required|string|min:7|max:20',
         'message' => 'required|string|max:1000',
         'scheduledDate' => 'required|date|after_or_equal:today',
         'scheduledTime' => 'required|date_format:H:i',
@@ -50,7 +50,7 @@ class WhatsAppScheduledMessages extends Component
 
     protected $messages = [
         'recipient.required' => 'El número de teléfono es requerido',
-        'recipient.regex' => 'El número debe tener 10 dígitos',
+        'recipient.string' => 'El número debe ser texto',
         'message.required' => 'El mensaje es requerido',
         'message.max' => 'El mensaje no puede exceder 1000 caracteres',
         'scheduledDate.required' => 'La fecha es requerida',
@@ -148,20 +148,20 @@ class WhatsAppScheduledMessages extends Component
 
     public function formatPhoneNumber($number)
     {
-        // Remove any non-numeric characters
-        $number = preg_replace('/[^0-9]/', '', $number);
-        
-        // If it starts with 58, remove it
-        if (substr($number, 0, 2) === '58') {
-            $number = substr($number, 2);
+        try {
+            $service = \App\Services\WhatsAppService::forCompany(auth()->user()->empresa_id);
+            $formatted = $service->formatPhone($number);
+            if (!$formatted) {
+                throw new \Exception('Número inválido');
+            }
+            return $formatted;
+        } catch (\Throwable $e) {
+            $digits = preg_replace('/\D+/', '', $number);
+            if (!$digits) {
+                throw new \Exception('Número inválido');
+            }
+            return ltrim($digits, '+');
         }
-        
-        // Ensure it has 10 digits
-        if (strlen($number) !== 10) {
-            throw new \Exception('El número debe tener 10 dígitos');
-        }
-        
-        return $number;
     }
 
     public function createScheduledMessage()

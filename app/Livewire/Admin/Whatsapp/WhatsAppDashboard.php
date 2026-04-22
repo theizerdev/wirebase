@@ -37,6 +37,11 @@ class WhatsAppDashboard extends Component
     public $empresaNombre = null;
     public $whatsappPhone = null;
     public $error = null;
+    public $metrics = [
+        'messagesSent' => 0,
+        'messagesFailed' => 0,
+        'latencyP95' => null
+    ];
 
     public function mount()
     {
@@ -54,7 +59,6 @@ class WhatsAppDashboard extends Component
     public function initializeWhatsApp()
     {
         $empresa = auth()->user()->empresa ?? null;
-        dd($this->whatsappApiKey);   
         if ($empresa) {
             $this->companyId = $empresa->id;
             $this->whatsappApiKey = $empresa->whatsapp_api_key;
@@ -87,6 +91,7 @@ class WhatsAppDashboard extends Component
         $this->isLoading = true;
         $this->checkStatus();
         $this->loadRecentMessages();
+        $this->loadMetrics();
         $this->isLoading = false;
     }
 
@@ -243,6 +248,111 @@ class WhatsAppDashboard extends Component
     {
         $this->loadDashboardData();
         session()->flash('message', 'Dashboard actualizado correctamente.');
+    }
+    
+    /**
+     * Cargar y parsear métricas del servicio Node (/metrics)
+     */
+    public function loadMetrics()
+    {
+        try {
+            $apiUrl = rtrim(config('whatsapp.api_url'), '/');
+            $response = Http::timeout(5)->get($apiUrl . '/metrics');
+            if (!$response->successful()) {
+                return;
+            }
+            $text = $response->body();
+            $parsed = $this->parsePrometheusText($text);
+            // Extraer counters por compañía
+            $companyId = (string) $this->companyId;
+            $this->metrics['messagesSent'] = $parsed['counters']['whatsapp_messages_sent_total'][$companyId] ?? 0;
+            $this->metrics['messagesFailed'] = $parsed['counters']['whatsapp_messages_failed_total'][$companyId] ?? 0;
+            // Calcular p95 global de latencia
+            $this->metrics['latencyP95'] = $this->estimateP95(
+                $parsed['histograms']['http_request_duration_seconds']['buckets'] ?? [],
+                $parsed['histograms']['http_request_duration_seconds']['count'] ?? 0
+            );
+        } catch (\Exception $e) {
+            // Silencioso en dashboard; opcional: set error
+        }
+    }
+    
+    /**
+     * Parse básico del formato de texto Prometheus
+     */
+    private function parsePrometheusText(string $text): array
+    {
+        $lines = preg_split('/\r?\n/', $text);
+        $counters = [];
+        $histograms = [];
+        foreach ($lines as $line) {
+            if ($line === '' || str_starts_with($line, '#')) continue;
+            // Example: whatsapp_messages_sent_total{company_id="1",company_name="X"} 42
+            if (preg_match('/^(\w+)(\{[^}]*\})?\s+([0-9\.eE+-]+)$/', $line, $m)) {
+                $name = $m[1];
+                $labels = $this->parseLabels($m[2] ?? '');
+                $value = floatval($m[3]);
+                if ($name === 'whatsapp_messages_sent_total' || $name === 'whatsapp_messages_failed_total') {
+                    $cid = $labels['company_id'] ?? 'unknown';
+                    $counters[$name] = $counters[$name] ?? [];
+                    $counters[$name][$cid] = $value;
+                } elseif (str_starts_with($name, 'http_request_duration_seconds')) {
+                    $histograms['http_request_duration_seconds'] = $histograms['http_request_duration_seconds'] ?? [
+                        'buckets' => [],
+                        'count' => 0,
+                        'sum' => 0
+                    ];
+                    if (str_ends_with($name, '_bucket')) {
+                        $le = $labels['le'] ?? null;
+                        if ($le !== null) {
+                            $histograms['http_request_duration_seconds']['buckets'][$le] = $value;
+                        }
+                    } elseif (str_ends_with($name, '_count')) {
+                        $histograms['http_request_duration_seconds']['count'] = $value;
+                    } elseif (str_ends_with($name, '_sum')) {
+                        $histograms['http_request_duration_seconds']['sum'] = $value;
+                    }
+                }
+            }
+        }
+        return [
+            'counters' => $counters,
+            'histograms' => $histograms
+        ];
+    }
+    
+    private function parseLabels(string $labels): array
+    {
+        $out = [];
+        if (!$labels) return $out;
+        // {key="val",key2="val2"}
+        $labels = trim($labels, '{}');
+        foreach (preg_split('/\s*,\s*/', $labels) as $pair) {
+            if (!$pair) continue;
+            [$k, $v] = array_pad(explode('=', $pair, 2), 2, null);
+            if ($k && $v) {
+                $out[$k] = trim($v, '"');
+            }
+        }
+        return $out;
+    }
+    
+    /**
+     * Estimar p95 a partir de buckets acumulados
+     */
+    private function estimateP95(array $buckets, float $total): ?float
+    {
+        if ($total <= 0 || empty($buckets)) return null;
+        ksort($buckets, SORT_NUMERIC);
+        $target = $total * 0.95;
+        foreach ($buckets as $le => $count) {
+            if ($count >= $target) {
+                // le puede ser +Inf o un número en segundos
+                if ($le === '+Inf') return null;
+                return (float) $le;
+            }
+        }
+        return null;
     }
 
     public function getStatusColorProperty()

@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Cajas;
 
 use App\Models\Caja;
+use App\Models\Pago;
 use App\Traits\Exportable;
 use App\Traits\HasDynamicLayout;
 use App\Traits\HasRegionalFormatting;
@@ -64,7 +65,11 @@ class Index extends Component
             'total' => (clone $baseQuery)->count() ?: 0,
             'abiertas' => (clone $baseQuery)->where('estado', 'abierta')->count() ?: 0,
             'cerradas' => (clone $baseQuery)->where('estado', 'cerrada')->count() ?: 0,
-            'ingresos_hoy' => (clone $baseQuery)->whereDate('fecha', today())->sum('total_ingresos') ?: 0,
+            'ingresos_hoy' => Pago::where('empresa_id', auth()->user()->empresa_id)
+                ->where('sucursal_id', auth()->user()->sucursal_id)
+                ->whereDate('fecha', today())
+                ->where('estado', 'aprobado')
+                ->sum('total') ?: 0,
         ];
     }
 

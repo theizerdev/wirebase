@@ -117,6 +117,13 @@ class Caja extends Model
         $this->save();
     }
 
+    public function getTotalIngresosActualAttribute(): float
+    {
+        return (float) $this->pagos()
+            ->where('estado', 'aprobado')
+            ->sum('total');
+    }
+
     public function cerrar(string $observaciones = null): bool
     {
         if ($this->estado === 'cerrada') {

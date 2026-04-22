@@ -10,7 +10,7 @@ return [
     |
     */
 
-    'api_url' => env('WHATSAPP_API_URL', 'http://localhost:3000'),
+    'api_url' => env('WHATSAPP_API_URL', 'http://localhost:3002'),
     'api_key' => env('WHATSAPP_API_KEY', 'test-api-key-vargas-centro'),
     'api_token' => env('WHATSAPP_API_TOKEN', ''),
     'jwt_secret' => env('JWT_SECRET', ''),

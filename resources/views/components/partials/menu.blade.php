@@ -75,7 +75,83 @@
       </a>
     </li>
 
-    @canany(['access conceptos pago', 'access cajas'])
+    @canany(['access motos', 'access clientes', 'access contratos', 'access moto unidades'])
+    <!-- Gestión de Créditos -->
+    <li class="menu-item {{ request()->routeIs('admin.motos.*') || request()->routeIs('admin.inventario.unidades.*') || request()->routeIs('admin.clientes.*') || request()->routeIs('admin.contratos.*') ? 'active open' : '' }}">
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons ri ri-motorbike-line"></i>
+        <div>Inversiones Danger 3000 C.A</div>
+      </a>
+      <ul class="menu-sub">
+        @can('access motos')
+        <li class="menu-item {{ request()->routeIs('admin.motos.index') ? 'active' : '' }}">
+          <a href="{{ route('admin.motos.index') }}" class="menu-link">
+            <div>Inventario Motos</div>
+          </a>
+        </li>
+        @endcan
+        @can('access moto unidades')
+        <li class="menu-item {{ request()->routeIs('admin.inventario.unidades.index') ? 'active' : '' }}">
+          <a href="{{ route('admin.inventario.unidades.index') }}" class="menu-link">
+            <div>Inventario Unidades</div>
+          </a>
+        </li>
+        @endcan
+        @can('access clientes')
+        <li class="menu-item {{ request()->routeIs('admin.clientes.index') ? 'active' : '' }}">
+          <a href="{{ route('admin.clientes.index') }}" class="menu-link">
+            <div>Clientes</div>
+          </a>
+        </li>
+        @endcan
+        @can('access contratos')
+        <li class="menu-item {{ request()->routeIs('admin.contratos.index') ? 'active' : '' }}">
+          <a href="{{ route('admin.contratos.index') }}" class="menu-link">
+            <div>Contratos</div>
+          </a>
+        </li>
+        @endcan
+      </ul>
+    </li>
+    @endcan
+        @canany(['access pagos','access contratos'])
+    <!-- Reportes -->
+    <li class="menu-item {{ request()->routeIs('admin.reportes.estado-cuenta') ? 'active' : '' }}">
+      <a href="{{ route('admin.reportes.estado-cuenta') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-file-chart-line"></i>
+        <div>Estado de Cuenta</div>
+      </a>
+    </li>
+    @endcan
+    
+    <!-- Dashboard -->
+    <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+      <a href="{{ route('admin.dashboard') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-dashboard-line"></i>
+        <div>Dashboard</div>
+      </a>
+    </li>
+    
+    @can('access nomina')
+    <!-- Nómina -->
+    <li class="menu-item {{ request()->routeIs('admin.nomina.*') ? 'active' : '' }}">
+      <a href="{{ route('admin.nomina.procesar') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-briefcase-3-line"></i>
+        <div>Nómina</div>
+      </a>
+    </li>
+    @endcan
+    
+    @can('access empleados')
+    <li class="menu-item {{ request()->routeIs('admin.empleados.*') ? 'active' : '' }}">
+      <a href="{{ route('admin.empleados.index') }}" class="menu-link">
+        <i class="menu-icon tf-icons ri ri-team-line"></i>
+        <div>Empleados</div>
+      </a>
+    </li>
+    @endcan
+
+    @canany(['access conceptos pago', 'access cajas', 'access pagos'])
     <!-- Pagos y Finanzas -->
     <li class="menu-item {{ request()->routeIs('admin.pagos.*') || request()->routeIs('admin.conceptos-pago.*') || request()->routeIs('admin.cajas.*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -84,16 +160,22 @@
       </a>
       <ul class="menu-sub">
        
-     
         @can('access conceptos pago')
-        <li class="menu-item {{ request()->routeIs('admin.conceptos-pago.index') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->routeIs('admin.conceptos-pago.*') ? 'active' : '' }}">
           <a href="{{ route('admin.conceptos-pago.index') }}" class="menu-link">
-            <div>Conceptos de Pago</div>
+            <div>Concepto de Pagos</div>
+          </a>
+        </li>
+        @endcan
+        @can('access pagos')
+        <li class="menu-item {{ request()->routeIs('admin.pagos.*') ? 'active' : '' }}">
+          <a href="{{ route('admin.pagos.index') }}" class="menu-link">
+            <div>Registro de Pagos</div>
           </a>
         </li>
         @endcan
         @can('access cajas')
-        <li class="menu-item {{ request()->routeIs('admin.cajas.index') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->routeIs('admin.cajas.*') ? 'active' : '' }}">
           <a href="{{ route('admin.cajas.index') }}" class="menu-link">
             <div>Caja Chica</div>
           </a>
@@ -103,8 +185,25 @@
     </li>
     @endcan
 
-   
-
+    <!-- Sorteos -->
+    <li class="menu-item {{ request()->routeIs('admin.sorteo.*') ? 'active open' : '' }}">
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons ri ri-gift-line"></i>
+        <div>Sorteos</div>
+      </a>
+      <ul class="menu-sub">
+        <li class="menu-item">
+          <a href="{{ route('sorteo.app') }}" class="menu-link" target="_blank">
+            <div>Realizar Sorteo</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('admin.sorteo.index') ? 'active' : '' }}">
+          <a href="{{ route('admin.sorteo.index') }}" class="menu-link">
+            <div>Administración</div>
+          </a>
+        </li>
+      </ul>
+    </li>
 
     @canany(['access empresas', 'access sucursales', 'access school periods', 'access niveles educativos', 'access turnos'])
     <!-- Configuración Institucional -->
@@ -169,13 +268,23 @@
     </li>
 
 
+
+
     <!-- WhatsApp -->
     @can('access whatsapp')
-        <li class="menu-item {{ request()->routeIs('admin.whatsapp.connection') ? 'active' : '' }}">
-          <a href="{{ route('admin.whatsapp.connection') }}" class="menu-link">
-               <i class="menu-icon tf-icons ri ri-whatsapp-line"></i>
-            <div>Whatsapp</div>
+        <li class="menu-item {{ request()->routeIs('admin.whatsapp.*') ? 'active open' : '' }}">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons ri ri-whatsapp-line"></i>
+            <div>WhatsApp</div>
           </a>
+          <ul class="menu-sub">
+           
+            <li class="menu-item {{ request()->routeIs('admin.whatsapp.index') ? 'active' : '' }}">
+              <a href="{{ route('admin.whatsapp.index') }}" class="menu-link">
+                <div>Panel</div>
+              </a>
+            </li>
+          </ul>
         </li>
     @endcan
 

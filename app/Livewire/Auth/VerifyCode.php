@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use App\Mail\VerificationCodeMail;
+use App\Services\WhatsAppService;
+use App\Services\Audit\AuditService;
 
 class VerifyCode extends Component
 {
@@ -20,13 +21,17 @@ class VerifyCode extends Component
 
     // Reglas de validación
     protected $rules = [
-        'code' => 'required|string|size:6',
+        'code' => 'required|regex:/^[0-9]{6}$/',
     ];
 
     public function mount()
     {
         // Si el usuario ya ha verificado su correo, redirigir
         if (Auth::user()->hasVerifiedEmail()) {
+            $user = Auth::user();
+            if ($user->cliente_id) {
+                return redirect('/cliente/app');
+            }
             return redirect()->intended('/');
         }
         
@@ -81,11 +86,34 @@ class VerifyCode extends Component
         // Registrar intento
         RateLimiter::hit($throttleKey, 300); // 5 minutos
 
-        // Generar un nuevo código y obtener el código en texto plano
+        // Generar un nuevo código y obtener el texto plano
         $plainCode = Auth::user()->generateVerificationCode();
-        
-        // Enviar el código por correo
-        Mail::to(Auth::user()->email)->send(new VerificationCodeMail($plainCode));
+
+        // Resolver teléfono destino
+        $user = Auth::user();
+        $telefono = null;
+        if ($user->cliente) {
+            $telefono = $user->cliente->telefono;
+        }
+        // Si no hay teléfono, abortar con notificación
+        if (!$telefono) {
+            $this->errors['code'] = 'No se puede enviar el código: no hay teléfono asociado.';
+            app(AuditService::class)->logSecurityEvent('otp.send.failed', [
+                'reason' => 'no_phone',
+                'user_id' => $user->id,
+            ], 'Intento de envío OTP sin teléfono');
+            return;
+        }
+
+        // Enviar vía WhatsApp
+        $wa = WhatsAppService::forCompany($user->empresa_id);
+        $message = "Tu código de verificación es: {$plainCode}. Vence en 30 minutos.";
+        $wa->send($telefono, $message);
+
+        app(AuditService::class)->logSecurityEvent('otp.send.success', [
+            'user_id' => $user->id,
+            'phone_mask' => substr(preg_replace('/\\D+/', '', $telefono), -4),
+        ], 'OTP enviado por WhatsApp');
         
         $this->resent = true;
         $this->canResend = false;
@@ -124,9 +152,9 @@ class VerifyCode extends Component
     {
         $this->errors = [];
         
-        // Validar entrada
-        if (strlen($this->code) != 6) {
-            $this->errors['code'] = 'El código debe tener 6 caracteres.';
+        // Validar entrada numérica de 6 dígitos
+        if (!preg_match('/^[0-9]{6}$/', $this->code)) {
+            $this->errors['code'] = 'El código debe tener 6 dígitos.';
             return;
         }
 
@@ -134,14 +162,24 @@ class VerifyCode extends Component
         if (Auth::user()->isVerificationCodeValid($this->code)) {
             // Marcar el correo como verificado
             Auth::user()->markEmailAsVerified();
+            app(AuditService::class)->logSecurityEvent('otp.verify.success', [
+                'user_id' => Auth::id(),
+            ]);
             
             // Regenerar sesión para prevenir session fixation
             request()->session()->regenerate();
             
-            // Redirigir al dashboard o a la página anterior
+            // Redirigir según tipo de usuario
+            $user = Auth::user();
+            if ($user->cliente_id) {
+                return redirect('/cliente/app');
+            }
             return redirect()->intended('/');
         } else {
             $this->errors['code'] = 'El código ingresado no es válido o ha expirado.';
+            app(AuditService::class)->logSecurityEvent('otp.verify.failed', [
+                'user_id' => Auth::id(),
+            ], 'OTP inválido o expirado');
         }
     }
 

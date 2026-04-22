@@ -1,4 +1,57 @@
 <div>
+    <div class="row mb-3">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ $series->total() }}</h4>
+                            <p class="mb-0">Total Series</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ri ri-file-text-line ri-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ $series->where('activo', true)->count() }}</h4>
+                            <p class="mb-0">Series Activas</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ri ri-checkbox-circle-line ri-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ $series->where('activo', false)->count() }}</h4>
+                            <p class="mb-0">Series Inactivas</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-danger">
+                                <i class="ri ri-close-circle-line ri-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
@@ -12,7 +65,7 @@
             @endcan
         </div>
 
-        <div class="card-body">
+        <div class="card-header border-bottom">
             @if (session()->has('message'))
     <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
         <i class="ri ri-check-line me-2"></i>{{ session('message') }}
@@ -20,14 +73,15 @@
     </div>
     @endif
             <!-- Filtros -->
-            <div class="row mb-4">
+            <div class="row g-3 mb-2">
                 <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="ri ri-search-line"></i></span>
-                        <input type="text" wire:model.live="search" class="form-control" placeholder="Buscar por serie...">
-                    </div>
+                    <label class="form-label">Buscar</label>
+                    <input type="text" wire:model.live.debounce.300ms="search" class="form-control" placeholder="Buscar por serie...">
                 </div>
+        
+        
                 <div class="col-md-3">
+                    <label class="form-label">Tipo</label>
                     <select wire:model.live="tipo_documento" class="form-select">
                         <option value="">Todos los tipos</option>
                         @foreach($tipos as $key => $value)
@@ -35,11 +89,19 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-5 text-end">
-                    <div class="d-flex gap-2 justify-content-end">
-                        <span class="badge bg-label-primary">Total: {{ $series->total() }}</span>
-                        <span class="badge bg-label-success">Activas: {{ $series->where('activo', true)->count() }}</span>
-                    </div>
+                <div class="col-md-2">
+                    <label class="form-label">Mostrar</label>
+                    <select wire:model.live="perPage" class="form-select">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2 justify-content-end">
+                    <button type="button" class="btn btn-label-secondary" wire:click="clearFilters">
+                        <i class="ri ri-eraser-line"></i> Limpiar
+                    </button>
                 </div>
             </div>
 

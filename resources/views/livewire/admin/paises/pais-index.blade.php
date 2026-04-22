@@ -13,48 +13,53 @@
         </div>
     @endif
 
-    <!-- Stats Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card border-start border-primary border-4 shadow-sm h-100">
+    <div class="row mb-3">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Países</h6>
-                            <h2 class="mb-0">{{ $totalPaises }}</h2>
+                            <h4 class="mb-1">{{ $totalPaises }}</h4>
+                            <p class="mb-0">Total Países</p>
                         </div>
-                        <div class="bg-primary bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-earth-line text-primary" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ri ri-earth-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-start border-success border-4 shadow-sm h-100">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Países Activos</h6>
-                            <h2 class="mb-0">{{ $paisesActivos }}</h2>
+                            <h4 class="mb-1">{{ $paisesActivos }}</h4>
+                            <p class="mb-0">Países Activos</p>
                         </div>
-                        <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-checkbox-circle-line text-success" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ri ri-checkbox-circle-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-start border-danger border-4 shadow-sm h-100">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Países Inactivos</h6>
-                            <h2 class="mb-0">{{ $paisesInactivos }}</h2>
+                            <h4 class="mb-1">{{ $paisesInactivos }}</h4>
+                            <p class="mb-0">Países Inactivos</p>
                         </div>
-                        <div class="bg-danger bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-close-circle-line text-danger" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-danger">
+                                <i class="ri ri-close-circle-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -81,14 +86,11 @@
                     </div>
                 </div>
 
-                <div class="card-body">
-                    <div class="row mb-3">
+                <div class="card-header border-bottom">
+                    <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Buscar</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" wire:model.live.debounce.300ms="search" placeholder="Buscar país...">
-                                <span class="input-group-text"><i class="ri ri-search-line"></i></span>
-                            </div>
+                            <input type="text" class="form-control" wire:model.live.debounce.300ms="search" placeholder="Nombre, moneda, continente...">
                         </div>
 
                         <div class="col-md-3">

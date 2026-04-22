@@ -12,13 +12,6 @@ class ConceptoPagoMejoradoSeeder extends Seeder
         $conceptos = [
             ['nombre' => 'Cuota Inicial', 'descripcion' => 'Pago de cuota inicial'],
             ['nombre' => 'Mensualidad', 'descripcion' => 'Pago mensual de colegiatura'],
-            ['nombre' => 'Matrícula', 'descripcion' => 'Pago de matrícula inicial'],
-            ['nombre' => 'Material Didáctico', 'descripcion' => 'Libros y materiales educativos'],
-            ['nombre' => 'Uniforme', 'descripcion' => 'Uniforme escolar'],
-            ['nombre' => 'Seguro Escolar', 'descripcion' => 'Seguro contra accidentes'],
-            ['nombre' => 'Actividades Extracurriculares', 'descripcion' => 'Talleres y actividades adicionales'],
-            ['nombre' => 'Transporte', 'descripcion' => 'Servicio de transporte escolar'],
-            ['nombre' => 'Alimentación', 'descripcion' => 'Servicio de comedor'],
             ['nombre' => 'Mora', 'descripcion' => 'Interés por pago tardío'],
             ['nombre' => 'Otros', 'descripcion' => 'Otros conceptos']
         ];

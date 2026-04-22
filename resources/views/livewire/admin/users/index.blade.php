@@ -14,67 +14,73 @@
     @endif
 
     <!-- Stats Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card border-start border-primary border-4 shadow-sm h-100">
+    <div class="row mb-3">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Total Usuarios</h6>
-                            <h2 class="mb-0">{{ $totalUsers }}</h2>
+                            <h4 class="mb-1">{{ $totalUsers }}</h4>
+                            <p class="mb-0">Total Usuarios</p>
+                            <small class="text-success fw-semibold">
+                                <i class="ri ri-arrow-up-line"></i> {{ round(($activeUsers/$totalUsers)*100) }}% Activos
+                            </small>
                         </div>
-                        <div class="bg-primary bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-group-line text-primary" style="font-size: 1.5rem;"></i>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <span class="text-success fw-semibold">
-                            <i class="ri ri-arrow-up-line"></i> {{ round(($activeUsers/$totalUsers)*100) }}% Activos
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-start border-success border-4 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-2">Usuarios Activos</h6>
-                            <h2 class="mb-0">{{ $activeUsers }}</h2>
-                        </div>
-                        <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-checkbox-circle-line text-success" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ri ri-group-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-warning border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Usuarios Pendientes</h6>
-                            <h2 class="mb-0">{{ $pendingUsers }}</h2>
+                            <h4 class="mb-1">{{ $activeUsers }}</h4>
+                            <p class="mb-0">Usuarios Activos</p>
                         </div>
-                        <div class="bg-warning bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-time-line text-warning" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ri ri-checkbox-circle-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-start border-danger border-4 shadow-sm h-100">
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Usuarios Inactivos</h6>
-                            <h2 class="mb-0">{{ $inactiveUsers }}</h2>
+                            <h4 class="mb-1">{{ $pendingUsers }}</h4>
+                            <p class="mb-0">Usuarios Pendientes</p>
                         </div>
-                        <div class="bg-danger bg-opacity-10 p-3 rounded">
-                            <i class="ri ri-close-circle-line text-danger" style="font-size: 1.5rem;"></i>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-warning">
+                                <i class="ri ri-time-line ri-24px"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">{{ $inactiveUsers }}</h4>
+                            <p class="mb-0">Usuarios Inactivos</p>
+                        </div>
+                        <div class="avatar">
+                            <span class="avatar-initial rounded bg-label-danger">
+                                <i class="ri ri-close-circle-line ri-24px"></i>
+                            </span>
                         </div>
                     </div>
                 </div>

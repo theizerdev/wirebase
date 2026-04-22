@@ -8,7 +8,7 @@ FOR /F "tokens=*" %%A IN ('ipconfig ^| findstr "IPv4"') DO (
     )
 )
 
-cd C:\laragon\www\vargasInstitute
+cd C:\laragon\www\Inversiones Danger 3000 C.A
 
 
 SET IP_LOCAL=%IP_LINE: =%

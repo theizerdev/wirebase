@@ -15,14 +15,17 @@ Route::get('/lang/{locale}', function ($locale) {
 })->name('lang.switch');
 
 Route::get('/', function () {
-   if (\Auth::check() && \Auth::user()->id == 1) {
-
-    return redirect()->to('superadmin/dashboard');
-   } else {
-    # code...
+    if (!\Auth::check()) {
+        return redirect()->route('login');
+    }
+    $user = \Auth::user();
+    if ($user->cliente_id) {
+        return redirect()->to('/cliente/app');
+    }
+    if ($user->id == 1 || $user->hasRole('Super Administrador')) {
+        return redirect()->to('superadmin/dashboard');
+    }
     return redirect()->to('admin/dashboard');
-   }
-
 })->middleware('auth');
 
 // Rutas de autenticación con Livewire
@@ -65,14 +68,35 @@ Route::group(['prefix' => 'superadmin', 'as' => 'superadmin.', 'middleware' => [
 // Admin routes
 Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::get('/dashboard', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
+        Route::get('/dashboard', \App\Livewire\Admin\Dashboard\Index::class)->name('dashboard');
         require __DIR__.'/admin.php';
+        require __DIR__.'/api_whatsapp_react.php';
    });
 });
 
 Route::get('/admin/template-customization', \App\Livewire\Admin\TemplateCustomization\Index::class)
     ->middleware(['auth'])
     ->name('admin.template-customization');
+
+// App Cliente (SPA React) — catch-all para que React Router maneje las sub-rutas
+Route::middleware(['auth', 'verified'])
+    ->get('/cliente/app/{any?}', function () {
+        return view('cliente.app');
+    })
+    ->where('any', '.*')
+    ->name('cliente.app');
+
+// API Cliente (session-based, mismas credenciales web)
+Route::prefix('cliente/api')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/contracts', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'contracts']);
+    Route::get('/contracts/{id}', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'contractShow']);
+    Route::get('/timeline', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'timeline']);
+    Route::get('/me', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'me']);
+    Route::put('/me', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'updateProfile']);
+    Route::put('/me/password', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'changePassword']);
+    Route::get('/me/sessions', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'sessions']);
+    Route::post('/me/logout', [\App\Http\Controllers\Cliente\Api\MobileController::class, 'logout']);
+});
 
 // Test WhatsApp API
 Route::get('/test-whatsapp', function () {
@@ -110,6 +134,11 @@ Route::get('/test-send-message', function () {
         return response()->json(['error' => $e->getMessage()]);
     }
 });
+
+// Sorteo Interactivo (standalone SPA)
+Route::get('/sorteo', function () {
+    return view('sorteo.app');
+})->name('sorteo.app');
 
 // Ruta de prueba para configuración regional
 Route::get('/test/regional-configuration', \App\Livewire\TestRegionalConfiguration::class)

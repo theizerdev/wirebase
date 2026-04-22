@@ -9,7 +9,7 @@ class PagoDetalle extends Model
     protected $fillable = [
         'pago_id',
         'concepto_pago_id',
-        'payment_schedule_id',
+        'plan_pago_id',
         'descripcion',
         'cantidad',
         'precio_unitario',
@@ -32,9 +32,9 @@ class PagoDetalle extends Model
         return $this->belongsTo(ConceptoPago::class);
     }
 
-    public function paymentSchedule()
+    public function planPago()
     {
-        return $this->belongsTo(PaymentSchedule::class);
+        return $this->belongsTo(PlanPago::class, 'plan_pago_id');
     }
 
     protected static function boot()

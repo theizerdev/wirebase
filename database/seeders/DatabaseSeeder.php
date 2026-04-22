@@ -22,6 +22,11 @@ class DatabaseSeeder extends Seeder
             SucursalSeeder::class,
             UsersTableSeeder::class,
             SerieSeeder::class,
+            ConceptoPagoMejoradoSeeder::class,
+            MotosSeeder::class, // Agregar motos
+            ClientesSeeder::class, // Agregar clientes
+            MotoUnidadesSeeder::class, // Agregar inventario de unidades
+            ContratosSeeder::class, // Agregar contratos con planes de pago
         ]);
     }
 }

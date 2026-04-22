@@ -33,7 +33,7 @@ class Show extends Component
 
     public function mount(Caja $caja)
     {
-        $this->caja = $caja->load(['usuario', 'sucursal', 'pagos.detalles.conceptoPago', 'pagos.matricula.student']);
+        $this->caja = $caja->load(['usuario', 'sucursal', 'pagos.detalles.conceptoPago', 'pagos.cliente']);
     }
 
     public function abrirModalCerrar()

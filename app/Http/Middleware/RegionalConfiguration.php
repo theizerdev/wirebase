@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use App\Services\RegionalConfigurationService;
+use App\Services\ExchangeRateService;
 
 class RegionalConfiguration
 {
@@ -17,8 +18,20 @@ class RegionalConfiguration
      */
     public function handle(Request $request, Closure $next)
     {
+
+    
         // Aplicar configuración regional si el usuario está autenticado
         if (auth()->check()) {
+            $tasa = \App\Models\ExchangeRate::getLatestRate();
+            if ($tasa != null) {
+                
+            }
+            else
+                {
+                     $service = new ExchangeRateService();
+                     $success = $service->fetchAndStoreRates();
+
+                }
             RegionalConfigurationService::setRegionalConfiguration();
         }
 

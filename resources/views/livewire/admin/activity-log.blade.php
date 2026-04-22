@@ -2,42 +2,43 @@
     |<div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card card-primary card-outline">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-history text-primary mr-2"></i>
-                        <h3 class="card-title mb-0">Registro de Actividades</h3>
-                        <span class="badge badge-secondary ml-2">{{ number_format($activities->total()) }} actividades</span>
-                    </div>
-                    <div class="card-tools">
-                        <div class="btn-group" role="group">
-                            <button class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-download"></i> Exportar
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right">
-                                <button wire:click="export('csv')" class="dropdown-item">
-                                    <i class="fas fa-file-csv text-success"></i> Exportar CSV
-                                </button>
-                                <button wire:click="export('json')" class="dropdown-item">
-                                    <i class="fas fa-file-code text-warning"></i> Exportar JSON
-                                </button>
-                                <button wire:click="export('xml')" class="dropdown-item">
-                                    <i class="fas fa-file-code text-info"></i> Exportar XML
-                                </button>
-                            </div>
+            <div class="card">
+                <div class="card-header border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-1">Registro de Actividades</h5>
+                            <p class="mb-0">Seguimiento y auditoría del sistema</p>
                         </div>
-                        
-                        @if(count($selectedActivities) > 0)
-                            <button wire:click="deleteSelected" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de eliminar {{ count($selectedActivities) }} actividades?')">
-                                <i class="fas fa-trash"></i> Eliminar seleccionados ({{ count($selectedActivities) }})
-                            </button>
-                        @endif
+                        <div class="d-flex gap-2">
+                            <div class="dropdown">
+                                <button class="btn btn-label-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="ri ri-download-line me-1"></i> Exportar
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <button wire:click="export('csv')" class="dropdown-item">
+                                        <i class="ri ri-file-text-line me-2"></i>CSV
+                                    </button>
+                                    <button wire:click="export('json')" class="dropdown-item">
+                                        <i class="ri ri-code-line me-2"></i>JSON
+                                    </button>
+                                    <button wire:click="export('xml')" class="dropdown-item">
+                                        <i class="ri ri-code-s-slash-line me-2"></i>XML
+                                    </button>
+                                </div>
+                            </div>
+                            @if(count($selectedActivities) > 0)
+                                <button wire:click="deleteSelected" class="btn btn-label-danger btn-sm" onclick="return confirm('¿Está seguro de eliminar {{ count($selectedActivities) }} actividades?')">
+                                    <i class="ri ri-delete-bin-line me-1"></i> Eliminar seleccionadas ({{ count($selectedActivities) }})
+                                </button>
+                            @endif
+                            <span class="badge bg-label-secondary ms-2">{{ number_format($activities->total()) }} actividades</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card-body p-0">
                     <!-- Filtros superiores -->
-                    <div class="p-3 border-bottom bg-light">
+                    <div class="card-header border-bottom">
                         <div class="row">
                             <div class="col-lg-4 col-md-6 mb-2">
                                 <div class="input-group">
@@ -186,8 +187,8 @@
                                                </div>
                                            </div>
                                        @else
-                                           <span class="badge badge-secondary">
-                                               <i class="fas fa-robot mr-1"></i>Sistema
+                                           <span class="badge bg-label-secondary">
+                                               <i class="ri ri-robot-line me-1"></i>Sistema
                                            </span>
                                        @endif
                                    </td>

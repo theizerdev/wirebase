@@ -23,6 +23,17 @@ use App\Livewire\Admin\ActiveSessions;
 use App\Livewire\Admin\ConceptosPago\Index as ConceptosPagoIndex;
 use App\Livewire\Admin\ConceptosPago\Create as ConceptosPagoCreate;
 use App\Livewire\Admin\ConceptosPago\Edit as ConceptosPagoEdit;
+use App\Livewire\Admin\Motos\Index as MotosIndex;
+use App\Livewire\Admin\Motos\Create as MotosCreate;
+use App\Livewire\Admin\Motos\Edit as MotosEdit;
+use App\Livewire\Admin\Clientes\Index as ClientesIndex;
+use App\Livewire\Admin\Clientes\Create as ClientesCreate;
+use App\Livewire\Admin\Clientes\Edit as ClientesEdit;
+use App\Livewire\Admin\Contratos\Index as ContratosIndex;
+use App\Livewire\Admin\Contratos\Create as ContratosCreate;
+use App\Livewire\Admin\Contratos\Edit as ContratosEdit;
+use App\Livewire\Admin\Contratos\Show as ContratosShow;
+use App\Livewire\Admin\Pagos\Register as PagosRegister;
 
 
 
@@ -93,11 +104,42 @@ Route::get('/pagos/crear', \App\Livewire\Admin\Pagos\Create::class)->name('pagos
 Route::get('/pagos/{pago}/editar', \App\Livewire\Admin\Pagos\Edit::class)->name('pagos.edit');
 Route::get('/pagos/{pago}', \App\Livewire\Admin\Pagos\Show::class)->name('pagos.show');
 Route::get('/pagos/{pago}/print', [\App\Livewire\Admin\Pagos\Index::class, 'downloadReceipt'])->name('pagos.print');
+Route::get('/pagos/{pago}/ticket', [\App\Livewire\Admin\Pagos\Index::class, 'ticketView'])->name('pagos.ticket');
+Route::get('/pagos/{pago}/ticket-thermal', [\App\Livewire\Admin\Pagos\Index::class, 'ticketThermalView'])->name('pagos.ticket-thermal');
 Route::get('/pagos/comprobante/{comprobante}', \App\Livewire\Admin\Pagos\Comprobantes::class)->name('pagos.comprobante');
 
+// Motos
+Route::get('/motos', MotosIndex::class)->name('motos.index');
+Route::get('/motos/crear', MotosCreate::class)->name('motos.create');
+Route::get('/motos/{moto}/editar', MotosEdit::class)->name('motos.edit');
+Route::get('/motos/{moto}/detalles', \App\Livewire\Admin\Motos\Details::class)->name('motos.details');
 
+// Unidades (Inventario)
+Route::get('/motos/{moto}/unidades', \App\Livewire\Admin\Motos\Unidades\Index::class)->name('motos.unidades.index');
+Route::get('/motos/{moto}/unidades/crear', \App\Livewire\Admin\Motos\Unidades\Create::class)->name('motos.unidades.create');
+
+// Unidades (Inventario General)
+Route::get('/inventario/unidades', \App\Livewire\Admin\Inventario\Unidades\Index::class)->name('inventario.unidades.index');
+Route::get('/inventario/unidades/crear', \App\Livewire\Admin\Inventario\Unidades\Create::class)->name('inventario.unidades.create');
+Route::get('/inventario/unidades/{unidad}', \App\Livewire\Admin\Inventario\Unidades\Show::class)->name('inventario.unidades.show');
+Route::get('/inventario/unidades/{unidad}/historial', \App\Livewire\Admin\Inventario\Unidades\History::class)->name('inventario.unidades.history');
+
+// Clientes
+Route::get('/clientes', ClientesIndex::class)->name('clientes.index');
+Route::get('/clientes/crear', ClientesCreate::class)->name('clientes.create');
+Route::get('/clientes/{cliente}', \App\Livewire\Admin\Clientes\Show::class)->name('clientes.show');
+Route::get('/clientes/{cliente}/editar', ClientesEdit::class)->name('clientes.edit');
+
+// Contratos
+Route::get('/contratos', ContratosIndex::class)->name('contratos.index');
+Route::get('/contratos/crear', ContratosCreate::class)->name('contratos.create');
+Route::get('/contratos/{contrato}', ContratosShow::class)->name('contratos.show');
+Route::get('/contratos/{contrato}/editar', ContratosEdit::class)->name('contratos.edit');
+Route::get('/contratos/{contrato}/pagar', PagosRegister::class)->name('contratos.pagar');
 
 // Registro de Actividad
+
+ 
 Route::get('/activity-log', \App\Livewire\Admin\ActivityLog::class)->name('activity-log');
 
 
@@ -138,6 +180,10 @@ Route::prefix('whatsapp')->as('whatsapp.')->group(function () {
     
     // Estadísticas
     Route::get('/statistics', \App\Livewire\Admin\Whatsapp\WhatsAppStatistics::class)->name('statistics');
+   
+    Route::get('/chat/{any?}', function () {
+        return view('admin.whatsapp.react-chat');
+    })->where('any', '.*')->name('chat');
 });
 
 // Exportador de Base de Datos
@@ -151,4 +197,17 @@ Route::get('/conceptos-pago', ConceptosPagoIndex::class)->name('conceptos-pago.i
 Route::get('/conceptos-pago/crear', ConceptosPagoCreate::class)->name('conceptos-pago.create');
 Route::get('/conceptos-pago/{concepto}/editar', ConceptosPagoEdit::class)->name('conceptos-pago.edit');
 
-// Estadísticas
+// Reportes
+Route::get('/reportes/estado-cuenta', \App\Livewire\Admin\Reportes\EstadoCuenta::class)->name('reportes.estado-cuenta');
+
+// Nómina
+Route::get('/nomina/procesar', \App\Livewire\Admin\Nomina\Procesar::class)->name('nomina.procesar');
+
+// Sorteos
+Route::get('/sorteo', \App\Livewire\Admin\Sorteo\Index::class)->name('sorteo.index');
+Route::get('/sorteo/{sorteo}', \App\Livewire\Admin\Sorteo\Detalle::class)->name('sorteo.detalle');
+
+// Empleados
+Route::get('/empleados', \App\Livewire\Admin\Empleados\Index::class)->name('empleados.index');
+Route::get('/empleados/crear', \App\Livewire\Admin\Empleados\Create::class)->name('empleados.create');
+Route::get('/empleados/{empleado}/editar', \App\Livewire\Admin\Empleados\Edit::class)->name('empleados.edit');

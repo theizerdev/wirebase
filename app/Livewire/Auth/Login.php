@@ -112,6 +112,10 @@ class Login extends Component
         // Regenerar sesión para prevenir session fixation
         request()->session()->regenerate();
 
+        // Redirigir según tipo de usuario
+        if ($user->cliente_id) {
+            return redirect('/cliente/app');
+        }
         return redirect()->intended('/');
     }
 

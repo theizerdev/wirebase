@@ -206,6 +206,7 @@ Thumbs.db
 
 # WhatsApp API (Node.js)
 /resources/js/whatsapp/node_modules/
+/resources/js/whatsapp/storage/
 /resources/js/whatsapp/logs/
 /resources/js/whatsapp/*.log
 /resources/js/whatsapp/npm-debug.log*

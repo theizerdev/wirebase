@@ -6,19 +6,25 @@ use App\Traits\HasDynamicLayout;
 use App\Traits\HasRegionalFormatting;
 use Livewire\Component;
 use App\Models\Pago;
-use App\Models\Matricula;
+use App\Models\Cliente;
+use App\Models\Contrato;
 use App\Models\ConceptoPago;
-use App\Models\PaymentSchedule;
+use App\Models\PlanPago;
 use App\Models\Serie;
 use App\Models\Caja;
+use App\Models\ExchangeRate;
 use App\Services\PagoService;
-use DB;
+use App\Services\ExchangeRateService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+
 class Create extends Component
 {
     use HasDynamicLayout, HasRegionalFormatting;
 
-
-    public $matricula_id;
+    public $cliente_id;
+    public $contrato_id;
+    
     public $tipo_pago = 'recibo';
     public $fecha;
     public $metodo_pago = 'efectivo';
@@ -32,22 +38,25 @@ class Create extends Component
     // Propiedades para pago mixto
     public $es_pago_mixto = false;
     public $metodos_pago_mixto = [];
+    public $totalPagoMixto = 0;
 
-    // Propiedades adicionales para la vista
+    // Propiedades adicionales
     public $fecha_pago;
-    public $concepto_id;
     public $monto;
 
-    public $matriculas = [];
+    // Colecciones
+    public $clientes = [];
+    public $contratos = [];
     public $conceptos = [];
     public $cuotasPendientes = [];
+    
     public $serie_actual;
     public $numero_documento;
     public $caja_abierta;
 
-    // Propiedades para búsqueda
-    public $busqueda_estudiante = '';
-    public $matriculas_filtradas = [];
+    // Búsqueda
+    public $busqueda_cliente = '';
+    public $clientes_filtrados = [];
 
     // Propiedades para mejoras
     public $monto_recibido = 0;
@@ -55,9 +64,14 @@ class Create extends Component
     public $plantillas_pago = [];
     public $whatsappStatus = 'disconnected';
 
+    protected $listeners = [
+        'referencia-mixto-actualizada' => 'procesarReferenciaMixto',
+        'whatsapp-status-updated' => 'actualizarEstadoWhatsApp'
+    ];
+
     protected $rules = [
-        'matricula_id' => 'required|exists:matriculas,id',
-        'tipo_pago' => 'required|in:factura,boleta,nota_credito,recibo,comunidad educativa,educacion adulto',
+        'cliente_id' => 'required|exists:clientes,id',
+        'tipo_pago' => 'required',
         'fecha' => 'required|date',
         'metodo_pago' => 'required',
         'detalles' => 'required|array|min:1',
@@ -65,38 +79,47 @@ class Create extends Component
         'detalles.*.descripcion' => 'required|string',
         'detalles.*.cantidad' => 'required|numeric|min:0.01',
         'detalles.*.precio_unitario' => 'required|numeric|min:0',
-        'metodos_pago_mixto.*.metodo' => 'required',
-        'metodos_pago_mixto.*.monto' => 'required|numeric|min:0',
     ];
-
-   
 
     public function mount()
     {
         $this->fecha = now()->format('Y-m-d');
-        //$this->fecha_pago = now()->format('Y-m-d');
+        $this->fecha_pago = now()->format('Y-m-d');
+        
         $this->cargarTasaCambio();
-        $this->cargarDatos();
         $this->verificarCajaAbierta();
+        $this->cargarDatos();
         $this->agregarDetalle();
         $this->inicializarPagoMixto();
         $this->cargarPlantillasPago();
         $this->checkWhatsAppStatus();
-        
-        //dd($this->checkWhatsAppStatus());
     }
 
     public function inicializarPagoMixto()
     {
         $this->metodos_pago_mixto = [
-            ['metodo' => 'efectivo_dolares', 'monto' => 0, 'referencia' => '-'],
-            ['metodo' => 'transferencia', 'monto' => 0, 'referencia' => '-']
+            ['metodo' => 'efectivo', 'monto' => 0, 'referencia' => ''],
+            ['metodo' => 'transferencia', 'monto' => 0, 'referencia' => '']
         ];
     }
 
     public function cargarTasaCambio()
     {
-        $tasaHoy = \App\Models\ExchangeRate::getTodayRate();
+        $fecha = $this->fecha_pago ?: $this->fecha;
+        if ($fecha) {
+            $service = new ExchangeRateService();
+            $rate = $service->fetchAndStoreRates() ? ExchangeRate::getTodayRate()->usd_rate : null;
+            // Simplified for now, assuming service stores it.
+            // Better: use ExchangeRate model directly if service is complex
+            $tasa = ExchangeRate::whereDate('date', $fecha)->first();
+            if ($tasa) {
+                $this->tasa_cambio = $tasa->usd_rate;
+                $this->mostrar_bolivares = true;
+                return;
+            }
+        }
+        
+        $tasaHoy = ExchangeRate::getTodayRate();
         if ($tasaHoy) {
             $this->tasa_cambio = $tasaHoy->usd_rate;
             $this->mostrar_bolivares = true;
@@ -113,55 +136,69 @@ class Create extends Component
 
     public function cargarDatos()
     {
-        $query = Matricula::with(['student', 'programa']);
-
-        if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
-            $query->where('empresa_id', auth()->user()->empresa_id)
-                  ->where('sucursal_id', auth()->user()->sucursal_id);
-        }
-
-        $this->matriculas = $query->get();
         $this->conceptos = ConceptoPago::where('activo', true)->get();
         $this->cargarSerieActual();
     }
 
-    public function updatedBusquedaEstudiante($value)
+    public function updatedBusquedaCliente($value)
     {
         if (strlen($value) >= 2) {
-            $query = Matricula::with(['student', 'programa'])
-                ->whereHas('student', function($q) use ($value) {
-                    $q->where('nombres', 'like', '%' . $value . '%')
-                      ->orWhere('apellidos', 'like', '%' . $value . '%')
-                      ->orWhere('documento_identidad', 'like', '%' . $value . '%')
-                      ->orWhere('codigo', 'like', '%' . $value . '%');
-                })
-                ->orWhereHas('programa', function($q) use ($value) {
-                    $q->where('nombre', 'like', '%' . $value . '%');
+            $query = Cliente::where(function($q) use ($value) {
+                    $q->where('nombre', 'like', '%' . $value . '%')
+                      ->orWhere('apellido', 'like', '%' . $value . '%')
+                      ->orWhere('documento', 'like', '%' . $value . '%');
                 });
 
             if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
-                $query->where('empresa_id', auth()->user()->empresa_id)
-                      ->where('sucursal_id', auth()->user()->sucursal_id);
+                $query->where('empresa_id', auth()->user()->empresa_id);
             }
 
-            $this->matriculas_filtradas = $query->limit(10)->get();
+            $this->clientes_filtrados = $query->limit(10)->get();
         } else {
-            $this->matriculas_filtradas = [];
+            $this->clientes_filtrados = [];
         }
     }
 
-    public function seleccionarMatricula($matriculaId)
+    public function seleccionarCliente($clienteId)
     {
-        $this->matricula_id = $matriculaId;
-        $this->busqueda_estudiante = '';
-        $this->matriculas_filtradas = [];
-        $this->updatedMatriculaId($matriculaId);
-        $this->cargarPagosAnteriores($matriculaId);
+        $this->cliente_id = $clienteId;
+        $this->busqueda_cliente = '';
+        $this->clientes_filtrados = [];
+        
+        $this->cargarContratos($clienteId);
+        $this->cargarPagosAnteriores($clienteId);
     }
 
-    public function cargarPagosAnteriores($matriculaId)
+    public function cargarContratos($clienteId)
     {
-        $this->pagos_anteriores = Pago::where('matricula_id', $matriculaId)
+        $this->contratos = Contrato::where('cliente_id', $clienteId)
+            ->whereIn('estado', ['activo', 'mora'])
+            ->get();
+            
+        if ($this->contratos->count() === 1) {
+            $this->contrato_id = $this->contratos->first()->id;
+            $this->updatedContratoId($this->contrato_id);
+        } else {
+            $this->contrato_id = null;
+            $this->cuotasPendientes = [];
+        }
+    }
+
+    public function updatedContratoId($value)
+    {
+        if ($value) {
+            $this->cuotasPendientes = PlanPago::where('contrato_id', $value)
+                ->whereIn('estado', ['pendiente', 'parcial'])
+                ->orderBy('fecha_vencimiento')
+                ->get();
+        } else {
+            $this->cuotasPendientes = [];
+        }
+    }
+
+    public function cargarPagosAnteriores($clienteId)
+    {
+        $this->pagos_anteriores = Pago::where('cliente_id', $clienteId)
             ->where('estado', 'aprobado')
             ->orderBy('created_at', 'desc')
             ->limit(5)
@@ -172,8 +209,8 @@ class Create extends Component
     {
         $this->plantillas_pago = [
             'mensualidad' => ['nombre' => 'Mensualidad', 'conceptos' => ['Mensualidad']],
-            'inscripcion' => ['nombre' => 'Inscripción', 'conceptos' => ['Inscripción', 'Materiales']],
-            'materiales' => ['nombre' => 'Materiales', 'conceptos' => ['Materiales Escolares']]
+            'inicial' => ['nombre' => 'Inicial', 'conceptos' => ['Cuota Inicial']],
+            'mora' => ['nombre' => 'Mora', 'conceptos' => ['Recargo por Mora']]
         ];
     }
 
@@ -191,7 +228,7 @@ class Create extends Component
                 if ($concepto) {
                     $this->detalles[] = [
                         'concepto_pago_id' => $concepto->id,
-                        'payment_schedule_id' => null,
+                        'plan_pago_id' => null,
                         'descripcion' => $concepto->nombre,
                         'cantidad' => 1,
                         'precio_unitario' => $concepto->precio_sugerido ?? 0
@@ -212,22 +249,30 @@ class Create extends Component
         }
     }
 
+    public function getSubtotalProperty()
+    {
+        return collect($this->detalles)->sum(fn($d) => ($d['cantidad'] ?? 0) * ($d['precio_unitario'] ?? 0));
+    }
+
+    public function getTotalProperty()
+    {
+        return $this->subtotal - $this->descuento;
+    }
+
+    public function getTotalBolivaresProperty()
+    {
+        if ($this->tasa_cambio) {
+            return $this->total * $this->tasa_cambio;
+        }
+        return 0;
+    }
+
     public function getCambioProperty()
     {
         return max(0, $this->monto_recibido - $this->total);
     }
 
-    public function updatedMatriculaId($value)
-    {
-        if ($value) {
-            if (class_exists('\App\Models\PaymentSchedule')) {
-                $this->cuotasPendientes = PaymentSchedule::where('matricula_id', $value)
-                    ->where('estado', 'pendiente')
-                    ->orderBy('numero_cuota')
-                    ->get();
-            }
-        }
-    }
+    // Method updatedMatriculaId removed as logic is now in updatedContratoId
 
     public function updatedTipoPago($value)
     {
@@ -237,17 +282,22 @@ class Create extends Component
     public function cargarSerieActual()
     {
         $query = Serie::where('tipo_documento', $this->tipo_pago)
-                     ->where('activo', true);
+                     ->where('activo', true)
+                     ->where('empresa_id', auth()->user()->empresa_id);
 
     
         $this->serie_actual = $query->first();
 
         if ($this->serie_actual) {
-            $siguienteNumero = $this->serie_actual->correlativo_actual + 1;
-            $this->numero_documento = $this->serie_actual->serie . '-' .
-                str_pad($siguienteNumero, $this->serie_actual->longitud_correlativo, '0', STR_PAD_LEFT);
+            $this->numero_documento = $this->serie_actual->correlativo_actual;
         } else {
-            $this->numero_documento = null;
+            // Fallback
+             $this->serie_actual = new Serie([
+                'id' => 1, 
+                'serie' => 'TMP', 
+                'correlativo_actual' => 1
+            ]);
+            $this->numero_documento = 1;
         }
     }
 
@@ -257,7 +307,7 @@ class Create extends Component
 
         $this->detalles[] = [
             'concepto_pago_id' => $conceptoDefault?->id ?? '',
-            'payment_schedule_id' => null,
+            'plan_pago_id' => null,
             'descripcion' => '',
             'cantidad' => 1,
             'precio_unitario' => 0.01
@@ -270,39 +320,42 @@ class Create extends Component
         $this->detalles = array_values($this->detalles);
     }
 
-    public function seleccionarCuota($scheduleId)
+    public function seleccionarCuota($planPagoId)
     {
-        $schedule = PaymentSchedule::find($scheduleId);
-        if ($schedule) {
-            $conceptoMensualidad = ConceptoPago::where('nombre', 'Mensualidad')->first();
-            $conceptoRecargo = ConceptoPago::where('nombre', 'Recargo por Mora')->first();
+        $planPago = PlanPago::find($planPagoId);
+        
+        if ($planPago) {
+            // Buscar conceptos apropiados
+            $conceptoMensualidad = ConceptoPago::where('nombre', 'like', '%Mensualidad%')->first();
+            
+            // Si no existe, usar el primero disponible o crear uno en memoria
+            if (!$conceptoMensualidad) {
+                $conceptoMensualidad = ConceptoPago::first();
+            }
 
             // Agregar cuota principal
             $this->detalles[] = [
                 'concepto_pago_id' => $conceptoMensualidad?->id,
-                'payment_schedule_id' => $schedule->id,
-                'descripcion' => "Cuota #{$schedule->numero_cuota} - {$schedule->fecha_vencimiento->format('M Y')}",
+                'plan_pago_id' => $planPago->id,
+                'descripcion' => "Cuota #{$planPago->numero_cuota} - Vence: {$planPago->fecha_vencimiento->format('d/m/Y')}",
                 'cantidad' => 1,
-                'precio_unitario' => $schedule->saldo_pendiente
+                'precio_unitario' => $planPago->saldo_pendiente
             ];
 
-            // Agregar recargo si existe
-            if ($schedule->recargo_morosidad > 0) {
-                if (!$conceptoRecargo) {
-                    $conceptoRecargo = ConceptoPago::create([
-                        'nombre' => 'Recargo por Mora',
-                        'descripcion' => 'Recargo aplicado por pagos vencidos',
-                        'activo' => true
-                    ]);
+            // Si tiene mora calculada y no pagada, agregarla como detalle separado
+            if ($planPago->mora_calculada > $planPago->mora_pagada) {
+                $conceptoRecargo = ConceptoPago::where('nombre', 'like', '%Mora%')->first();
+                $montoMora = $planPago->mora_calculada - $planPago->mora_pagada;
+                
+                if ($montoMora > 0) {
+                     $this->detalles[] = [
+                        'concepto_pago_id' => $conceptoRecargo?->id ?? $conceptoMensualidad?->id,
+                        'plan_pago_id' => null,
+                        'descripcion' => "Mora - Cuota #{$planPago->numero_cuota}",
+                        'cantidad' => 1,
+                        'precio_unitario' => $montoMora
+                    ];
                 }
-
-                $this->detalles[] = [
-                    'concepto_pago_id' => $conceptoRecargo->id,
-                    'payment_schedule_id' => null,
-                    'descripcion' => "Recargo por mora - Cuota #{$schedule->numero_cuota}",
-                    'cantidad' => 1,
-                    'precio_unitario' => $schedule->recargo_morosidad
-                ];
             }
         }
     }
@@ -328,24 +381,6 @@ class Create extends Component
     {
         $detalle = $this->detalles[$index];
         return ($detalle['cantidad'] ?? 0) * ($detalle['precio_unitario'] ?? 0);
-    }
-
-    public function getSubtotalProperty()
-    {
-        return collect($this->detalles)->sum(fn($d) => ($d['cantidad'] ?? 0) * ($d['precio_unitario'] ?? 0));
-    }
-
-    public function getTotalProperty()
-    {
-        return $this->subtotal - $this->descuento;
-    }
-
-    public function getTotalBolivaresProperty()
-    {
-        if ($this->tasa_cambio) {
-            return $this->total * $this->tasa_cambio;
-        }
-        return 0;
     }
 
     public function updatedMetodoPago($value)
@@ -374,64 +409,41 @@ class Create extends Component
         return collect($this->metodos_pago_mixto)->sum('monto');
     }
 
-    private function enviarNotificacionWhatsApp($pago, $matricula)
+    public function enviarReciboWhatsApp($pago)
     {
-        $result = ['sent' => false, 'attempted' => false, 'destinatario' => null];
-        
-        
-
-        try {
-              $estudiante = $matricula->student;
-            $esMayorDeEdad = \Carbon\Carbon::parse($estudiante->fecha_nacimiento)->age >= 18;
-            
-            $telefono = null;
-            $nombreDestino = null;
-
-            if (!$esMayorDeEdad && $estudiante->representante_telefonos) {
-                $telefonos = explode(',', $estudiante->representante_telefonos);
-                $telefono = trim($telefonos[0] ?? '');
-                $nombreDestino = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
-            }
-            else {
-                $telefono = $estudiante->telefono;
-                $nombreDestino = $estudiante->nombres . ' ' . $estudiante->apellidos;
-            }
-
-
-            $result['attempted'] = true;
-            $result['destinatario'] = $nombreDestino;
-            
-            $mensaje = $this->generarMensajePago($pago, $estudiante, $esMayorDeEdad);
-            $telefonoFormateado = $this->formatPhoneNumber($telefono);
-            
-            $whatsappService = new \App\Services\WhatsAppService();
-            $whatsappResult = $whatsappService->sendMessage($telefonoFormateado, $mensaje);
-           
-            $result['sent'] = $whatsappResult && ($whatsappResult['success'] ?? false);
-            
-        } catch (\Exception $e) {
-
-            \Log::error('Error enviando notificación WhatsApp de pago: ' . $e->getMessage());
-            $result['attempted'] = true;
+        $cliente = $pago->cliente;
+        if (!$cliente || !$cliente->telefono) {
+            return false;
         }
+
+        $numero = $this->formatPhoneNumber($cliente->telefono);
+        $mensaje = $this->generarMensajeWhatsApp($pago);
         
-        return $result;
+        // Usar WhatsAppService en lugar de Http directo para mayor robustez y compatibilidad
+        try {
+            $whatsappService = new \App\Services\WhatsAppService(auth()->user()->empresa_id);
+            $response = $whatsappService->sendMessage($numero, $mensaje);
+            
+            if ($response && ($response['success'] ?? false)) {
+                return true;
+            }
+            
+            \Log::error('Error WhatsApp Service Response: ' . json_encode($response));
+            return false;
+        } catch (\Exception $e) {
+             \Log::error('Error enviando WhatsApp (Exception): ' . $e->getMessage());
+             return false;
+        }
     }
 
-    private function generarMensajePago($pago, $estudiante, $esMayorDeEdad)
+    private function generarMensajeWhatsApp($pago)
     {
-        $nombreEstudiante = $estudiante->nombres . ' ' . $estudiante->apellidos;
+        $cliente = $pago->cliente;
         $totalFormateado = '$' . number_format($pago->total, 2, ',', '.');
         
-        if ($esMayorDeEdad) {
-            $mensaje = "💳 *Pago Recibido - U.E JOSE MARIA VARGAS*\n\n";
-            $mensaje .= "Estimado/a {$nombreEstudiante},\n\n";
-        } else {
-            $representante = $estudiante->representante_nombres . ' ' . $estudiante->representante_apellidos;
-            $mensaje = "💳 *Pago Recibido - U.E JOSE MARIA VARGAS*\n\n";
-            $mensaje .= "Estimado/a {$representante},\n\n";
-            $mensaje .= "Hemos recibido el pago del estudiante *{$nombreEstudiante}*.\n\n";
-        }
+        $mensaje = "💳 *Pago Recibido - Inversiones Danger 3000 C.A*\n\n";
+        $mensaje .= "Estimado/a *{$cliente->nombre_completo}*,\n\n";
+        $mensaje .= "Hemos recibido su pago correctamente.\n\n";
         
         $mensaje .= "📄 *Detalles del Pago:*\n";
         $mensaje .= "• Número de Recibo: *{$pago->numero_completo}*\n";
@@ -449,28 +461,23 @@ class Create extends Component
         
         $mensaje .= "\n💰 *Total Pagado: {$totalFormateado}*\n\n";
         $mensaje .= "Gracias por su pago puntual.\n\n";
-        $mensaje .= "*U.E JOSE MARIA VARGAS*";
+        $mensaje .= "*Inversiones Danger 3000 C.A - Tu aliado en dos ruedas*";
         
         return $mensaje;
     }
 
     private function formatPhoneNumber($number)
     {
-        $empresa = \DB::table('empresas')->where('id', 1)->first();
-        $pais = $empresa ? \DB::table('pais')->where('id', $empresa->pais_id)->first() : null;
-        $codigoPais = $pais ? $pais->codigo_telefonico : '58';
-        
-        $cleaned = preg_replace('/[^0-9]/', '', $number);
-        
-        if (strlen($cleaned) > 10 && str_starts_with($cleaned, $codigoPais)) {
-            return $cleaned;
+        try {
+            $service = \App\Services\WhatsAppService::forCompany(auth()->user()->empresa_id);
+            return $service->formatPhone($number);
+        } catch (\Throwable $e) {
+            $cleaned = preg_replace('/[^0-9]/', '', $number);
+            if (strlen($cleaned) === 10) {
+                return '58' . ltrim($cleaned, '0');
+            }
+            return ltrim($cleaned, '+');
         }
-        
-        if (str_starts_with($cleaned, '0')) {
-            $cleaned = substr($cleaned, 1);
-        }
-        
-        return $codigoPais . $cleaned;
     }
 
     public function checkWhatsAppStatus()
@@ -505,68 +512,41 @@ class Create extends Component
     public function guardar()
     {
         // Validación especial para pago mixto
-        if ($this->es_pago_mixto && $this->totalPagoMixto != $this->total) {
-            session()->flash('error', 'El total configurado en el pago mixto debe coincidir con el total a pagar.');
+        if ($this->es_pago_mixto && abs($this->totalPagoMixto - $this->total) > 0.01) {
+             session()->flash('error', 'El total configurado en el pago mixto debe coincidir con el total a pagar.');
+             return;
+        }
+
+        $this->validate();
+
+        if (!$this->caja_abierta) {
+            $this->dispatch('swal:error', [
+                'title' => 'Error',
+                'text' => 'No hay una caja abierta para registrar pagos.'
+            ]);
             return;
         }
-
-        // Validar referencias duplicadas antes de guardar
-        if ($this->es_pago_mixto) {
-            foreach ($this->metodos_pago_mixto as $index => $metodo) {
-                if (!empty($metodo['referencia'])) {
-                    $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $metodo['referencia']);
-                    
-                    // Buscar en el campo referencia directo
-                    $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
-                        ->where('estado', 'aprobado')
-                        ->exists();
-                    
-                    // Buscar en el campo detalles_pago_mixto (JSON)
-                    $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
-                        ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
-                        ->exists();
-                    
-                    if ($existeReferenciaDirecta || $existeEnDetalles) {
-                        session()->flash('error', 'La referencia "' . $metodo['referencia'] . '" ya fue utilizada en otro pago.');
-                        return;
-                    }
-                }
-            }
-        } elseif (!empty($this->referencia)) {
-            // Validar referencia para pago no mixto
-            $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $this->referencia);
-            
-            $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
-                ->where('estado', 'aprobado')
-                ->exists();
-            
-            $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
-                ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
-                ->exists();
-            
-            if ($existeReferenciaDirecta || $existeEnDetalles) {
-                session()->flash('error', 'La referencia "' . $this->referencia . '" ya fue utilizada en otro pago.');
-                return;
-            }
-        }
-
-
 
        try {
         DB::transaction(function () {
             
-
-            $matricula = Matricula::find($this->matricula_id);
+            // Recalcular totales antes de enviar
+            $subtotal = $this->subtotal; // Usar el getter corregido
+            $total = $this->total;       // Usar el getter corregido
+            $totalBolivares = $this->total_bolivares;
 
             $pagoService = new PagoService();
             $pago = $pagoService->crearPago([
                 'tipo_pago' => $this->tipo_pago,
-                'fecha' => $this->fecha_pago,
-                'matricula_id' => $this->matricula_id,
+                'fecha' => $this->fecha_pago ?: $this->fecha, // Usar fecha correcta
+                'cliente_id' => $this->cliente_id,
                 'serie_id' => $this->serie_actual?->id,
                 'metodo_pago' => $this->metodo_pago,
                 'referencia' => $this->referencia,
                 'descuento' => $this->descuento,
+                'subtotal' => $subtotal, // Enviar subtotal calculado
+                'total' => $total,       // Enviar total calculado
+                'total_bolivares' => $totalBolivares,
                 'observaciones' => $this->observaciones,
                 'tasa_cambio' => $this->tasa_cambio,
                 'es_pago_mixto' => $this->es_pago_mixto,
@@ -574,23 +554,20 @@ class Create extends Component
                 'empresa_id' => auth()->user()->empresa_id,
                 'sucursal_id' => auth()->user()->sucursal_id,
                 'caja_id' => $this->caja_abierta->id,
-                'estado' => Pago::ESTADO_APROBADO,
+                'estado' => 'aprobado',
                 'detalles' => $this->detalles
             ]);
 
-            $this->dispatch('pago-registrado', ['mensaje' => 'Pago registrado exitosamente: ' . $pago->numero_completo]);
-
             // Enviar notificación por WhatsApp y esperar respuesta
-            $whatsappResult = $this->enviarNotificacionWhatsApp($pago, $matricula);
+            $whatsappSent = $this->enviarReciboWhatsApp($pago);
+            
             $mensaje = 'Pago registrado exitosamente: ' . $pago->numero_completo;
-            if ($whatsappResult['sent']) {
-                $mensaje .= ' - Notificación WhatsApp enviada a ' . $whatsappResult['destinatario'];
-            } elseif ($whatsappResult['attempted']) {
-                $mensaje .= ' - No se pudo enviar notificación WhatsApp';
+            if ($whatsappSent) {
+                $mensaje .= ' - Notificación WhatsApp enviada.';
             }
             
             session()->flash('message', $mensaje);
-            return redirect()->route('admin.pagos.create');
+            return redirect()->route('admin.pagos.index');
         });
         } catch (\Throwable $th) {
             session()->flash('error', 'Error al crear el pago: ' . $th->getMessage());
@@ -602,12 +579,10 @@ class Create extends Component
      */
     public function updatedMetodosPagoMixto($value, $key)
     {
-       
-        
-        // Si el cambio es en una referencia, procesar la validación
         if (str_contains($key, 'referencia')) {
             $this->validarReferenciaMixto($value, $key);
         }
+        $this->calculateTotalPagoMixto();
     }
     
     /**
@@ -615,109 +590,57 @@ class Create extends Component
      */
     private function validarReferenciaMixto($value, $key)
     {
-        // Extraer el índice del array
         $parts = explode('.', $key);
         $index = $parts[0] ?? null;
         
         if ($index !== null && isset($this->metodos_pago_mixto[$index])) {
-            // Limpiar la referencia
             $valorLimpio = trim($value);
             $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $valorLimpio);
             
-            // Validar que la referencia no exista en la base de datos
             if (!empty($valorLimpio)) {
-                // Buscar en el campo referencia directo
                 $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
                     ->where('estado', 'aprobado')
                     ->exists();
                 
-                // Buscar en el campo detalles_pago_mixto (JSON)
                 $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
                     ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
                     ->exists();
                 
-                // Verificar si existe en cualquiera de los dos lugares
                 if ($existeReferenciaDirecta || $existeEnDetalles) {
-                    // Usar $this->addError para mostrar el error en el campo específico
-                    $this->addError('metodos_pago_mixto.' . $index . '.referencia', 'Esta referencia ya fue utilizada en otro pago.');
+                    $this->addError('metodos_pago_mixto.' . $index . '.referencia', 'Referencia ya utilizada.');
                     $this->metodos_pago_mixto[$index]['referencia'] = '';
                 } else {
                     $this->metodos_pago_mixto[$index]['referencia'] = $valorLimpio;
-                    // Limpiar el error si existe
                     $this->resetErrorBag('metodos_pago_mixto.' . $index . '.referencia');
                 }
             }
         }
     }
+    
+    public function calculateTotalPagoMixto()
+    {
+        $this->totalPagoMixto = collect($this->metodos_pago_mixto)->sum('monto');
+    }
 
+    public function procesarReferenciaMixto($data)
+    {
+        // Listener method if needed
+    }
+
+    public function actualizarEstadoWhatsApp($status)
+    {
+        $this->whatsappStatus = $status;
+    }
+    
     public function render()
     {
         $tipos = [
+            'recibo' => 'Recibo',
             'factura' => 'Factura',
             'boleta' => 'Boleta',
-            'nota_credito' => 'Nota de Crédito',
-            'recibo' => 'Recibo',
-            'comunidad educativa' => 'Comunidad Educativa',
-            'educacion adulto' => 'Educación de Adultos',
+            'nota_credito' => 'Nota de Crédito'
         ];
 
         return view('livewire.admin.pagos.create', compact('tipos'))->layout($this->getLayout());
     }
-
-    function updatedReferencia($value)
-    {
-        if (!$this->es_pago_mixto) {
-            // Limpiar la referencia
-            $valorLimpio = trim($value);
-            $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $valorLimpio);
-            
-            if (!empty($valorLimpio)) {
-                // Buscar en el campo referencia directo
-                $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
-                    ->where('estado', 'aprobado')
-                    ->exists();
-                
-                // Buscar en el campo detalles_pago_mixto (JSON)
-                $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
-                    ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
-                    ->exists();
-                
-                // Verificar si existe en cualquiera de los dos lugares
-                if ($existeReferenciaDirecta || $existeEnDetalles) {
-                    $this->addError('referencia', 'Esta referencia ya fue utilizada en otro pago.');
-                    $this->referencia = '';
-                } else {
-                    $this->referencia = $valorLimpio;
-                    $this->resetErrorBag('referencia');
-                }
-            }
-        }
-    }
-
-    /**
-     * Función updated para manejar cambios en referencias de pago mixto
-     * Se ejecuta cuando se actualiza cualquier referencia en metodos_pago_mixto
-     */
-    public function updatedMetodosPagoMixtoReferencia($value, $key)
-    {
-        // Usar el método de validación
-        $this->validarReferenciaMixto($value, $key);
-
-            // Actualizar el valor limpio
-            $this->metodos_pago_mixto[$index]['referencia'] = $valorLimpio;
-            
-            // Si el método de pago es efectivo, la referencia debe estar vacía
-            $metodoPago = $this->metodos_pago_mixto[$index]['metodo'] ?? '';
-            if (in_array($metodoPago, ['efectivo_bolivares', 'efectivo_dolares'])) {
-                $this->metodos_pago_mixto[$index]['referencia'] = '';
-            }
-            
-            // Emitir evento para notificar cambios
-            $this->dispatch('referencia-mixto-actualizada', [
-                'index' => $index,
-                'valor' => $valorLimpio,
-                'metodo' => $metodoPago
-            ]);
-        }
-    
 }

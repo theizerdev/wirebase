@@ -11,6 +11,7 @@ class WhatsAppService
     private $baseUrl;
     private $apiKey;
     private $companyId;
+    private $dialCode;
     private $timeout;
 
     /**
@@ -36,25 +37,28 @@ class WhatsAppService
         if ($empresa instanceof Empresa) {
             $this->companyId = $empresa->id;
             $this->apiKey = $empresa->whatsapp_api_key;
+            $this->dialCode = optional($empresa->pais)->codigo_telefonico;
             return;
         }
 
         // Si se pasa un ID de empresa
         if (is_numeric($empresa)) {
-            $empresaModel = Empresa::find($empresa);
+            $empresaModel = Empresa::with('pais')->find($empresa);
             if ($empresaModel) {
                 $this->companyId = $empresaModel->id;
                 $this->apiKey = $empresaModel->whatsapp_api_key;
+                $this->dialCode = optional($empresaModel->pais)->codigo_telefonico;
                 return;
             }
         }
 
         // Intentar obtener la empresa del usuario autenticado
         if (auth()->check() && auth()->user()->empresa_id) {
-            $empresaModel = Empresa::find(auth()->user()->empresa_id);
+            $empresaModel = Empresa::with('pais')->find(auth()->user()->empresa_id);
             if ($empresaModel) {
                 $this->companyId = $empresaModel->id;
                 $this->apiKey = $empresaModel->whatsapp_api_key;
+                $this->dialCode = optional($empresaModel->pais)->codigo_telefonico;
                 return;
             }
         }
@@ -62,6 +66,7 @@ class WhatsAppService
         // Fallback a la configuración global (para compatibilidad)
         $this->companyId = 1;
         $this->apiKey = config('whatsapp.api_key', 'test-api-key-vargas-centro');
+        $this->dialCode = config('whatsapp.default_country_code', '+58');
     }
 
     /**
@@ -128,6 +133,7 @@ class WhatsAppService
     public function sendMessage(string $to, string $message)
     {
         try {
+            $to = $this->formatPhone($to);
             $response = Http::timeout($this->timeout)
                 ->withHeaders($this->getHeaders())
                 ->post("{$this->baseUrl}/api/whatsapp/send", [
@@ -144,14 +150,71 @@ class WhatsAppService
                 ]);
             }
 
-            return $response->successful() ? $response->json() : null;
+            return $response->json();
         } catch (\Exception $e) {
             Log::error('WhatsApp Send Message Error: ' . $e->getMessage(), [
                 'company_id' => $this->companyId,
                 'to' => $to
             ]);
-            return null;
+            return ['success' => false, 'error' => $e->getMessage()];
         }
+    }
+
+    /**
+     * Formatear número telefónico según país de la empresa
+     * Devuelve solo dígitos con código de país, por ejemplo: 584241703465
+     */
+    public function formatPhone(string $number): string
+    {
+        $digits = preg_replace('/\D+/', '', $number);
+        if (!$digits) {
+            return '';
+        }
+
+        // Resolver código de país (sin signos, solo dígitos)
+        $dialCode = preg_replace('/\D+/', '', (string) ($this->dialCode ?: ''));
+        if (!$dialCode && $this->companyId) {
+            $empresa = Empresa::with('pais')->find($this->companyId);
+            $dialCode = preg_replace('/\D+/', '', (string) optional(optional($empresa)->pais)->codigo_telefonico);
+        }
+        if (!$dialCode) {
+            $dialCode = preg_replace('/\D+/', '', config('whatsapp.default_country_code', '+58'));
+        }
+
+        // Si ya viene con código de país delante, devolver tal cual en dígitos
+        if (strpos($digits, $dialCode) === 0) {
+            return $digits;
+        }
+
+        // Remover prefijo internacional 00
+        if (strpos($digits, '00') === 0) {
+            $digits = substr($digits, 2);
+        }
+
+        // Si después de limpiar aún empieza con el código, devolver
+        if (strpos($digits, $dialCode) === 0) {
+            return $digits;
+        }
+
+        // Quitar ceros a la izquierda típicos del marcado nacional (ej: 0 424...)
+        $national = ltrim($digits, '0');
+
+        // Si la longitud parece nacional (10 dígitos típico en varios países), anteponer el código
+        if (strlen($national) >= 7 && strlen($national) <= 11) {
+            return $dialCode . $national;
+        }
+
+        // Como último recurso, devolver dígitos tal cual
+        return $digits;
+    }
+
+    /**
+     * Enviar mensaje (con auto-formateo de número por país)
+     */
+    public function send(string $to, string $message)
+    {
+        $formatted = $this->formatPhone($to);
+        return $this->sendMessage($formatted, $message);
     }
 
     /**
@@ -160,6 +223,7 @@ class WhatsAppService
     public function sendDocument(string $to, string $filePath, string $caption = '')
     {
         try {
+            $to = $this->formatPhone($to);
             $response = Http::timeout($this->timeout)
                 ->withHeaders([
                     'X-API-Key' => $this->apiKey,

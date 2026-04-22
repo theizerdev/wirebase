@@ -31,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'verification_code_sent_at',
         'empresa_id',
         'sucursal_id',
+        'cliente_id',
         'status',
         'two_factor_enabled',
         'two_factor_secret',
@@ -89,19 +90,18 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Generar un código de verificación de 8 caracteres (alfanumérico)
+     * Generar un código de verificación de 6 dígitos numéricos
      */
     public function generateVerificationCode()
     {
-        // Generar código alfanumérico de 8 caracteres
-        $code = strtoupper(Str::random(6));
+        $code = (string) random_int(100000, 999999);
 
         // Almacenar el código cifrado
         $this->verification_code = Hash::make($code);
         $this->verification_code_sent_at = Carbon::now();
         $this->save();
 
-        // Devolver el código sin cifrar para enviar por correo
+        // Devolver el código sin cifrar para enviar
         return $code;
     }
 
@@ -110,12 +110,12 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function isVerificationCodeValid($code)
     {
-        // Verificar que el código exista y no haya expirado (15 minutos)
+        // Verificar que el código exista y no haya expirado (30 minutos)
         if (!$this->verification_code || !$this->verification_code_sent_at) {
             return false;
         }
 
-        if (Carbon::now()->diffInMinutes($this->verification_code_sent_at) > 15) {
+        if ($this->verification_code_sent_at->lt(Carbon::now()->subMinutes(30))) {
             return false;
         }
 
@@ -231,6 +231,27 @@ class User extends Authenticatable implements MustVerifyEmail
             }
         }
         return $query;
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class);
+    }
+
+    public static function generateUniqueUsername(string $nombre, string $apellido): string
+    {
+        $firstName = \Illuminate\Support\Str::of($nombre)->trim()->explode(' ')->first();
+        $lastName = \Illuminate\Support\Str::of($apellido)->trim()->explode(' ')->first();
+        $base = \Illuminate\Support\Str::lower(
+            \Illuminate\Support\Str::ascii(mb_substr($firstName, 0, 1) . $lastName)
+        );
+        $username = $base;
+        $suffix = 0;
+        while (static::where('username', $username)->exists()) {
+            $suffix++;
+            $username = $base . $suffix;
+        }
+        return $username;
     }
 
     public function getActivitylogOptions(): LogOptions

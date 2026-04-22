@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Estilos para avatar con iniciales */
 .avatar-initials {
     display: flex;

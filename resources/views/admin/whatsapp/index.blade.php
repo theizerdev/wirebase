@@ -33,11 +33,7 @@
                 <i class="fas fa-plug"></i> Conexión
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="mensajes-tab" data-bs-toggle="tab" data-bs-target="#mensajes" type="button" role="tab">
-                <i class="fas fa-paper-plane"></i> Enviar Mensajes
-            </button>
-        </li>
+       
     </ul>
 
     <!-- Tab Content -->

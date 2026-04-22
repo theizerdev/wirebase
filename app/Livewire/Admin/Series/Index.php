@@ -13,9 +13,24 @@ class Index extends Component
 
     public $search = '';
     public $tipo_documento = '';
+    public $perPage = 10;
+
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'tipo_documento' => ['except' => ''],
+        'perPage' => ['except' => 10]
+    ];
 
     public function updatingSearch()
     {
+        $this->resetPage();
+    }
+
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->tipo_documento = '';
+        $this->perPage = 10;
         $this->resetPage();
     }
 
@@ -41,7 +56,7 @@ class Index extends Component
             ->with(['empresa', 'sucursal'])
             ->orderBy('tipo_documento')
             ->orderBy('serie')
-            ->paginate(15);
+            ->paginate($this->perPage);
 
         return $this->renderWithLayout('livewire.admin.series.index', [
             'series' => $series,

@@ -372,15 +372,16 @@ class WhatsAppSendMessages extends Component
 
     private function formatPhoneNumber($number)
     {
-        // Eliminar espacios y caracteres no numéricos
-        $number = preg_replace('/[^0-9]/', '', $number);
-        
-        // Si no tiene código de país, agregar +58 (Venezuela)
-        if (strlen($number) === 10) {
-            $number = '58' . $number;
+        try {
+            $service = \App\Services\WhatsAppService::forCompany(auth()->user()->empresa_id);
+            return $service->formatPhone($number);
+        } catch (\Throwable $e) {
+            $digits = preg_replace('/\D+/', '', $number);
+            if (strlen($digits) === 10) {
+                return '58' . ltrim($digits, '0');
+            }
+            return ltrim($digits, '+');
         }
-        
-        return '+' . $number;
     }
 
     public function resetForm()

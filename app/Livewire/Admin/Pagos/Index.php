@@ -10,6 +10,7 @@ use App\Models\Pago;
 use App\Models\ExchangeRate;
 use App\Traits\Exportable;
 use Codedge\Fpdf\Fpdf\Fpdf;
+use App\Services\ThermalPrinterService;
 
 class Index extends Component
 {
@@ -17,12 +18,16 @@ class Index extends Component
 
     public $showPreview = false;
     public $previewPagoId;
+    public $showTicketPreview = false;
+    public $printers = [];
+    public $selectedPrinter = null;
 
     public $search = '';
     public $status = '';
     public $sortBy = 'created_at';
     public $sortDirection = 'desc';
     public $perPage = 10;
+    public $monthsRange = 6;
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -34,24 +39,20 @@ class Index extends Component
 
     public function getStatsProperty()
     {
-        // Para usuarios no Super Administrador, usar withoutGlobalScope y aplicar manualmente
-        if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
-            $baseQuery = Pago::withoutGlobalScope('multitenancy')
-                ->where(function($query) {
-                    if (auth()->user()->empresa_id) {
-                        $query->where('pagos.empresa_id', auth()->user()->empresa_id);
-                    }
-                    if (auth()->user()->sucursal_id) {
-                        $query->where('pagos.sucursal_id', auth()->user()->sucursal_id);
-                    }
-                })
-                ->whereHas('matricula', function($q) {
-                    $q->whereHas('student');
-                });
-        } else {
-            $baseQuery = Pago::whereHas('matricula', function($q) {
-                $q->whereHas('student');
-            });
+        // Base query según rol, sin dependencias de relaciones inexistentes
+        $baseQuery = Pago::query();
+        if (auth()->check()) {
+            if (!auth()->user()->hasRole('Super Administrador')) {
+                if (auth()->user()->empresa_id) {
+                    $baseQuery->where('pagos.empresa_id', auth()->user()->empresa_id);
+                }
+                if (auth()->user()->sucursal_id) {
+                    $baseQuery->where('pagos.sucursal_id', auth()->user()->sucursal_id);
+                }
+            }
+            if (auth()->user()->cliente_id) {
+                $baseQuery->where('cliente_id', auth()->user()->cliente_id);
+            }
         }
 
         return [
@@ -134,26 +135,21 @@ class Index extends Component
     public function getExportHeaders()
     {
         return [
-            'Documento', 'Estudiante', 'DNI', 'Total', 'Fecha', 'Estado', 'Método Pago'
+            'Documento', 'Cliente', 'DNI', 'Total', 'Fecha', 'Estado', 'Método Pago'
         ];
     }
 
     public function formatExportRow($pago)
     {
-        $studentName = '';
-        $studentDocumento = '';
-
-        if ($pago->matricula && $pago->matricula->student) {
-            $studentName = ($pago->matricula->student->nombres ?? '') . ' ' . ($pago->matricula->student->apellidos ?? '');
-            $studentDocumento = $pago->matricula->student->documento_identidad ?? '';
-        }
+        $clienteName = $pago->cliente ? $pago->cliente->nombre_completo : 'N/A';
+        $clienteDocumento = $pago->cliente ? $pago->cliente->documento : 'N/A';
 
         return [
-            $pago->numero_completo,
-            $studentName,
-            $studentDocumento,
-            $this->format_money($pago->total),
-            $this->format_date($pago->fecha),
+            $pago->numero ?? $pago->id,
+            $clienteName,
+            $clienteDocumento,
+            number_format($pago->total, 2),
+            $pago->fecha->format('d/m/Y'),
             ucfirst($pago->estado),
             $pago->metodo_pago ?? ''
         ];
@@ -161,91 +157,389 @@ class Index extends Component
 
     private function getQuery()
     {
-        // Para usuarios no Super Administrador, usar withoutGlobalScope y aplicar manualmente solo a pagos
+        $query = Pago::with(['cliente', 'detalles', 'user']);
+
+        if (auth()->check() && auth()->user()->cliente_id) {
+            $query->where('cliente_id', auth()->user()->cliente_id);
+        }
+
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->whereHas('cliente', function ($subQuery) {
+                    $subQuery->where('nombre', 'like', '%' . $this->search . '%')
+                        ->orWhere('apellido', 'like', '%' . $this->search . '%')
+                        ->orWhere('documento', 'like', '%' . $this->search . '%');
+                })
+                ->orWhere('referencia', 'like', '%' . $this->search . '%')
+                ->orWhere('numero', 'like', '%' . $this->search . '%');
+            });
+        }
+
+        if ($this->status !== '') {
+            $query->where('estado', $this->status);
+        }
+
+        return $query->orderBy($this->sortBy, $this->sortDirection);
+    }
+
+    public function render()
+    {
+        $pagos = $this->getQuery()->paginate($this->perPage);
+        $comparatives = $this->getMonthlyComparatives();
+        $monthly = $this->getMonthlyTotals($this->monthsRange);
+
+        return view('livewire.admin.pagos.index', [
+            'pagos' => $pagos,
+            'stats' => $this->stats,
+            'comparatives' => $comparatives,
+            'monthlySeries' => $monthly
+        ])
+            ->layout($this->getLayout());
+    }
+    
+    public function thermalPrint($pagoId)
+    {
+        $pago = Pago::with(['empresa','sucursal'])->findOrFail($pagoId);
+        if (!ThermalPrinterService::isAvailable()) {
+            session()->flash('error', 'Impresora no disponible. Verifique conexión.');
+            return;
+        }
+        $result = ThermalPrinterService::printPayment($pago);
+        if ($result['success']) {
+            session()->flash('message', 'Ticket enviado a la impresora.');
+        } else {
+            session()->flash('error', 'Error de impresión: ' . $result['message']);
+        }
+    }
+
+    public function thermalPrintSelected($pagoId)
+    {
+        $pago = Pago::with(['empresa','sucursal'])->findOrFail($pagoId);
+        $printer = $this->selectedPrinter ?: config('printing.default_printer');
+        if (!ThermalPrinterService::isAvailable($printer)) {
+            session()->flash('error', 'Impresora no disponible. Verifique conexión.');
+            return;
+        }
+        $result = ThermalPrinterService::printPayment($pago, ['printer' => $printer]);
+        if ($result['success']) {
+            session()->flash('message', 'Ticket enviado a la impresora.');
+        } else {
+            session()->flash('error', 'Error de impresión: ' . $result['message']);
+        }
+    }
+
+    public function openTicketPreview($pagoId)
+    {
+        $this->previewPagoId = $pagoId;
+        $this->showTicketPreview = true;
+        $this->printers = ThermalPrinterService::listPrinters();
+        $this->selectedPrinter = $this->printers[0] ?? config('printing.default_printer');
+    }
+
+    public function ticketView(Pago $pago)
+    {
+        $pago->load(['empresa', 'sucursal', 'cliente', 'detalles.planPago.contrato', 'user']);
+
+        $merchant = [
+            'name' => $pago->empresa->razon_social ?? 'Comercio',
+            'rif' => $pago->empresa->documento ?? '',
+            'phone' => $pago->empresa->telefono ?? '',
+            'branch' => $pago->sucursal->nombre ?? '',
+            'address' => $pago->sucursal->direccion ?? '',
+            'branch_phone' => $pago->sucursal->telefono ?? '',
+        ];
+
+        $cliente = $pago->cliente;
+        $customer = [
+            'name' => $cliente->nombre_completo ?? 'N/A',
+            'document' => ($cliente->tipo_documento ?? 'CI') . ': ' . ($cliente->documento ?? 'N/A'),
+            'phone' => $cliente->telefono ?? '',
+        ];
+
+        $tasaCambio = $pago->tasa_cambio;
+        if (!$tasaCambio) {
+            $rate = ExchangeRate::whereDate('date', $pago->fecha ?? $pago->created_at)->first();
+            $tasaCambio = $rate->usd_rate ?? null;
+        }
+
+        $transaction = $pago->numero_completo ?? ($pago->serie . '-' . str_pad($pago->numero ?? 0, 8, '0', STR_PAD_LEFT));
+
+        $payment = [
+            'transaction' => $transaction,
+            'type' => ucfirst($pago->tipo_pago ?? 'recibo'),
+            'date' => optional($pago->fecha)->format('d/m/Y'),
+            'time' => optional($pago->created_at)->format('H:i'),
+            'method' => ucfirst(str_replace('_', ' ', $pago->metodo_pago ?? 'N/A')),
+            'reference' => $pago->referencia ?? '',
+            'is_mixed' => $pago->es_pago_mixto,
+            'mixed_details' => $pago->detalles_pago_mixto ?? [],
+            'cashier' => $pago->user->name ?? '',
+            'status' => ucfirst($pago->estado ?? ''),
+        ];
+
+        $details = $pago->detalles->map(function ($d) {
+            return [
+                'description' => $d->descripcion,
+                'qty' => $d->cantidad,
+                'price' => $d->precio_unitario,
+                'subtotal' => $d->subtotal,
+            ];
+        })->toArray();
+
+        $totals = [
+            'subtotal_usd' => round($pago->subtotal, 2),
+            'discount_usd' => round($pago->descuento, 2),
+            'total_usd' => round($pago->total, 2),
+            'exchange_rate' => $tasaCambio ? round($tasaCambio, 4) : null,
+            'subtotal_bs' => $tasaCambio ? round($pago->subtotal * $tasaCambio, 2) : null,
+            'discount_bs' => $tasaCambio ? round($pago->descuento * $tasaCambio, 2) : null,
+            'total_bs' => $tasaCambio ? round($pago->total * $tasaCambio, 2) : ($pago->total_bolivares ? round($pago->total_bolivares, 2) : null),
+        ];
+
+        // Next installment: try via pago_detalles → plan_pago → contrato, fallback via cliente → contratos
+        $nextInstallment = null;
+        $contrato = $pago->detalles->first(fn($d) => $d->plan_pago_id)?->planPago?->contrato;
+        if (!$contrato && $cliente) {
+            $contrato = \App\Models\Contrato::where('cliente_id', $cliente->id)
+                ->whereIn('estado', ['activo', 'mora'])
+                ->latest()
+                ->first();
+        }
+        if ($contrato) {
+            $next = \App\Models\PlanPago::where('contrato_id', $contrato->id)
+                ->whereIn('estado', ['pendiente', 'parcial'])
+                ->orderBy('numero_cuota')
+                ->first();
+            if ($next) {
+                $nextInstallment = [
+                    'number' => $next->numero_cuota,
+                    'date' => optional($next->fecha_vencimiento)->format('d/m/Y'),
+                    'amount_usd' => round($next->monto_total, 2),
+                    'amount_bs' => $tasaCambio ? round($next->monto_total * $tasaCambio, 2) : null,
+                    'pending' => round($next->saldo_pendiente, 2),
+                ];
+            }
+        }
+
+        // QR code
+        $qrBase64 = null;
+        try {
+            $qrData = url('/verificar-pago/' . $pago->id . '?tx=' . urlencode($transaction));
+            if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                $qrPng = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(150)->generate($qrData);
+                $qrBase64 = base64_encode($qrPng);
+            } else {
+                $qrBase64 = @base64_encode(@file_get_contents('https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=' . urlencode($qrData)));
+            }
+        } catch (\Exception $e) {
+            $qrBase64 = null;
+        }
+
+        return response()->view('livewire.admin.pagos.ticket', compact(
+            'merchant', 'customer', 'payment', 'details', 'totals', 'nextInstallment', 'qrBase64'
+        ));
+    }
+
+    /**
+     * Ticket alternativo optimizado para impresoras térmicas 58mm
+     */
+    public function ticketThermalView(Pago $pago)
+    {
+        // Reutiliza la misma preparación de datos que ticketView
+        $pago->load(['empresa', 'sucursal', 'cliente', 'detalles.planPago.contrato', 'user']);
+
+        $merchant = [
+            'name' => $pago->empresa->razon_social ?? 'Comercio',
+            'rif' => $pago->empresa->documento ?? '',
+            'phone' => $pago->empresa->telefono ?? '',
+            'branch' => $pago->sucursal->nombre ?? '',
+            'address' => $pago->sucursal->direccion ?? '',
+            'branch_phone' => $pago->sucursal->telefono ?? '',
+        ];
+
+        $cliente = $pago->cliente;
+        $customer = [
+            'name' => $cliente->nombre_completo ?? 'N/A',
+            'document' => ($cliente->tipo_documento ?? 'CI') . ': ' . ($cliente->documento ?? 'N/A'),
+            'phone' => $cliente->telefono ?? '',
+        ];
+
+        $tasaCambio = $pago->tasa_cambio;
+        if (!$tasaCambio) {
+            $rate = ExchangeRate::whereDate('date', $pago->fecha ?? $pago->created_at)->first();
+            $tasaCambio = $rate->usd_rate ?? null;
+        }
+
+        $transaction = $pago->numero_completo ?? ($pago->serie . '-' . str_pad($pago->numero ?? 0, 8, '0', STR_PAD_LEFT));
+
+        $payment = [
+            'transaction' => $transaction,
+            'type' => ucfirst($pago->tipo_pago ?? 'recibo'),
+            'date' => optional($pago->fecha)->format('d/m/Y'),
+            'time' => optional($pago->created_at)->format('H:i'),
+            'method' => ucfirst(str_replace('_', ' ', $pago->metodo_pago ?? 'N/A')),
+            'reference' => $pago->referencia ?? '',
+            'is_mixed' => $pago->es_pago_mixto,
+            'mixed_details' => $pago->detalles_pago_mixto ?? [],
+            'cashier' => $pago->user->name ?? '',
+            'status' => ucfirst($pago->estado ?? ''),
+        ];
+
+        $details = $pago->detalles->map(function ($d) {
+            return [
+                'description' => $d->descripcion,
+                'qty' => $d->cantidad,
+                'price' => $d->precio_unitario,
+                'subtotal' => $d->subtotal,
+            ];
+        })->toArray();
+
+        $totals = [
+            'subtotal_usd' => round($pago->subtotal, 2),
+            'discount_usd' => round($pago->descuento, 2),
+            'total_usd' => round($pago->total, 2),
+            'exchange_rate' => $tasaCambio ? round($tasaCambio, 4) : null,
+            'subtotal_bs' => $tasaCambio ? round($pago->subtotal * $tasaCambio, 2) : null,
+            'discount_bs' => $tasaCambio ? round($pago->descuento * $tasaCambio, 2) : null,
+            'total_bs' => $tasaCambio ? round($pago->total * $tasaCambio, 2) : ($pago->total_bolivares ? round($pago->total_bolivares, 2) : null),
+        ];
+
+        $nextInstallment = null;
+        $contrato = $pago->detalles->first(fn($d) => $d->plan_pago_id)?->planPago?->contrato;
+        if (!$contrato && $cliente) {
+            $contrato = \App\Models\Contrato::where('cliente_id', $cliente->id)
+                ->whereIn('estado', ['activo', 'mora'])
+                ->latest()
+                ->first();
+        }
+        if ($contrato) {
+            $next = \App\Models\PlanPago::where('contrato_id', $contrato->id)
+                ->whereIn('estado', ['pendiente', 'parcial'])
+                ->orderBy('numero_cuota')
+                ->first();
+            if ($next) {
+                $nextInstallment = [
+                    'number' => $next->numero_cuota,
+                    'date' => optional($next->fecha_vencimiento)->format('d/m/Y'),
+                    'amount_usd' => round($next->monto_total, 2),
+                    'amount_bs' => $tasaCambio ? round($next->monto_total * $tasaCambio, 2) : null,
+                    'pending' => round($next->saldo_pendiente, 2),
+                ];
+            }
+        }
+
+        $qrBase64 = null;
+        try {
+            $qrData = url('/verificar-pago/' . $pago->id . '?tx=' . urlencode($transaction));
+            if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                $qrPng = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(150)->generate($qrData);
+                $qrBase64 = base64_encode($qrPng);
+            } else {
+                $qrBase64 = @base64_encode(@file_get_contents('https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=' . urlencode($qrData)));
+            }
+        } catch (\Exception $e) {
+            $qrBase64 = null;
+        }
+
+        $contractNumber = $contrato->numero_contrato ?? null;
+
+        return response()->view('livewire.admin.pagos.ticket-thermal', compact(
+            'merchant', 'customer', 'payment', 'details', 'totals', 'nextInstallment', 'qrBase64', 'contractNumber'
+        ));
+    }
+
+    /**
+     * Totales del mes actual vs mes anterior: ingresos y cantidad de pagos aprobados
+     */
+    private function getMonthlyComparatives(): array
+    {
+        $now = now();
+        $startCurrent = $now->copy()->startOfMonth();
+        $endCurrent = $now->copy()->endOfMonth();
+        $startPrev = $now->copy()->subMonth()->startOfMonth();
+        $endPrev = $now->copy()->subMonth()->endOfMonth();
+
+        $baseQuery = Pago::query();
         if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
-            return Pago::withoutGlobalScope('multitenancy')
-                ->with(['matricula.student', 'detalles.conceptoPago', 'user', 'serieModel'])
+            $baseQuery = Pago::withoutGlobalScope('multitenancy')
                 ->where(function($query) {
-                    // Aplicar scope manualmente solo a pagos
                     if (auth()->user()->empresa_id) {
                         $query->where('pagos.empresa_id', auth()->user()->empresa_id);
                     }
                     if (auth()->user()->sucursal_id) {
                         $query->where('pagos.sucursal_id', auth()->user()->sucursal_id);
                     }
-                })
-                ->whereHas('matricula', function($q) {
-                    $q->whereHas('student');
-                })
-                ->when($this->search, function ($query) {
-                    $query->where(function($q) {
-                        $q->whereHas('matricula.student', function ($subQuery) {
-                            $subQuery->where('nombres', 'like', '%' . $this->search . '%')
-                                ->orWhere('apellidos', 'like', '%' . $this->search . '%')
-                                ->orWhere('documento_identidad', 'like', '%' . $this->search . '%');
-                        })
-                        ->orWhereHas('detalles.conceptoPago', function($subQuery) {
-                            $subQuery->where('nombre', 'like', '%' . $this->search . '%');
-                        })
-                        ->orWhere('referencia', 'like', '%' . $this->search . '%')
-                        ->orWhere('serie', 'like', '%' . $this->search . '%')
-                        ->orWhere('numero', 'like', '%' . $this->search . '%');
-                    });
-                })
-                ->when($this->status !== '', function ($query) {
-                    $query->where('estado', $this->status);
-                })
-                ->orderBy($this->sortBy, $this->sortDirection);
+                });
         }
 
-        // Para Super Administrador, usar el scope normal
-        return Pago::with(['matricula.student', 'detalles.conceptoPago', 'user', 'serieModel'])
-                    ->whereHas('matricula', function($q) {
-                        $q->whereHas('student');
-                    })
-                    ->when($this->search, function ($query) {
-                        $query->where(function($q) {
-                            $q->whereHas('matricula.student', function ($subQuery) {
-                                $subQuery->where('nombres', 'like', '%' . $this->search . '%')
-                                    ->orWhere('apellidos', 'like', '%' . $this->search . '%')
-                                    ->orWhere('documento_identidad', 'like', '%' . $this->search . '%');
-                            })
-                            ->orWhereHas('detalles.conceptoPago', function($subQuery) {
-                                $subQuery->where('nombre', 'like', '%' . $this->search . '%');
-                            })
-                            ->orWhere('referencia', 'like', '%' . $this->search . '%')
-                            ->orWhere('serie', 'like', '%' . $this->search . '%')
-                            ->orWhere('numero', 'like', '%' . $this->search . '%');
-                        });
-                    })
-                    ->when($this->status !== '', function ($query) {
-                        $query->where('estado', $this->status);
-                    })
-                    ->orderBy($this->sortBy, $this->sortDirection);
+        $currentApproved = (clone $baseQuery)
+            ->where('estado', 'aprobado')
+            ->whereBetween('fecha', [$startCurrent, $endCurrent]);
+        $prevApproved = (clone $baseQuery)
+            ->where('estado', 'aprobado')
+            ->whereBetween('fecha', [$startPrev, $endPrev]);
+
+        $currentAmount = (clone $currentApproved)->sum('total') ?: 0;
+        $prevAmount = (clone $prevApproved)->sum('total') ?: 0;
+        $currentCount = (clone $currentApproved)->count();
+        $prevCount = (clone $prevApproved)->count();
+
+        return [
+            'amount' => [
+                'current' => $currentAmount,
+                'previous' => $prevAmount,
+                'delta' => $currentAmount - $prevAmount,
+                'deltaPercent' => $prevAmount > 0 ? (($currentAmount - $prevAmount) / $prevAmount) * 100 : null
+            ],
+            'count' => [
+                'current' => $currentCount,
+                'previous' => $prevCount,
+                'delta' => $currentCount - $prevCount,
+                'deltaPercent' => $prevCount > 0 ? (($currentCount - $prevCount) / $prevCount) * 100 : null
+            ]
+        ];
     }
 
-    public function render()
+    /**
+     * Serie de ingresos por mes (últimos 6 meses)
+     */
+    private function getMonthlyTotalsLastSix(): array
     {
-        $pagos = $this->getQuery()->paginate($this->perPage);
+        return $this->getMonthlyTotals(6);
+    }
 
-        // Debug temporal para verificar datos
-        \Log::info('=== RENDER DE PAGOS COMPONENT ===', [
-            'user_id' => auth()->id(),
-            'user_role' => auth()->user()->roles->first()->name ?? 'no role',
-            'is_super_admin' => auth()->user()->hasRole('Super Administrador'),
-            'empresa_id' => auth()->user()->empresa_id,
-            'sucursal_id' => auth()->user()->sucursal_id,
-            'pagos_count' => $pagos->count(),
-            'pagos_total' => $pagos->total(),
-            'per_page' => $this->perPage,
-            'search' => $this->search,
-            'status' => $this->status,
-            'sql' => $this->getQuery()->toSql(),
-            'bindings' => $this->getQuery()->getBindings()
-        ]);
+    public function getMonthlyTotals(int $months): array
+    {
+        $months = max(1, min(12, $months));
+        $series = [];
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $month = now()->copy()->subMonths($i);
+            $start = $month->startOfMonth();
+            $end = $month->endOfMonth();
+            $query = Pago::query();
+            if (auth()->check() && !auth()->user()->hasRole('Super Administrador')) {
+                $query = Pago::withoutGlobalScope('multitenancy')
+                    ->where(function($q) {
+                        if (auth()->user()->empresa_id) {
+                            $q->where('pagos.empresa_id', auth()->user()->empresa_id);
+                        }
+                        if (auth()->user()->sucursal_id) {
+                            $q->where('pagos.sucursal_id', auth()->user()->sucursal_id);
+                        }
+                    });
+            }
+            $total = $query->where('estado', 'aprobado')->whereBetween('fecha', [$start, $end])->sum('total') ?: 0;
+            $series[] = [
+                'label' => $month->format('M'),
+                'value' => $total
+            ];
+        }
+        return $series;
+    }
 
-        return view('livewire.admin.pagos.index', compact('pagos'))
-            ->layout($this->getLayout());
+    public function setMonthsRange($months)
+    {
+        $this->monthsRange = (int)$months;
     }
 
     public function printReceipt(Pago $pago)
@@ -313,22 +607,18 @@ class Index extends Component
     
 
 
-        // Información del estudiante
-        $student = $pago->matricula->student;
-       
-        $fechaNacimiento = \Carbon\Carbon::parse($student->fecha_nacimiento);
-        $esMenorEdad = $fechaNacimiento->age < 18;
-    
+        // Información del cliente
+        $cliente = $pago->cliente;
+        
         $pdf->SetFont('Arial', 'B', 8);
-        if ($esMenorEdad != true) {
-             $pdf->Cell(30, 5, 'Estudiante:', 0, 0, 'L');
-             $pdf->SetFont('Arial', '', 8);
-             $pdf->Cell(0, 5, substr(utf8_decode($student->nombres . ' ' . $student->apellidos), 0, 45), 0, 1, 'L');
-        } else {
-             $pdf->Cell(30, 5, 'Estudiante:', 0, 0, 'L');
-             $pdf->SetFont('Arial', '', 8);
-             $pdf->Cell(0, 5, utf8_decode($student->nombres . ' ' . $student->apellidos.' ('.$student->grado.' - '.$student->seccion.') Representante: '.$student->representante_nombres.' '.$student->representante_apellidos), 0, 1, 'L');
-        }
+        $pdf->Cell(30, 5, 'Cliente:', 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(0, 5, utf8_decode($cliente->nombre_completo ?? 'N/A'), 0, 1, 'L');
+        
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->Cell(30, 5, 'Documento:', 0, 0, 'L');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(0, 5, utf8_decode($cliente->documento ?? 'N/A'), 0, 1, 'L');
        
         
 
@@ -342,7 +632,7 @@ class Index extends Component
         $pdf->Cell(30, 5, utf8_decode('Método de pago:'), 0, 0, 'L');
         
         // Para pagos mixtos, mostrar el método con los detalles en la misma línea
-         if (strtolower($pago->metodo_pago) === 'pago mixto' && !empty($pago->detalles_pago_mixto)) {
+         if (strtolower($pago->metodo_pago ?? '') === 'pago mixto' && !empty($pago->detalles_pago_mixto)) {
             $pdf->SetFont('Arial', 'B', 8);
             $detalles = [];
             foreach ($pago->detalles_pago_mixto as $detalleMixto) {
@@ -354,7 +644,7 @@ class Index extends Component
             $pdf->Cell(0, 5, strtoupper($pago->metodo_pago) . ' (' . implode(' ', $detalles) . ')', 0, 1, 'L');
         } else {
             // Para métodos de pago normales, mostrar referencia en la misma línea si existe
-            $metodoPagoTexto = strtoupper($pago->metodo_pago);
+            $metodoPagoTexto = strtoupper($pago->metodo_pago ?? 'N/A');
             if (in_array($pago->metodo_pago, ['transferencia', 'pago movil', 'punto de venta']) && !empty($pago->referencia)) {
                 $metodoPagoTexto .= ' - Ref: ' . $pago->referencia;
             }
@@ -378,12 +668,8 @@ class Index extends Component
 
             // Convertir monto a bolívares si hay tasa de cambio
             $monto = $detalle->precio_unitario * $detalle->cantidad;
-            if ($exchangeRate) {
-                $montoBs = $monto * $exchangeRate->usd_rate;
-                $pdf->Cell(25, 5, 'Bs. ' . number_format($montoBs, 2, ',', '.'), 1, 1, 'R');
-            } else {
-                $pdf->Cell(25, 5, '$' . number_format($monto, 2, ',', '.'), 1, 1, 'R');
-            }
+            $pdf->Cell(25, 5, '$' . number_format($monto, 2, ',', '.'), 1, 1, 'R');
+            $pdf->Ln();
         }
 
         // Totales
