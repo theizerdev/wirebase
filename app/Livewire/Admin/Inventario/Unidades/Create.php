@@ -33,12 +33,11 @@ class Create extends Component
     public $empresas;
     public $sucursales = [];
 
-    protected $rules = [
-        'moto_id' => 'required|exists:motos,id',
-        'vin' => 'required|string|max:50|unique:moto_unidades,vin',
-        'numero_motor' => 'required|string|max:50',
-        'numero_chasis' => 'required|string|max:50',
-        'placa' => 'nullable|string|max:20|unique:moto_unidades,placa',
+     protected $rules = [
+        'vin' => 'nullable|string|max:50',
+        'numero_motor' => 'nullable|string|max:50',
+        'numero_chasis' => 'nullable|string|max:50',
+        'placa' => 'nullable|string|max:20',
         'color_especifico' => 'required|string|max:50',
         'kilometraje' => 'required|integer|min:0',
         'costo_compra' => 'required|numeric|min:0',
@@ -55,12 +54,18 @@ class Create extends Component
         $this->motos = Moto::where('activo', true)->get();
         $this->empresas = Empresa::forUser()->where('status', true)->get();
         $this->fecha_ingreso = date('Y-m-d');
-        
+
         // Si el usuario tiene una empresa asignada, seleccionarla por defecto
         if (auth()->user()->empresa_id) {
             $this->empresa_id = auth()->user()->empresa_id;
             $this->updatedEmpresaId($this->empresa_id);
         }
+
+          $this->vin = 'N/A';
+        $this->numero_motor = 'N/A';
+        $this->numero_chasis = 'N/A';
+        $this->placa = 'N/A';
+
     }
 
     public function updatedEmpresaId($value)

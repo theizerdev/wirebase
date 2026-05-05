@@ -2,7 +2,7 @@
     @push('styles')
     <link rel="stylesheet" href="{{ asset('/materialize/assets//vendor/libs/bs-stepper/bs-stepper.css') }}" />
     @endpush
-    
+
     @push('scripts')
     <script src="{{ asset('/materialize/assets//vendor/libs/bs-stepper/bs-stepper.js') }}"></script>
     @endpush
@@ -15,7 +15,7 @@
                         <i class="ri ri-arrow-left-line me-1"></i> Volver
                     </a>
                 </div>
-                
+
                 <!-- Wizard Navigation -->
                 <div class="card-body">
                     <div class="bs-stepper wizard-numbered mt-2">
@@ -85,7 +85,7 @@
 
                                         <div class="col-md-6">
                                             <div class="form-floating form-floating-outline">
-                                                <select wire:model="sucursal_id" id="sucursal_id" class="form-select @error('sucursal_id') is-invalid @enderror" 
+                                                <select wire:model="sucursal_id" id="sucursal_id" class="form-select @error('sucursal_id') is-invalid @enderror"
                                                         {{ empty($empresa_id) ? 'disabled' : '' }}>
                                                     <option value="">Seleccione...</option>
                                                     @foreach($sucursales as $sucursal)
@@ -135,7 +135,7 @@
                                                 @error('moto_unidad_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-12 d-flex justify-content-between mt-4">
                                             <button class="btn btn-outline-secondary btn-prev" disabled type="button">
                                                 <i class="ri ri-arrow-left-line me-1"></i> Anterior
@@ -155,7 +155,7 @@
                                         <h6 class="mb-0">Condiciones del Crédito</h6>
                                         <small>Configure los parámetros financieros para calcular las cuotas.</small>
                                     </div>
-                                    
+
                                     <div class="row g-3">
                                         <div class="col-12 mb-3">
                                             <div class="alert alert-warning d-flex align-items-center" role="alert">
@@ -167,7 +167,7 @@
                                         </div>
                                         <div class="col-md-12 mb-2">
                                             <div class="form-floating form-floating-outline">
-                                                <input disabled type="text" step="0.01" id="numero_contrato" class="form-control @error('numero_contrato') is-invalid @enderror" 
+                                                <input disabled type="text" step="0.01" id="numero_contrato" class="form-control @error('numero_contrato') is-invalid @enderror"
                                                        wire:model="numero_contrato" placeholder="0.00" />
                                                 <label for="numero_contrato">Número de Contrato</label>
                                                 @error('numero_contrato') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -176,7 +176,7 @@
 
                                         <div class="col-md-4">
                                             <div class="form-floating form-floating-outline">
-                                                <input type="number" step="0.01" id="precio_venta_final" class="form-control @error('precio_venta_final') is-invalid @enderror" 
+                                                <input type="number" step="0.01" id="precio_venta_final" class="form-control @error('precio_venta_final') is-invalid @enderror"
                                                        wire:model.live.debounce.500ms="precio_venta_final" placeholder="0.00" />
                                                 <label for="precio_venta_final">Precio Venta Final ($)</label>
                                                 @error('precio_venta_final') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -185,7 +185,7 @@
 
                                         <div class="col-md-4">
                                             <div class="form-floating form-floating-outline">
-                                                <input type="number" step="0.01" id="cuota_inicial" class="form-control @error('cuota_inicial') is-invalid @enderror" 
+                                                <input type="number" step="0.01" id="cuota_inicial" class="form-control @error('cuota_inicial') is-invalid @enderror"
                                                        wire:model.live.debounce.500ms="cuota_inicial" placeholder="0.00" />
                                                 <label for="cuota_inicial">Cuota Inicial ($)</label>
                                                 @error('cuota_inicial') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -201,7 +201,7 @@
 
                                         <div class="col-md-12">
                                             <div class="form-floating form-floating-outline">
-                                                <input type="number" step="0.01" id="tasa_interes_anual" class="form-control @error('tasa_interes_anual') is-invalid @enderror" 
+                                                <input type="number" step="0.01" id="tasa_interes_anual" class="form-control @error('tasa_interes_anual') is-invalid @enderror"
                                                        wire:model.live.debounce.500ms="tasa_interes_anual" placeholder="12" />
                                                 <label for="tasa_interes_anual">Tasa Interés Anual (%)</label>
                                                 @error('tasa_interes_anual') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -210,7 +210,7 @@
 
                                         <div class="col-md-12">
                                             <div class="form-floating form-floating-outline">
-                                                <input type="number" id="plazo_semanas" class="form-control @error('plazo_semanas') is-invalid @enderror" 
+                                                <input type="number" id="plazo_semanas" class="form-control @error('plazo_semanas') is-invalid @enderror"
                                                        wire:model.live.debounce.500ms="plazo_semanas" placeholder="48" />
                                                 <label for="plazo_semanas">Duración (Semanas)</label>
                                                 @error('plazo_semanas') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -237,17 +237,17 @@
                                         @if($frecuencia_pago === 'mensual')
                                         <div class="col-md-12">
                                             <div class="form-floating form-floating-outline">
-                                                <input type="number" min="1" max="31" id="dia_pago_mensual" class="form-control @error('dia_pago_mensual') is-invalid @enderror" 
+                                                <input type="number" min="1" max="31" id="dia_pago_mensual" class="form-control @error('dia_pago_mensual') is-invalid @enderror"
                                                        wire:model="dia_pago_mensual" placeholder="5" />
                                                 <label for="dia_pago_mensual">Día de Pago Mensual</label>
                                                 @error('dia_pago_mensual') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                             </div>
                                         </div>
                                         @endif
-                                        
+
                                         <div class="col-md-12">
                                             <div class="form-floating form-floating-outline">
-                                                <input type="date" id="fecha_inicio" class="form-control @error('fecha_inicio') is-invalid @enderror" 
+                                                <input type="date" id="fecha_inicio" class="form-control @error('fecha_inicio') is-invalid @enderror"
                                                        wire:model="fecha_inicio" />
                                                 <label for="fecha_inicio">Fecha Inicio Contrato</label>
                                                 @error('fecha_inicio') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -295,11 +295,11 @@
                                         <h6 class="mb-0">Revisión y Confirmación</h6>
                                         <small>Verifique el plan de pagos antes de guardar los cambios.</small>
                                     </div>
-                                    
+
                                     <div class="row">
                                         <div class="col-12 mb-4">
                                             <h6 class="mb-2 text-body">Plan de Pagos Proyectado</h6>
-                                            
+
                                             <div class="table-responsive border rounded">
                                                 <table class="table table-sm table-striped">
                                                     <thead class="table-light">
@@ -330,7 +330,7 @@
 
                                         <div class="col-12 mb-4">
                                             <div class="form-floating form-floating-outline">
-                                                <textarea class="form-control" wire:model="observaciones" rows="3" 
+                                                <textarea class="form-control" wire:model="observaciones" rows="3"
                                                           placeholder="Notas adicionales sobre el contrato..."></textarea>
                                                 <label for="observaciones">Observaciones</label>
                                                 @error('observaciones') <span class="text-danger">{{ $message }}</span> @enderror

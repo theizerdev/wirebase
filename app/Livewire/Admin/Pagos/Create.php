@@ -24,7 +24,7 @@ class Create extends Component
 
     public $cliente_id;
     public $contrato_id;
-    
+
     public $tipo_pago = 'recibo';
     public $fecha;
     public $metodo_pago = 'efectivo';
@@ -49,7 +49,7 @@ class Create extends Component
     public $contratos = [];
     public $conceptos = [];
     public $cuotasPendientes = [];
-    
+
     public $serie_actual;
     public $numero_documento;
     public $caja_abierta;
@@ -63,6 +63,9 @@ class Create extends Component
     public $pagos_anteriores = [];
     public $plantillas_pago = [];
     public $whatsappStatus = 'disconnected';
+
+    // Propiedad para adelantos de pago
+    public $adelanto_monto = [];
 
     protected $listeners = [
         'referencia-mixto-actualizada' => 'procesarReferenciaMixto',
@@ -85,7 +88,7 @@ class Create extends Component
     {
         $this->fecha = now()->format('Y-m-d');
         $this->fecha_pago = now()->format('Y-m-d');
-        
+
         $this->cargarTasaCambio();
         $this->verificarCajaAbierta();
         $this->cargarDatos();
@@ -118,7 +121,7 @@ class Create extends Component
                 return;
             }
         }
-        
+
         $tasaHoy = ExchangeRate::getTodayRate();
         if ($tasaHoy) {
             $this->tasa_cambio = $tasaHoy->usd_rate;
@@ -164,7 +167,7 @@ class Create extends Component
         $this->cliente_id = $clienteId;
         $this->busqueda_cliente = '';
         $this->clientes_filtrados = [];
-        
+
         $this->cargarContratos($clienteId);
         $this->cargarPagosAnteriores($clienteId);
     }
@@ -174,7 +177,7 @@ class Create extends Component
         $this->contratos = Contrato::where('cliente_id', $clienteId)
             ->whereIn('estado', ['activo', 'mora'])
             ->get();
-            
+
         if ($this->contratos->count() === 1) {
             $this->contrato_id = $this->contratos->first()->id;
             $this->updatedContratoId($this->contrato_id);
@@ -285,7 +288,7 @@ class Create extends Component
                      ->where('activo', true)
                      ->where('empresa_id', auth()->user()->empresa_id);
 
-    
+
         $this->serie_actual = $query->first();
 
         if ($this->serie_actual) {
@@ -293,8 +296,8 @@ class Create extends Component
         } else {
             // Fallback
              $this->serie_actual = new Serie([
-                'id' => 1, 
-                'serie' => 'TMP', 
+                'id' => 1,
+                'serie' => 'TMP',
                 'correlativo_actual' => 1
             ]);
             $this->numero_documento = 1;
@@ -323,17 +326,17 @@ class Create extends Component
     public function seleccionarCuota($planPagoId)
     {
         $planPago = PlanPago::find($planPagoId);
-        
+
         if ($planPago) {
             // Buscar conceptos apropiados
             $conceptoMensualidad = ConceptoPago::where('nombre', 'like', '%Mensualidad%')->first();
-            
+
             // Si no existe, usar el primero disponible o crear uno en memoria
             if (!$conceptoMensualidad) {
                 $conceptoMensualidad = ConceptoPago::first();
             }
 
-            // Agregar cuota principal
+            // Agregar cuota principal con el saldo pendiente completo
             $this->detalles[] = [
                 'concepto_pago_id' => $conceptoMensualidad?->id,
                 'plan_pago_id' => $planPago->id,
@@ -346,7 +349,7 @@ class Create extends Component
             if ($planPago->mora_calculada > $planPago->mora_pagada) {
                 $conceptoRecargo = ConceptoPago::where('nombre', 'like', '%Mora%')->first();
                 $montoMora = $planPago->mora_calculada - $planPago->mora_pagada;
-                
+
                 if ($montoMora > 0) {
                      $this->detalles[] = [
                         'concepto_pago_id' => $conceptoRecargo?->id ?? $conceptoMensualidad?->id,
@@ -357,6 +360,45 @@ class Create extends Component
                     ];
                 }
             }
+        }
+    }
+
+    /**
+     * Registrar un adelanto de pago para una cuota específica
+     * Permite al usuario ingresar un monto personalizado menor al saldo pendiente
+     */
+    public function registrarAdelanto($planPagoId, $montoAdelanto = null)
+    {
+        $planPago = PlanPago::find($planPagoId);
+
+        if ($planPago) {
+            // Validar que el monto sea válido
+            $monto = $montoAdelanto ?? ($planPago->saldo_pendiente / 2); // Por defecto 50% si no se especifica
+
+            if ($monto <= 0) {
+                session()->flash('error', 'El monto del adelanto debe ser mayor a cero.');
+                return;
+            }
+
+            if ($monto > $planPago->saldo_pendiente) {
+                session()->flash('error', 'El adelanto no puede ser mayor al saldo pendiente ($' . number_format($planPago->saldo_pendiente, 2) . ').');
+                return;
+            }
+
+            // Buscar concepto apropiado
+            $conceptoMensualidad = ConceptoPago::where('nombre', 'like', '%Mensualidad%')->first();
+            if (!$conceptoMensualidad) {
+                $conceptoMensualidad = ConceptoPago::first();
+            }
+
+            // Agregar el adelanto como detalle
+            $this->detalles[] = [
+                'concepto_pago_id' => $conceptoMensualidad?->id,
+                'plan_pago_id' => $planPago->id,
+                'descripcion' => "Adelanto Cuota #{$planPago->numero_cuota} - Vence: {$planPago->fecha_vencimiento->format('d/m/Y')}",
+                'cantidad' => 1,
+                'precio_unitario' => round($monto, 2)
+            ];
         }
     }
 
@@ -418,16 +460,16 @@ class Create extends Component
 
         $numero = $this->formatPhoneNumber($cliente->telefono);
         $mensaje = $this->generarMensajeWhatsApp($pago);
-        
+
         // Usar WhatsAppService en lugar de Http directo para mayor robustez y compatibilidad
         try {
             $whatsappService = new \App\Services\WhatsAppService(auth()->user()->empresa_id);
             $response = $whatsappService->sendMessage($numero, $mensaje);
-            
+
             if ($response && ($response['success'] ?? false)) {
                 return true;
             }
-            
+
             \Log::error('Error WhatsApp Service Response: ' . json_encode($response));
             return false;
         } catch (\Exception $e) {
@@ -440,11 +482,11 @@ class Create extends Component
     {
         $cliente = $pago->cliente;
         $totalFormateado = '$' . number_format($pago->total, 2, ',', '.');
-        
+
         $mensaje = "💳 *Pago Recibido - Inversiones Danger 3000 C.A*\n\n";
         $mensaje .= "Estimado/a *{$cliente->nombre_completo}*,\n\n";
         $mensaje .= "Hemos recibido su pago correctamente.\n\n";
-        
+
         $mensaje .= "📄 *Detalles del Pago:*\n";
         $mensaje .= "• Número de Recibo: *{$pago->numero_completo}*\n";
         $mensaje .= "• Fecha: {$pago->fecha->format('d/m/Y')}\n";
@@ -452,17 +494,17 @@ class Create extends Component
         if ($pago->referencia) {
             $mensaje .= "• Referencia: {$pago->referencia}\n";
         }
-        
+
         $mensaje .= "\n📋 *Conceptos Pagados:*\n";
         foreach ($pago->detalles as $detalle) {
             $montoDetalle = '$' . number_format($detalle->precio_unitario * $detalle->cantidad, 2, ',', '.');
             $mensaje .= "• {$detalle->descripcion}: {$montoDetalle}\n";
         }
-        
+
         $mensaje .= "\n💰 *Total Pagado: {$totalFormateado}*\n\n";
         $mensaje .= "Gracias por su pago puntual.\n\n";
         $mensaje .= "*Inversiones Danger 3000 C.A - Tu aliado en dos ruedas*";
-        
+
         return $mensaje;
     }
 
@@ -485,19 +527,19 @@ class Create extends Component
         try {
             $apiUrl = config('whatsapp.api_url', 'http://localhost:3001');
             $apiKey = config('whatsapp.api_key', 'test-api-key-vargas-centro');
-            
+
             // Verificar si el servicio está disponible
             $healthResponse = \Http::timeout(3)->get($apiUrl . '/health');
             if (!$healthResponse->successful()) {
                 $this->whatsappStatus = 'disconnected';
                 return;
                 }
-                
+
                 // Obtener estado de conexión
                 $response = \Http::withHeaders(['X-API-Key' => $apiKey])
                 ->timeout(5)
                 ->get($apiUrl . '/api/whatsapp/status');
-                
+
                 if ($response->successful()) {
                     $data = $response->json();
                     $this->whatsappStatus = $data['connectionState'] ?? 'disconnected';
@@ -529,7 +571,7 @@ class Create extends Component
 
        try {
         DB::transaction(function () {
-            
+
             // Recalcular totales antes de enviar
             $subtotal = $this->subtotal; // Usar el getter corregido
             $total = $this->total;       // Usar el getter corregido
@@ -560,12 +602,12 @@ class Create extends Component
 
             // Enviar notificación por WhatsApp y esperar respuesta
             $whatsappSent = $this->enviarReciboWhatsApp($pago);
-            
+
             $mensaje = 'Pago registrado exitosamente: ' . $pago->numero_completo;
             if ($whatsappSent) {
                 $mensaje .= ' - Notificación WhatsApp enviada.';
             }
-            
+
             session()->flash('message', $mensaje);
             return redirect()->route('admin.pagos.index');
         });
@@ -584,7 +626,7 @@ class Create extends Component
         }
         $this->calculateTotalPagoMixto();
     }
-    
+
     /**
      * Validar referencia en tiempo real
      */
@@ -592,20 +634,20 @@ class Create extends Component
     {
         $parts = explode('.', $key);
         $index = $parts[0] ?? null;
-        
+
         if ($index !== null && isset($this->metodos_pago_mixto[$index])) {
             $valorLimpio = trim($value);
             $valorLimpio = preg_replace('/[^a-zA-Z0-9\-]/', '', $valorLimpio);
-            
+
             if (!empty($valorLimpio)) {
                 $existeReferenciaDirecta = \App\Models\Pago::where('referencia', $valorLimpio)
                     ->where('estado', 'aprobado')
                     ->exists();
-                
+
                 $existeEnDetalles = \App\Models\Pago::where('estado', 'aprobado')
                     ->whereJsonContains('detalles_pago_mixto', [['referencia' => $valorLimpio]])
                     ->exists();
-                
+
                 if ($existeReferenciaDirecta || $existeEnDetalles) {
                     $this->addError('metodos_pago_mixto.' . $index . '.referencia', 'Referencia ya utilizada.');
                     $this->metodos_pago_mixto[$index]['referencia'] = '';
@@ -616,7 +658,7 @@ class Create extends Component
             }
         }
     }
-    
+
     public function calculateTotalPagoMixto()
     {
         $this->totalPagoMixto = collect($this->metodos_pago_mixto)->sum('monto');
@@ -631,7 +673,7 @@ class Create extends Component
     {
         $this->whatsappStatus = $status;
     }
-    
+
     public function render()
     {
         $tipos = [

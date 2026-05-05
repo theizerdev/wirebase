@@ -14,7 +14,7 @@ class Create extends Component
     use HasDynamicLayout;
 
     public Moto $moto;
-    
+
     // Campos del formulario
     public $vin = '';
     public $numero_motor = '';
@@ -34,10 +34,10 @@ class Create extends Component
     public $sucursales = [];
 
     protected $rules = [
-        'vin' => 'required|string|max:50|unique:moto_unidades,vin',
-        'numero_motor' => 'required|string|max:50',
-        'numero_chasis' => 'required|string|max:50',
-        'placa' => 'nullable|string|max:20|unique:moto_unidades,placa',
+        'vin' => 'nullable|string|max:50',
+        'numero_motor' => 'nullable|string|max:50',
+        'numero_chasis' => 'nullable|string|max:50',
+        'placa' => 'nullable|string|max:20',
         'color_especifico' => 'required|string|max:50',
         'kilometraje' => 'required|integer|min:0',
         'costo_compra' => 'required|numeric|min:0',
@@ -54,17 +54,23 @@ class Create extends Component
         $this->moto = $moto;
         $this->empresas = Empresa::forUser()->where('status', true)->get();
         $this->fecha_ingreso = date('Y-m-d');
-        
+
         // Prellenar con datos base del modelo
         $this->color_especifico = $moto->color_principal;
         $this->precio_venta = $moto->precio_venta_base;
         $this->costo_compra = $moto->costo_referencial;
-        
+
         // Si el usuario tiene una empresa asignada, seleccionarla por defecto
         if (auth()->user()->empresa_id) {
             $this->empresa_id = auth()->user()->empresa_id;
             $this->updatedEmpresaId($this->empresa_id);
         }
+
+        $this->vin = 'N/A';
+        $this->numero_motor = 'N/A';
+        $this->numero_chasis = 'N/A';
+        $this->placa = 'N/A';
+
     }
 
     public function updatedEmpresaId($value)
@@ -77,12 +83,18 @@ class Create extends Component
     {
         $this->validate();
 
+        // Normalizar campos de identificación: convertir vacíos o espacios en null
+        $vin = $this->normalizeIdentificationField($this->vin);
+        $numeroMotor = $this->normalizeIdentificationField($this->numero_motor);
+        $numeroChasis = $this->normalizeIdentificationField($this->numero_chasis);
+        $placa = $this->normalizeIdentificationField($this->placa);
+
         MotoUnidad::create([
             'moto_id' => $this->moto->id,
-            'vin' => $this->vin,
-            'numero_motor' => $this->numero_motor,
-            'numero_chasis' => $this->numero_chasis,
-            'placa' => $this->placa ?: null,
+            'vin' => $vin,
+            'numero_motor' => $numeroMotor,
+            'numero_chasis' => $numeroChasis,
+            'placa' => $placa,
             'color_especifico' => $this->color_especifico,
             'kilometraje' => $this->kilometraje,
             'costo_compra' => $this->costo_compra,
@@ -98,6 +110,26 @@ class Create extends Component
         session()->flash('message', 'Unidad registrada correctamente en inventario.');
 
         return redirect()->route('admin.motos.unidades.index', $this->moto->id);
+    }
+
+    /**
+     * Normaliza los campos de identificación
+     * Convierte valores vacíos, "-", "N/A", "NA", "n/a" en null
+     */
+    private function normalizeIdentificationField($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        // Convertir placeholders comunes a null
+        if (in_array(strtoupper($trimmed), ['-', 'N/A', 'NA', 'S/N', 'SN', 'NONE', 'NINGUNO', ''])) {
+            return null;
+        }
+
+        return $trimmed;
     }
 
     public function render()

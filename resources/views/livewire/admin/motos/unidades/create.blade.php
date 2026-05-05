@@ -51,13 +51,18 @@
                             <div class="col-12 mt-4">
                                 <h6 class="fw-bold text-primary">Identificación de la Unidad</h6>
                                 <hr class="mt-0">
+                                <div class="alert alert-info py-2 px-3 mb-3">
+                                    <small><i class="ri ri-information-line me-1"></i> 
+                                    <strong>Nota:</strong> Estos campos son opcionales. Puede dejarlos vacíos o usar "-", "N/A", "S/N" si no aplica.
+                                    </small>
+                                </div>
                             </div>
 
                             <div class="col-md-4">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" id="vin" class="form-control @error('vin') is-invalid @enderror" 
-                                           wire:model="vin" placeholder="XXXXXXXXXXXXXXXXX">
-                                    <label for="vin">VIN / Serial de Chasis</label>
+                                           wire:model="vin" placeholder="Opcional - Use - o N/A si no tiene">
+                                    <label for="vin">VIN / Serial de Chasis (Opcional)</label>
                                     @error('vin') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -65,8 +70,8 @@
                             <div class="col-md-4">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" id="numero_chasis" class="form-control @error('numero_chasis') is-invalid @enderror" 
-                                           wire:model="numero_chasis" placeholder="Igual al VIN si aplica">
-                                    <label for="numero_chasis">Número de Chasis</label>
+                                           wire:model="numero_chasis" placeholder="Opcional - Igual al VIN si aplica">
+                                    <label for="numero_chasis">Número de Chasis (Opcional)</label>
                                     @error('numero_chasis') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -74,8 +79,8 @@
                             <div class="col-md-4">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" id="numero_motor" class="form-control @error('numero_motor') is-invalid @enderror" 
-                                           wire:model="numero_motor" placeholder="Número de motor">
-                                    <label for="numero_motor">Número de Motor</label>
+                                           wire:model="numero_motor" placeholder="Opcional - Use - o N/A si no tiene">
+                                    <label for="numero_motor">Número de Motor (Opcional)</label>
                                     @error('numero_motor') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -83,7 +88,7 @@
                             <div class="col-md-4">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" id="placa" class="form-control @error('placa') is-invalid @enderror" 
-                                           wire:model="placa" placeholder="Placa (si posee)">
+                                           wire:model="placa" placeholder="Opcional - Si posee placa">
                                     <label for="placa">Placa (Opcional)</label>
                                     @error('placa') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>

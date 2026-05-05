@@ -31,7 +31,7 @@ class Edit extends Component
     public $moto_unidad_id = '';
     public $vendedor_id = '';
     public $numero_contrato = '';
-    
+
     // Condiciones Financieras
     public $precio_venta_final = 0;
     public $cuota_inicial = 0;
@@ -43,7 +43,7 @@ class Edit extends Component
     public $frecuencia_pago = 'mensual';
     public $fecha_inicio;
     public $observaciones = '';
-    
+
     // Proyección de Cuotas
     public $plan_proyectado = [];
     public $cuota_estimada = 0;
@@ -75,7 +75,7 @@ class Edit extends Component
 
     /**
      * Genera un número de contrato único con dígitos aleatorios
-     * 
+     *
      * @return string
      */
     private function generateUniqueContractNumber(): string
@@ -84,13 +84,13 @@ class Edit extends Component
             // Generar 6 dígitos aleatorios
             $randomDigits = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $numeroContrato =  $randomDigits;
-            
+
             // Verificar que no exista en la base de datos (excluyendo el contrato actual)
             $existe = Contrato::where('numero_contrato', $numeroContrato)
                 ->where('id', '!=', $this->contratoId)
                 ->exists();
         } while ($existe);
-        
+
         return $numeroContrato;
     }
 
@@ -98,10 +98,10 @@ class Edit extends Component
     {
         $this->contrato = $contrato;
         $this->contratoId = $contrato->id;
-        
+
         // Cargar recursos iniciales PRIMERO
         $this->empresas = Empresa::forUser()->where('status', true)->get();
-        
+
         // Cargar datos del contrato DESPUÉS de cargar empresas
         $this->empresa_id = $contrato->empresa_id;
         $this->sucursal_id = $contrato->sucursal_id;
@@ -119,11 +119,11 @@ class Edit extends Component
         $this->frecuencia_pago = $contrato->frecuencia_pago;
         $this->fecha_inicio = $contrato->fecha_inicio->format('Y-m-d');
         $this->observaciones = $contrato->observaciones;
-        
+
         // Cargar sucursales, clientes y unidades SIN resetear los valores actuales
         $this->sucursales = Sucursal::where('empresa_id', $this->empresa_id)->get();
         $this->clientes = Cliente::where('empresa_id', $this->empresa_id)->where('activo', true)->get();
-        
+
         // Solo unidades disponibles o la unidad actual del contrato
         $this->unidades_disponibles = MotoUnidad::with('moto')
             ->where('empresa_id', $this->empresa_id)
@@ -132,7 +132,7 @@ class Edit extends Component
                     ->orWhere('id', $this->moto_unidad_id);
             })
             ->get();
-        
+
         // Calcular totales iniciales
         $this->calculateTotals();
     }
@@ -142,7 +142,7 @@ class Edit extends Component
         $this->sucursales = Sucursal::where('empresa_id', $value)->get();
         $this->loadResources($value);
     }
-    
+
     public function loadResources($empresaId)
     {
         $this->reset(['cliente_id', 'moto_unidad_id']);
@@ -170,9 +170,9 @@ class Edit extends Component
     public function updatedPrecioVentaFinal() { $this->calculateTotals(); }
     public function updatedCuotaInicial() { $this->calculateTotals(); }
     public function updatedTasaInteresAnual() { $this->calculateTotals(); }
-    public function updatedPlazoSemanas() { 
+    public function updatedPlazoSemanas() {
         $this->plazo_meses = round((int) $this->plazo_semanas / 4, 1);
-        $this->calculateTotals(); 
+        $this->calculateTotals();
     }
     public function updatedFrecuenciaPago() { $this->calculateTotals(); }
 
@@ -199,11 +199,11 @@ class Edit extends Component
     {
         $precio = (float) $this->precio_venta_final;
         $inicial = (float) $this->cuota_inicial;
-        
+
         $this->monto_financiado = max(0, $precio - $inicial);
         $numCuotas = $this->getNumCuotas();
         $this->total_cuotas_calculadas = $numCuotas;
-        
+
         if ($this->monto_financiado > 0 && $numCuotas > 0) {
             $interes_total = $this->monto_financiado * ($this->tasa_interes_anual / 100) * ($this->plazo_semanas / 52);
             $total_a_pagar = $this->monto_financiado + $interes_total;
@@ -216,7 +216,7 @@ class Edit extends Component
     /**
      * Obtiene el próximo día hábil (Lunes a Sábado) a partir de una fecha dada
      * Si la fecha es Domingo, se mueve al Lunes siguiente
-     * 
+     *
      * @param Carbon $fecha
      * @return Carbon
      */
@@ -226,14 +226,14 @@ class Edit extends Component
         if ($fecha->dayOfWeek === 0) {
             return $fecha->copy()->addDay();
         }
-        
+
         // Si es sábado (dayOfWeek = 6) o cualquier otro día hábil, mantener la fecha
         return $fecha->copy();
     }
 
     /**
      * Cuenta los días hábiles (Lunes a Sábado) entre dos fechas
-     * 
+     *
      * @param Carbon $fechaInicio
      * @param Carbon $fechaFin
      * @return int
@@ -242,7 +242,7 @@ class Edit extends Component
     {
         $dias = 0;
         $fechaActual = $fechaInicio->copy();
-        
+
         while ($fechaActual <= $fechaFin) {
             // Contar solo Lunes (1) a Sábado (6)
             if ($fechaActual->dayOfWeek >= 1 && $fechaActual->dayOfWeek <= 6) {
@@ -250,13 +250,13 @@ class Edit extends Component
             }
             $fechaActual->addDay();
         }
-        
+
         return $dias;
     }
 
     /**
      * Agrega días hábiles (Lunes a Sábado) a una fecha
-     * 
+     *
      * @param Carbon $fecha
      * @param int $dias
      * @return Carbon
@@ -265,7 +265,7 @@ class Edit extends Component
     {
         $fechaResultado = $fecha->copy();
         $diasAgregados = 0;
-        
+
         while ($diasAgregados < $dias) {
             $fechaResultado->addDay();
             // Solo contar Lunes a Sábado
@@ -273,7 +273,7 @@ class Edit extends Component
                 $diasAgregados++;
             }
         }
-        
+
         return $fechaResultado;
     }
 
@@ -281,14 +281,14 @@ class Edit extends Component
     {
         $this->validate($this->rules[2]);
         $this->calculateTotals();
-        
+
         $plan = [];
         $fecha = Carbon::parse($this->fecha_inicio);
         $numCuotas = $this->getNumCuotas();
         $periodsPerYear = $this->getPeriodsPerYear();
 
         $fecha_pago = $fecha->copy();
-        
+
         // Calcular la fecha de la primera cuota según la frecuencia
         if ($this->frecuencia_pago === 'mensual') {
             $fecha_pago->addMonth();
@@ -333,7 +333,7 @@ class Edit extends Component
         for ($i = 1; $i <= $numCuotas; $i++) {
             $total_cuota = $capital_por_cuota + $interes_por_cuota;
             $saldo -= $capital_por_cuota;
-            
+
             $plan[] = [
                 'numero' => $i,
                 'tipo' => $tipoCuota,
@@ -343,7 +343,7 @@ class Edit extends Component
                 'total' => round($total_cuota, 2),
                 'saldo' => max(0, round($saldo, 2))
             ];
-            
+
             if ($this->frecuencia_pago === 'semanal') {
                 // Para semanal: sumar 7 días y buscar el próximo día hábil
                 $fecha_pago->addDays(7);
@@ -363,7 +363,7 @@ class Edit extends Component
                 }
             }
         }
-        
+
         $this->plan_proyectado = $plan;
         $this->step = 3;
     }
@@ -436,7 +436,7 @@ class Edit extends Component
                     $unidadAnterior->estado = 'disponible';
                     $unidadAnterior->save();
                 }
-                
+
                 // Reservar la nueva unidad
                 $unidadNueva = MotoUnidad::find($this->moto_unidad_id);
                 if ($unidadNueva) {

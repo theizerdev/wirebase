@@ -217,9 +217,9 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Referencia</label>
-                            <input type="text" 
-                                   wire:model.live="metodos_pago_mixto.{{ $index }}.referencia" 
-                                   class="form-control @error('metodos_pago_mixto.' . $index . '.referencia') is-invalid @enderror" 
+                            <input type="text"
+                                   wire:model.live="metodos_pago_mixto.{{ $index }}.referencia"
+                                   class="form-control @error('metodos_pago_mixto.' . $index . '.referencia') is-invalid @enderror"
                                    placeholder="Número de referencia">
                             @error('metodos_pago_mixto.' . $index . '.referencia')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -385,7 +385,7 @@
                             </div>
                         </div>
                         @endif
-                    
+
                     @if(!$cliente_id)
                         <div class="border rounded p-4 text-center mt-3">
                             <i class="ri ri-user-search-line ri ri-2x text-muted mb-2"></i>
@@ -439,9 +439,31 @@
                                         @endif
                                     </div>
                                 </div>
+
+                                <!-- Input para adelanto de pago -->
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted mb-1">Adelanto de pago ($):</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number"
+                                               step="0.01"
+                                               min="0.01"
+                                               max="{{ $cuota->saldo_pendiente }}"
+                                               wire:model.defer="adelanto_monto.{{ $cuota->id }}"
+                                               class="form-control"
+                                               placeholder="Monto del adelanto..."
+                                               id="adelanto_{{ $cuota->id }}">
+                                        <button wire:click="registrarAdelanto({{ $cuota->id }}, $wire.get('adelanto_monto.{{ $cuota->id }}'))"
+                                                class="btn btn-outline-success"
+                                                title="Registrar adelanto">
+                                            <i class="ri ri-add-line"></i> Adelanto
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Máximo: ${{ number_format($cuota->saldo_pendiente, 2) }}</small>
+                                </div>
+
                                 <div class="d-flex gap-2">
                                     <button wire:click="seleccionarCuota({{ $cuota->id }})" class="btn btn-sm btn-primary flex-fill">
-                                        <i class="ri ri-add-line"></i> Pagar Completa
+                                        <i class="ri ri-check-line"></i> Pagar Completa
                                     </button>
                                 </div>
                             </div>
