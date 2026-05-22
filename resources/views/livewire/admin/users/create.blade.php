@@ -109,6 +109,41 @@
                     @enderror
                 </div>
 
+                <!-- Zonas de Acceso -->
+                <div class="col-12 mb-3">
+                    <label class="form-label">Zonas de Acceso</label>
+                    <div class="border rounded p-3 bg-light">
+                        @if(count($zonasDisponibles) > 0)
+                            <div class="row">
+                                @foreach($zonasDisponibles as $zona)
+                                    <div class="col-md-6 col-lg-4 mb-2">
+                                        <div class="form-check">
+                                            <input 
+                                                class="form-check-input" 
+                                                type="checkbox" 
+                                                wire:model="selectedZonas" 
+                                                value="{{ $zona['id'] }}"
+                                                id="zona_{{ $zona['id'] }}"
+                                            >
+                                            <label class="form-check-label" for="zona_{{ $zona['id'] }}">
+                                                {{ $zona['nombre'] }}
+                                                @if(!empty($zona['codigo']))
+                                                    <small class="text-muted">({{ $zona['codigo'] }})</small>
+                                                @endif
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                Seleccione las zonas a las que este usuario tendrá acceso
+                            </small>
+                        @else
+                            <p class="text-muted mb-0">No hay zonas disponibles para la empresa seleccionada</p>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Rol <span class="text-danger">*</span></label>
                     <select class="form-select @error('role') is-invalid @enderror" wire:model="role">

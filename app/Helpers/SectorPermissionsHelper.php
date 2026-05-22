@@ -10,7 +10,7 @@ if (!function_exists('getPermissionSectors')) {
                 'description' => 'Configuración del sistema, empresas, usuarios y roles',
                 'color' => 'purple',
                 'icon' => 'ri-settings-3-line',
-                'modules' => ['empresas', 'consultorios', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion']
+                'modules' => ['empresas', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion', 'zonas']
             ],
             'monitoreo' => [
                 'name' => '📊 Monitoreo',
@@ -172,6 +172,13 @@ if (!function_exists('getSectorMenuItems')) {
                             //['label' => 'Consultorios', 'permission' => 'access consultorios', 'route' => 'admin.consultorios.index', 'active' => 'admin.consultorios.index'],
                             ['label' => 'Países', 'permission' => 'access paises', 'route' => 'admin.paises.index', 'active' => 'admin.paises.index'],
                         ]
+                    ],
+                    [
+                        'label' => 'Zonas de trabajo',
+                        'icon' => 'ri-map-pin-line',
+                        'permission' => 'access zonas',
+                        'route' => 'admin.zonas.index',
+                        'active' => 'admin.zonas.*',
                     ],
                     [
                         'label' => 'Usuarios y Acceso',

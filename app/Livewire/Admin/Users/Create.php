@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Models\User;
 use App\Models\Empresa;
 use App\Models\Sucursal;
+use App\Models\Zona;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -32,6 +33,8 @@ class Create extends Component
     public $phone;
     public $showPassword = false;
     public $showPasswordConfirmation = false;
+    public $zonasDisponibles = [];
+    public $selectedZonas = [];
 
     protected function rules()
     {
@@ -51,6 +54,7 @@ class Create extends Component
     public function updatedEmpresaId($value)
     {
         $this->loadSucursales();
+        $this->loadZonasDisponibles();
     }
 
     public function loadSucursales()
@@ -64,6 +68,32 @@ class Create extends Component
             $this->sucursales = [];
         }
         $this->sucursal_id = null;
+    }
+
+    /**
+     * Cargar las zonas disponibles según la empresa y sucursal seleccionada.
+     */
+    public function loadZonasDisponibles()
+    {
+        if (!$this->empresa_id) {
+            $this->zonasDisponibles = [];
+            return;
+        }
+
+        $query = Zona::query()
+            ->where('empresa_id', $this->empresa_id)
+            ->activas()
+            ->orderBy('nombre');
+
+        // Si hay sucursal seleccionada, filtrar por esa sucursal o zonas globales
+        if ($this->sucursal_id) {
+            $query->where(function($q) {
+                $q->where('sucursal_id', $this->sucursal_id)
+                  ->orWhereNull('sucursal_id');
+            });
+        }
+
+        $this->zonasDisponibles = $query->get()->toArray();
     }
 
     /**
@@ -214,6 +244,10 @@ class Create extends Component
 
         $user->assignRole($this->role);
 
+        // Asignar zonas seleccionadas al usuario
+        if (!empty($this->selectedZonas)) {
+            $user->zonas()->attach($this->selectedZonas);
+        }
 
         // Enviar mensaje de WhatsApp de bienvenida
         $this->enviarMensajeBienvenida($user, $plainPassword);
@@ -350,6 +384,11 @@ class Create extends Component
             ->get();
 
         $roles = Role::all();
+
+        // Cargar zonas disponibles si hay empresa seleccionada
+        if ($this->empresa_id) {
+            $this->loadZonasDisponibles();
+        }
 
         // Calcular estadísticas
         $totalUsers = User::forUser()->count();

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 | - sucursales.php: Gestión de sucursales
 | - usuarios.php: Gestión de usuarios y perfiles
 | - roles_permisos.php: Roles y permisos (RBAC)
+| - zonas.php: Gestión de zonas de acceso
 | - sesiones.php: Sesiones activas
 | - monitoreo.php: Monitoreo del sistema
 | - tasas_cambio.php: Tasas de cambio
@@ -37,6 +38,7 @@ require_once __DIR__ . '/admin/paises.php';
 require_once __DIR__ . '/admin/sucursales.php';
 require_once __DIR__ . '/admin/usuarios.php';
 require_once __DIR__ . '/admin/roles_permisos.php';
+require_once __DIR__ . '/admin/zonas.php';
 require_once __DIR__ . '/admin/sesiones.php';
 require_once __DIR__ . '/admin/monitoreo.php';
 require_once __DIR__ . '/admin/tasas_cambio.php';

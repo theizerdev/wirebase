@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Models\User;
 use App\Models\Empresa;
 use App\Models\Sucursal;
+use App\Models\Zona;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
@@ -29,6 +30,8 @@ class Edit extends Component
     public $role;
     public $sucursales = [];
     public $username; // Solo para mostrar, no se edita
+    public $zonasDisponibles = [];
+    public $selectedZonas = [];
 
     public function mount(User $user)
     {
@@ -46,6 +49,10 @@ class Edit extends Component
             ->where('empresa_id', $user->empresa_id)
             ->where('status', true)
             ->get();
+        
+        // Cargar zonas disponibles y seleccionadas
+        $this->loadZonasDisponibles();
+        $this->selectedZonas = $user->zonas()->pluck('zonas.id')->toArray();
     }
 
     protected function rules()
@@ -79,6 +86,34 @@ class Edit extends Component
             $this->sucursales = [];
         }
         $this->sucursal_id = null;
+        // Recargar zonas cuando cambia la sucursal
+        $this->loadZonasDisponibles();
+    }
+
+    /**
+     * Cargar las zonas disponibles según la empresa y sucursal seleccionada.
+     */
+    public function loadZonasDisponibles()
+    {
+        if (!$this->empresa_id) {
+            $this->zonasDisponibles = [];
+            return;
+        }
+
+        $query = Zona::query()
+            ->where('empresa_id', $this->empresa_id)
+            ->activas()
+            ->orderBy('nombre');
+
+        // Si hay sucursal seleccionada, filtrar por esa sucursal o zonas globales
+        if ($this->sucursal_id) {
+            $query->where(function($q) {
+                $q->where('sucursal_id', $this->sucursal_id)
+                  ->orWhereNull('sucursal_id');
+            });
+        }
+
+        $this->zonasDisponibles = $query->get()->toArray();
     }
 
     public function update()
@@ -111,6 +146,9 @@ class Edit extends Component
 
         // Sincronizar rol del usuario
         $user->syncRoles([$this->role]);
+
+        // Sincronizar zonas seleccionadas
+        $user->zonas()->sync($this->selectedZonas);
 
         $this->dispatch('notify', [
             'type' => 'success',

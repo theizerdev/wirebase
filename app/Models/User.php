@@ -167,6 +167,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the zonas assigned to the user.
+     */
+    public function zonas()
+    {
+        return $this->belongsToMany(Zona::class, 'user_zona')
+            ->withTimestamps();
+    }
+
+    /**
      * Get the user's common locations from active sessions
      */
     public function getCommonLocationsAttribute()
