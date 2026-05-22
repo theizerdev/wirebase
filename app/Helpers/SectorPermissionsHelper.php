@@ -10,7 +10,7 @@ if (!function_exists('getPermissionSectors')) {
                 'description' => 'Configuración del sistema, empresas, usuarios y roles',
                 'color' => 'purple',
                 'icon' => 'ri-settings-3-line',
-                'modules' => ['empresas', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion', 'zonas']
+                'modules' => ['empresas', 'consultorios', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion', 'zonas', 'estados', 'ciudades', 'municipios', 'parroquias']
             ],
             'monitoreo' => [
                 'name' => '📊 Monitoreo',
@@ -174,12 +174,25 @@ if (!function_exists('getSectorMenuItems')) {
                         ]
                     ],
                     [
-                        'label' => 'Zonas de trabajo',
+                        'label' => 'Zonas de Acceso',
                         'icon' => 'ri-map-pin-line',
                         'permission' => 'access zonas',
                         'route' => 'admin.zonas.index',
                         'active' => 'admin.zonas.*',
                     ],
+                    [
+                        'label' => 'Ubicación Geográfica',
+                        'icon' => 'ri-earth-line',
+                        'permissions' => ['access estados', 'access ciudades', 'access municipios', 'access parroquias'],
+                        'active' => 'admin.estados.*|admin.ciudades.*|admin.municipios.*|admin.parroquias.*',
+                        'children' => [
+                            ['label' => 'Estados', 'permission' => 'access estados', 'route' => 'admin.estados.index', 'active' => 'admin.estados.index'],
+                            ['label' => 'Ciudades', 'permission' => 'access ciudades', 'route' => 'admin.ciudades.index', 'active' => 'admin.ciudades.index'],
+                            ['label' => 'Municipios', 'permission' => 'access municipios', 'route' => 'admin.municipios.index', 'active' => 'admin.municipios.index'],
+                            ['label' => 'Parroquias', 'permission' => 'access parroquias', 'route' => 'admin.parroquias.index', 'active' => 'admin.parroquias.index'],
+                        ]
+                    ],
+
                     [
                         'label' => 'Usuarios y Acceso',
                         'icon' => 'ri-group-line',

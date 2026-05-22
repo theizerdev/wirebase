@@ -1,11 +1,11 @@
 <div>
-    @section('title', 'Zonas de Acceso')
+    @section('title', 'Ciudades')
 
     @push('styles')
     <style>
-        .zona-hero { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color:#fff; border-radius:.75rem; padding:1.4rem 1.6rem; }
-        .zona-hero h2 { color:#fff; margin:0; }
-        .zona-hero p { opacity:.9; margin:0; }
+        .ciudad-hero { background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); color:#fff; border-radius:.75rem; padding:1.4rem 1.6rem; }
+        .ciudad-hero h2 { color:#fff; margin:0; }
+        .ciudad-hero p { opacity:.9; margin:0; }
 
         .stat-card { border:1px solid rgba(0,0,0,.06); border-radius:.65rem; padding:.9rem 1rem;
                      transition:all .2s; display:flex; align-items:center; gap:.85rem; height:100%; background:#fff; }
@@ -16,8 +16,8 @@
         .stat-card .stat-label { font-size:.72rem; color:var(--bs-secondary-color);
                                  text-transform:uppercase; letter-spacing:.4px; font-weight:600; }
 
-        .zona-row { transition:background .12s; }
-        .zona-row:hover { background:#f8f9ff; }
+        .ciudad-row { transition:background .12s; }
+        .ciudad-row:hover { background:#f8f9ff; }
     </style>
     @endpush
 
@@ -25,19 +25,19 @@
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb breadcrumb-style1 mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}"><i class="ri ri-home-line me-1"></i>Dashboard</a></li>
-                <li class="breadcrumb-item active">Zonas</li>
+                <li class="breadcrumb-item active">Ciudades</li>
             </ol>
         </nav>
 
         {{-- Hero + acciones --}}
-        <div class="zona-hero mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="ciudad-hero mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div>
-                <h2 class="fw-semibold"><i class="ri ri-map-pin-line me-2"></i>Zonas de Acceso</h2>
-                <p class="mt-1">Gestión de zonas y áreas de acceso del sistema</p>
+                <h2 class="fw-semibold"><i class="ri ri-building-2-line me-2"></i>Ciudades</h2>
+                <p class="mt-1">Gestión de ciudades del sistema</p>
             </div>
-            @can('create zonas')
-                <a href="{{ route('admin.zonas.create') }}" class="btn btn-light btn-sm">
-                    <i class="ri ri-add-line me-1"></i>Nueva Zona
+            @can('create ciudades')
+                <a href="{{ route('admin.ciudades.create') }}" class="btn btn-light btn-sm">
+                    <i class="ri ri-add-line me-1"></i>Nueva Ciudad
                 </a>
             @endcan
         </div>
@@ -46,10 +46,10 @@
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-xl-3">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="ri ri-map-pin-line"></i></div>
+                    <div class="stat-icon" style="background:#cffafe;color:#0891b2;"><i class="ri ri-building-2-line"></i></div>
                     <div>
-                        <div class="stat-label">Total zonas</div>
-                        <div class="stat-value">{{ $totalZonas }}</div>
+                        <div class="stat-label">Total ciudades</div>
+                        <div class="stat-value">{{ $totalCiudades }}</div>
                     </div>
                 </div>
             </div>
@@ -57,8 +57,8 @@
                 <div class="stat-card">
                     <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="ri ri-check-line"></i></div>
                     <div>
-                        <div class="stat-label">Zonas activas</div>
-                        <div class="stat-value">{{ $zonasActivas }}</div>
+                        <div class="stat-label">Ciudades activas</div>
+                        <div class="stat-value">{{ $ciudadesActivas }}</div>
                     </div>
                 </div>
             </div>
@@ -66,17 +66,17 @@
                 <div class="stat-card">
                     <div class="stat-icon" style="background:#fef3c7;color:#d97706;"><i class="ri ri-close-line"></i></div>
                     <div>
-                        <div class="stat-label">Zonas inactivas</div>
-                        <div class="stat-value">{{ $zonasInactivas }}</div>
+                        <div class="stat-label">Ciudades inactivas</div>
+                        <div class="stat-value">{{ $ciudadesInactivas }}</div>
                     </div>
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#cffafe;color:#0891b2;"><i class="ri ri-user-line"></i></div>
+                    <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;"><i class="ri ri-map-pin-2-line"></i></div>
                     <div>
-                        <div class="stat-label">Con usuarios</div>
-                        <div class="stat-value">{{ $zonasConUsuarios }}</div>
+                        <div class="stat-label">Total estados</div>
+                        <div class="stat-value">{{ $totalEstados }}</div>
                     </div>
                 </div>
             </div>
@@ -88,20 +88,16 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold"><i class="ri ri-search-line me-1"></i>Buscar</label>
-                        <input type="text" class="form-control form-control-sm" wire:model.live.debounce.300ms="search" placeholder="Nombre, código, distrito...">
+                        <input type="text" class="form-control form-control-sm" wire:model.live.debounce.300ms="search" placeholder="Nombre, código...">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-semibold">Sucursal</label>
-                        <select class="form-select form-select-sm" wire:model.live="filterSucursal">
-                            <option value="">Todas</option>
-                            @foreach(\App\Models\Sucursal::where('empresa_id', auth()->user()->empresa_id)->get() as $sucursal)
-                                <option value="{{ $sucursal->id }}">{{ $sucursal->nombre }}</option>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Estado</label>
+                        <select class="form-select form-select-sm" wire:model.live="filterEstado">
+                            <option value="">Todos</option>
+                            @foreach(\App\Models\Estado::where('activo', true)->get() as $estado)
+                                <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
                             @endforeach
                         </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-semibold">Distrito</label>
-                        <input type="text" class="form-control form-control-sm" wire:model.live="filterDistrito" placeholder="Filtrar por distrito...">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Estado</label>
@@ -111,7 +107,7 @@
                             <option value="0">Inactivas</option>
                         </select>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <label class="form-label small fw-semibold">Mostrar</label>
                         <select class="form-select form-select-sm" wire:model.live="perPage">
                             <option value="10">10</option>
@@ -134,12 +130,12 @@
         {{-- Tabla --}}
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent border-0 pb-0">
-                <h6 class="mb-0"><i class="ri ri-map-pin-line me-2 text-success"></i>Listado de zonas</h6>
+                <h6 class="mb-0"><i class="ri ri-building-2-line me-2 text-primary"></i>Listado de ciudades</h6>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-success text-white">
+                        <thead class="bg-info text-white">
                             <tr>
                                 <th wire:click="sortBy('nombre')" style="cursor: pointer;">
                                     Nombre @if($sortBy === 'nombre') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
@@ -147,14 +143,8 @@
                                 <th wire:click="sortBy('codigo')" style="cursor: pointer;">
                                     Código @if($sortBy === 'codigo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th wire:click="sortBy('distrito')" style="cursor: pointer;">
-                                    Distrito @if($sortBy === 'distrito') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
-                                <th wire:click="sortBy('sucursal_id')" style="cursor: pointer;">
-                                    Sucursal @if($sortBy === 'sucursal_id') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
-                                <th wire:click="sortBy('users_count')" style="cursor: pointer;">
-                                    Usuarios @if($sortBy === 'users_count') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
+                                <th wire:click="sortBy('estado_id')" style="cursor: pointer;">
+                                    Estado @if($sortBy === 'estado_id') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
                                 <th wire:click="sortBy('activo')" style="cursor: pointer;">
                                     Estado @if($sortBy === 'activo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
@@ -163,53 +153,40 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($zonas as $zona)
-                                <tr class="zona-row">
+                            @forelse($ciudades as $ciudad)
+                                <tr class="ciudad-row">
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="avatar avatar-sm me-2">
-                                                <span class="avatar-initial rounded bg-label-success">{{ substr($zona->nombre, 0, 1) }}</span>
+                                                <span class="avatar-initial rounded bg-label-info">{{ substr($ciudad->nombre, 0, 1) }}</span>
                                             </div>
                                             <div>
-                                                <h6 class="mb-0">{{ $zona->nombre }}</h6>
-                                                @if($zona->descripcion)
-                                                    <small class="text-muted">{{ Str::limit($zona->descripcion, 50) }}</small>
-                                                @endif
+                                                <h6 class="mb-0">{{ $ciudad->nombre }}</h6>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        @if($zona->codigo)
-                                            <span class="badge bg-light text-dark">{{ $zona->codigo }}</span>
+                                        @if($ciudad->codigo)
+                                            <span class="badge bg-light text-dark">{{ $ciudad->codigo }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td>
-                                        @if($zona->distrito)
-                                            <span class="badge bg-info-subtle text-info-emphasis">{{ $zona->distrito }}</span>
+                                        @if($ciudad->estado)
+                                            <span class="badge bg-purple-subtle text-purple-emphasis">{{ $ciudad->estado->nombre }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
-                                    </td>
-                                    <td>
-                                        @if($zona->sucursal)
-                                            <span class="badge bg-primary-subtle text-primary-emphasis">{{ $zona->sucursal->nombre }}</span>
-                                        @else
-                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">Global</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-label-primary">{{ $zona->users_count ?? 0 }}</span>
                                     </td>
                                     <td>
                                         <div class="form-check form-switch">
                                             <input class="form-check-input" type="checkbox"
-                                                   id="statusSwitch{{ $zona->id }}"
-                                                   {{ $zona->activo ? 'checked' : '' }}
-                                                   @can('edit zonas') wire:click="toggleStatus({{ $zona->id }})" @endcan>
-                                            <label class="form-check-label" for="statusSwitch{{ $zona->id }}">
-                                                {{ $zona->activo ? 'Activo' : 'Inactivo' }}
+                                                   id="statusSwitch{{ $ciudad->id }}"
+                                                   {{ $ciudad->activo ? 'checked' : '' }}
+                                                   @can('edit ciudades') wire:click="toggleStatus({{ $ciudad->id }})" @endcan>
+                                            <label class="form-check-label" for="statusSwitch{{ $ciudad->id }}">
+                                                {{ $ciudad->activo ? 'Activa' : 'Inactiva' }}
                                             </label>
                                         </div>
                                     </td>
@@ -219,20 +196,15 @@
                                                 <i class="ri ri-more-2-line"></i>
                                             </button>
                                             <div class="dropdown-menu">
-                                                @can('view zonas')
-                                                <a class="dropdown-item" href="#">
-                                                    <i class="ri ri-eye-line me-1"></i> Ver detalles
-                                                </a>
-                                                @endcan
-                                                @can('edit zonas')
-                                                <a class="dropdown-item" href="{{ route('admin.zonas.edit', $zona) }}">
+                                                @can('edit ciudades')
+                                                <a class="dropdown-item" href="{{ route('admin.ciudades.edit', $ciudad) }}">
                                                     <i class="ri ri-pencil-line me-1"></i> Editar
                                                 </a>
                                                 @endcan
-                                                @can('delete zonas')
+                                                @can('delete ciudades')
                                                 <button type="button" class="dropdown-item text-danger"
-                                                        wire:click="deleteZona({{ $zona->id }})"
-                                                        wire:confirm="¿Estás seguro de eliminar esta zona?">
+                                                        wire:click="deleteCiudad({{ $ciudad->id }})"
+                                                        wire:confirm="¿Estás seguro de eliminar esta ciudad?">
                                                     <i class="ri ri-delete-bin-line me-1"></i> Eliminar
                                                 </button>
                                                 @endcan
@@ -242,9 +214,9 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">
-                                        <i class="ri ri-map-pin-line" style="font-size:1.5rem;opacity:.3;"></i>
-                                        <p class="mb-0 mt-1 small">No se encontraron zonas</p>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="ri ri-building-2-line" style="font-size:1.5rem;opacity:.3;"></i>
+                                        <p class="mb-0 mt-1 small">No se encontraron ciudades</p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -253,7 +225,7 @@
                 </div>
 
                 <div class="mt-3">
-                    {{ $zonas->links('livewire.pagination') }}
+                    {{ $ciudades->links('livewire.pagination') }}
                 </div>
             </div>
         </div>

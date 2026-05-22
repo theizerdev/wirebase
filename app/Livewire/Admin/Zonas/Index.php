@@ -15,39 +15,13 @@ class Index extends Component
     public $filterSucursal = '';
     public $filterDistrito = '';
     public $filterActivo = '';
-    public $perPage = 10;
-    public $sortBy = 'nombre';
-    public $sortDirection = 'asc';
     
     protected $queryString = [
         'search' => ['except' => ''],
         'filterSucursal' => ['except' => ''],
         'filterDistrito' => ['except' => ''],
         'filterActivo' => ['except' => ''],
-        'sortBy' => ['except' => 'nombre'],
-        'sortDirection' => ['except' => 'asc'],
     ];
-    
-    /**
-     * Ordenar por columna.
-     */
-    public function sortBy($column)
-    {
-        if ($this->sortBy === $column) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortBy = $column;
-            $this->sortDirection = 'asc';
-        }
-    }
-    
-    /**
-     * Limpiar filtros.
-     */
-    public function clearFilters()
-    {
-        $this->reset(['search', 'filterSucursal', 'filterDistrito', 'filterActivo']);
-    }
     
     /**
      * Eliminar una zona.
@@ -80,44 +54,20 @@ class Index extends Component
     }
     
     /**
-     * Obtener estadísticas.
-     */
-    public function getTotalZonasProperty()
-    {
-        return Zona::count();
-    }
-    
-    public function getZonasActivasProperty()
-    {
-        return Zona::where('activo', true)->count();
-    }
-    
-    public function getZonasInactivasProperty()
-    {
-        return Zona::where('activo', false)->count();
-    }
-    
-    public function getZonasConUsuariosProperty()
-    {
-        return Zona::has('users')->count();
-    }
-    
-    /**
      * Obtener las zonas filtradas.
      */
     public function getZonasProperty()
     {
         $query = Zona::query()
             ->with(['empresa', 'sucursal'])
-            ->withCount('users');
+            ->orderBy('nombre');
         
         // Filtro por búsqueda
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('nombre', 'like', '%' . $this->search . '%')
                   ->orWhere('codigo', 'like', '%' . $this->search . '%')
-                  ->orWhere('descripcion', 'like', '%' . $this->search . '%')
-                  ->orWhere('distrito', 'like', '%' . $this->search . '%');
+                  ->orWhere('descripcion', 'like', '%' . $this->search . '%');
             });
         }
         
@@ -136,10 +86,7 @@ class Index extends Component
             $query->where('activo', $this->filterActivo === '1');
         }
         
-        // Ordenamiento
-        $query->orderBy($this->sortBy, $this->sortDirection);
-        
-        return $query->paginate($this->perPage);
+        return $query->paginate(15);
     }
     
     /**
@@ -147,12 +94,18 @@ class Index extends Component
      */
     public function render()
     {
+        // Calcular estadísticas
+        $totalZonas = Zona::count();
+        $zonasActivas = Zona::where('activo', true)->count();
+        $zonasInactivas = Zona::where('activo', false)->count();
+        $zonasConUsuarios = Zona::has('users')->count();
+
         return view('livewire.admin.zonas.index', [
             'zonas' => $this->zonas,
-            'totalZonas' => $this->totalZonas,
-            'zonasActivas' => $this->zonasActivas,
-            'zonasInactivas' => $this->zonasInactivas,
-            'zonasConUsuarios' => $this->zonasConUsuarios,
+            'totalZonas' => $totalZonas,
+            'zonasActivas' => $zonasActivas,
+            'zonasInactivas' => $zonasInactivas,
+            'zonasConUsuarios' => $zonasConUsuarios,
         ])->layout($this->getLayout());
     }
 }
