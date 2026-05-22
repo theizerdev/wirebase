@@ -1,19 +1,18 @@
-<div>
+<div wire:cloak>
 <!-- Botón Flotante Principal -->
-@if(!$isOpen)
 <button type="button"
-        class="floating-chat-button"
+        class="floating-chat-button {{ $isOpen ? 'hidden' : '' }}"
         wire:click="toggleWidget">
     <i class="ri ri-message-3-line"></i>
     @if($totalUnread > 0)
         <span class="floating-chat-button-badge">{{ $totalUnread > 99 ? '99+' : $totalUnread }}</span>
     @endif
 </button>
-@endif
 
 <!-- Widget de Chat Flotante -->
-@if($isOpen)
-<div class="floating-chat-widget {{ $isMinimized ? 'minimized' : '' }}" id="floatingChatWidget">
+<div class="floating-chat-widget {{ $isOpen ? '' : 'closed' }} {{ $isMinimized ? 'minimized' : '' }}" 
+     id="floatingChatWidget"
+     wire:ignore.self>
     <!-- Header del Widget -->
     <div class="floating-chat-widget-header">
         <div class="d-flex align-items-center flex-grow-1">
@@ -169,7 +168,6 @@
         </div>
     </div>
 </div>
-@endif
 
 <!-- Polling para actualizar -->
 <div wire:poll.3s="checkNewMessages" class="d-none"></div>
@@ -194,6 +192,17 @@
     font-size: 1.5rem;
     z-index: 1999;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.floating-chat-button.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.5);
+    pointer-events: none;
 }
 
 .floating-chat-button:hover {
@@ -240,6 +249,17 @@
     z-index: 2000;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.floating-chat-widget.closed {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.95);
+    pointer-events: none;
 }
 
 .floating-chat-widget.minimized {
@@ -247,7 +267,9 @@
 }
 
 .floating-chat-widget.minimized .floating-chat-widget-content {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .floating-chat-widget-header {
@@ -467,6 +489,20 @@ if (typeof floatingChatInitialized === 'undefined') {
         let xOffset = 0, yOffset = 0;
         let chatWidget = null;
 
+        // Prevenir que se cierre al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const widget = document.getElementById('floatingChatWidget');
+            const button = document.querySelector('.floating-chat-button');
+            
+            if (widget && !widget.classList.contains('closed')) {
+                // No cerrar si el clic fue dentro del widget o en el botón
+                if (!widget.contains(e.target) && !button.contains(e.target)) {
+                    // Opcional: Descomenta las siguientes líneas si quieres que se cierre al hacer clic fuera
+                    // Livewire.dispatch('toggle-widget');
+                }
+            }
+        });
+
         // Inicializar drag cuando el widget esté visible
         Livewire.hook('morph.updated', ({ el }) => {
             if (el.id === 'floatingChatWidget') {
@@ -547,6 +583,22 @@ if (typeof floatingChatInitialized === 'undefined') {
                 setTimeout(() => {
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 }, 100);
+            }
+            
+            // Focus en el input después de enviar
+            const input = document.getElementById('floatingChatInput');
+            if (input) {
+                setTimeout(() => input.focus(), 150);
+            }
+        });
+
+        // Focus en el input cuando se selecciona un usuario
+        Livewire.hook('morph.updated', ({ el }) => {
+            if (el.id === 'chatConversation' && el.style.display !== 'none') {
+                setTimeout(() => {
+                    const input = document.getElementById('floatingChatInput');
+                    if (input) input.focus();
+                }, 200);
             }
         });
     });

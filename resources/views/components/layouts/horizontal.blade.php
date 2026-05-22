@@ -158,11 +158,8 @@
 
     @include('components.toast-container')
 
-    <!-- Widget de Chat Flotante Global -->
-    @livewire('floating-chat-widget')
 
-    <!-- Timer Global de Dilatación -->
-    @livewire('dilatation-timer')
+  
 
     <!-- Script global para manejar eventos de notificaciones -->
 

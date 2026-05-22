@@ -342,30 +342,7 @@
                     </a>
                 </div>
                 <div class="card-body p-0">
-                    @if($recentCitas->count() > 0)
-                        <div class="px-3 py-2">
-                            @foreach($recentCitas as $cita)
-                            <div class="cita-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1 fw-semibold">{{ $cita->paciente->nombre_completo ?? 'Sin nombre' }}</h6>
-                                        <p class="text-muted mb-1 small">
-                                            <i class="ri ri-user-star-line me-1"></i>{{ $cita->medico->nombre_completo ?? 'Sin médico' }}
-                                        </p>
-                                        <p class="text-muted mb-0 small">
-                                            <i class="ri ri-time-line me-1"></i>{{ \Carbon\Carbon::parse($cita->fecha_inicio)->format('d/m H:i') }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="ri ri-calendar-line" style="font-size: 3rem; opacity: 0.3;"></i>
-                            <p class="text-muted mt-2 mb-0">No hay citas programadas</p>
-                        </div>
-                    @endif
+                   
                 </div>
             </div>
         </div>
@@ -384,34 +361,7 @@
 
                 </div>
                 <div class="card-body p-0">
-                    @if(count($recentPayments) > 0)
-                        <div class="px-3 py-2">
-                            @foreach($recentPayments as $pago)
-                            <div class="payment-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1 fw-semibold">{{ $pago->cita->paciente->nombre_completo ?? 'Sin paciente' }}</h6>
-                                        <p class="text-muted mb-1 small">
-                                            <i class="ri ri-bank-card-line me-1"></i>{{ $pago->metodoPago->nombre ?? 'N/A' }}
-                                        </p>
-                                        <p class="text-muted mb-0 small">
-                                            <i class="ri ri-time-line me-1"></i>{{ $pago->created_at->format('d/m H:i') }}
-                                        </p>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success" style="font-size: 1.1rem;">{{ format_money($pago->total_usd, 0) }}</div>
-                                        <span class="badge bg-success-subtle text-success" style="border-radius: .375rem; font-size: .7rem;">Aprobado</span>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="ri ri-bank-card-line" style="font-size: 3rem; opacity: 0.3;"></i>
-                            <p class="text-muted mt-2 mb-0">No hay pagos registrados</p>
-                        </div>
-                    @endif
+                    
                 </div>
             </div>
         </div>
@@ -426,33 +376,7 @@
                     </h5>
                 </div>
                 <div class="card-body p-0">
-                    @if(count($topMedicos) > 0)
-                        <div class="px-3 py-2">
-                            @foreach($topMedicos as $index => $medico)
-                            <div class="medico-row">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: {{ $index === 0 ? '#fef3c7' : ($index === 1 ? '#e5e7eb' : '#fed7aa') }}; display: flex; align-items: center; justify-content: center; font-weight: 700; color: {{ $index === 0 ? '#d97706' : ($index === 1 ? '#6b7280' : '#ea580c') }};">
-                                        {{ $index + 1 }}
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 fw-semibold" style="font-size: .9rem;">{{ $medico->nombre_completo }}</h6>
-                                        <small class="text-muted">{{ $medico->especialidad?->nombre ?? 'General' }}</small>
-                                    </div>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge" style="background: #e0e7ff; color: #4f46e5; border-radius: .375rem; font-size: .8rem; font-weight: 600;">
-                                        {{ $medico->citas_hoy_count }} cita{{ $medico->citas_hoy_count != 1 ? 's' : '' }}
-                                    </span>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="ri ri-user-star-line" style="font-size: 3rem; opacity: 0.3;"></i>
-                            <p class="text-muted mt-2 mb-0">No hay datos disponibles</p>
-                        </div>
-                    @endif
+                   
                 </div>
             </div>
         </div>

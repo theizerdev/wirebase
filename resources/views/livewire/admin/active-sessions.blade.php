@@ -155,8 +155,10 @@
         </div>
     </div>
 
-        {{-- Main Table --}}
-        <div class="table-responsive">
+     <div class="card">
+        <div class="card-body">
+               {{-- Main Table --}}
+        <div class="table table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-primary text-white">
                     <tr>
@@ -330,29 +332,18 @@
                 </div>
 
                 <!-- Paginación mejorada -->
-                <div class="card-footer">
+               <div class="card-footer">
                     <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center">
-                                <span class="text-muted me-3">Mostrar:</span>
-                                <select wire:model.live="perPage" class="form-select form-select-sm" style="width: auto;">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
-                                <span class="text-muted ms-3">
-                                    Mostrando {{ $sessions->firstItem() }} a {{ $sessions->lastItem() }} de {{ $sessions->total() }} resultados
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-md-6 d-flex justify-content-end">
+                    
+                        <div class="col-md-12">
                             {{ $sessions->links('livewire.pagination') }}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        </div>
+     </div>
 </div>
 </div>
 

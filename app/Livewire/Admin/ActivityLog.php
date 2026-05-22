@@ -111,7 +111,7 @@ class ActivityLog extends Component
             ->paginate($this->perPage);
 
         $users = User::orderBy('name')->get();
-        $medicos = Medico::orderBy('nombres')->get();
+      
 
         $actions = Activity::select('description')
             ->distinct()
@@ -180,7 +180,7 @@ class ActivityLog extends Component
             'total' => AuditLog::where('action', 'like', 'seguridad.%')->count(),
         ];
 
-        return view('livewire.admin.activity-log', compact('activities', 'users', 'actions', 'subjectTypes', 'medicos', 'securityEvents', 'securityCounts'))
+        return view('livewire.admin.activity-log', compact('activities', 'users', 'actions', 'subjectTypes', 'securityEvents', 'securityCounts'))
             ->layout($this->getLayout(), ['title' => 'Seguimiento de Actividades']);
     }
 

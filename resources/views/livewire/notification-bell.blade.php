@@ -102,13 +102,7 @@
                 @endforelse
             </ul>
         </li>
-        <li class="border-top">
-            <div class="d-grid p-4">
-                <a class="btn btn-primary btn-sm d-flex" href="{{ route('admin.notifications.index') }}" aria-label="Ver todas las notificaciones">
-                    <small class="align-middle">Ver todas las notificaciones</small>
-                </a>
-            </div>
-        </li>
+        
     </ul>
 </div>
 

@@ -457,20 +457,7 @@
             </table>
         </div>
 
-        @if($securityEvents instanceof \Illuminate\Pagination\LengthAwarePaginator && $securityEvents->hasPages())
-        <div class="card-footer">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <span class="text-muted">
-                        Mostrando {{ $securityEvents->firstItem() ?? 0 }} a {{ $securityEvents->lastItem() ?? 0 }} de {{ $securityEvents->total() }} eventos
-                    </span>
-                </div>
-                <div class="col-md-6">
-                    {{ $securityEvents->links('livewire.pagination') }}
-                </div>
-            </div>
-        </div>
-        @endif
+       
     </div>
 
     @else
@@ -786,12 +773,8 @@
 
         <div class="card-footer">
             <div class="row align-items-center">
-                <div class="col-md-6">
-                    <span class="text-muted">
-                        Mostrando {{ $activities->firstItem() ?? 0 }} a {{ $activities->lastItem() ?? 0 }} de {{ $activities->total() }} actividades
-                    </span>
-                </div>
-                <div class="col-md-6">
+               
+                <div class="col-md-12">
                     {{ $activities->links('livewire.pagination') }}
                 </div>
             </div>

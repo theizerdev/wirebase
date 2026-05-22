@@ -19,7 +19,7 @@ class FloatingChatWidget extends Component
     public $totalUnread = 0;
     public $lastMessageId = 0;
     
-    protected $listeners = ['toggle-widget' => 'toggleWidget'];
+    protected $listeners = ['toggle-widget' => 'toggleWidget', 'open-widget' => 'openWidget'];
 
     public function mount()
     {
@@ -40,14 +40,19 @@ class FloatingChatWidget extends Component
         $this->isOpen = !$this->isOpen;
         
         if (!$this->isOpen) {
-            $this->selectedUserId = null;
-            $this->selectedUser = null;
-            $this->messages = [];
+            $this->isMinimized = false;
+            // No limpiar la conversación seleccionada para mantener el estado
         }
         
         if ($this->isOpen) {
             $this->updateTotalUnread();
         }
+    }
+
+    public function openWidget()
+    {
+        $this->isOpen = true;
+        $this->updateTotalUnread();
     }
 
     public function toggleMinimize()
@@ -58,9 +63,8 @@ class FloatingChatWidget extends Component
     public function closeWidget()
     {
         $this->isOpen = false;
-        $this->selectedUserId = null;
-        $this->selectedUser = null;
-        $this->messages = [];
+        $this->isMinimized = false;
+        // Mantener la conversación seleccionada para cuando se abra de nuevo
     }
 
     public function getChatUsersProperty()

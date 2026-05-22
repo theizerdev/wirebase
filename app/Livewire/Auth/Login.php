@@ -201,10 +201,7 @@ class Login extends Component
             return redirect()->route('superadmin.dashboard');
         }
 
-        $medico = \App\Models\Medico::where('user_id', $user->id)->first();
-        if ($medico) {
-            return redirect()->to('admin/gestion/consultas/en-consultorio');
-        }
+        
 
         if ($user->hasRole('admin')) {
             return redirect()->route('admin.dashboard');
