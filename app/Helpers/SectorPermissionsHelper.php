@@ -126,6 +126,23 @@ if (!function_exists('getSectorMenuItems')) {
     function getSectorMenuItems(): array
     {
         return [
+             'registro_nacional' => [
+                'label' => 'Registro Nacional',
+                'icon' => 'ri-user-line',
+                'items' => [
+                    [
+                        'label' => 'Obreros',
+                        'icon' => 'ri-user-line',
+                        'permissions' => ['access pastores'],
+                        'active' => 'admin.pastores.*',
+                        'children' => [
+                            ['label' => 'Listado general', 'permission' => 'access pastores', 'route' => 'admin.pastores.index', 'active' => 'admin.pastores.index'],
+                            ['label' => 'Nuevo registro', 'permission' => 'access pastores', 'route' => 'admin.pastores.create', 'active' => 'admin.pastores.create'],
+                           
+                        ]
+                    ],
+                    ]
+            ],
                'administracion' => [
                 'label' => 'Administración',
                 'icon' => 'ri-money-dollar-circle-line',
@@ -154,7 +171,8 @@ if (!function_exists('getSectorMenuItems')) {
                             ['label' => 'Cierre Contable', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.cierre-contable', 'active' => 'admin.contabilidad.cierre-contable'],
                             //['label' => 'Libro de Ventas', 'permission' => 'access contabilidad', 'route' => 'admin.seniat.libro-ventas', 'active' => 'admin.seniat.libro-ventas'],
                         ]
-                    ],                ]
+                    ],
+                    ]
             ],
 
             'configuracion' => [

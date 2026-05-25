@@ -54,3 +54,4 @@ require_once __DIR__ . '/admin/whatsapp.php';
 require_once __DIR__ . '/admin/contabilidad.php';
 require_once __DIR__ . '/admin/seniat.php';
 require_once __DIR__ . '/admin/template.php';
+require_once __DIR__ . '/admin/pastores.php';
