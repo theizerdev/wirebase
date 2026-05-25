@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ciudades', function (Blueprint $table) {
+        Schema::create('estados', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre', 100);
-            $table->foreignId('estado_id')->constrained('estados')->onDelete('cascade');
-            $table->boolean('activo')->default(true);
+            $table->string('nombre');
+            $table->string('iso_3166_2')->unique(); // Código ISO 3166-2 para Venezuela
             $table->timestamps();
-            
-            $table->index(['estado_id', 'activo']);
         });
     }
 
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ciudades');
+        Schema::dropIfExists('estados');
     }
 };

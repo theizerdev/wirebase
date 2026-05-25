@@ -14,6 +14,7 @@ use App\Models\Ciudad;
 use App\Models\Estado;
 use App\Models\Parroquia;
 use App\Models\Municipio;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Empresa;
 use App\Models\Sucursal;
 
@@ -233,16 +234,18 @@ class Edit extends Component
         // Cargar listas desplegables
         $this->estados = Estado::orderBy('nombre')->get();
 
-        // Cargar pastores disponibles (excluir el actual y los que ya tienen cónyuge, pero incluir el cónyuge actual si existe)
-        $conyugeActualId = $pastor->conyuge_id;
-        $pastorConyuge = Pastor::where('id',  $pastor->conyuge_id)->first();
-        $this->foto =  $pastorConyuge->foto;
-        //dd($this->foto );
-        //$this->pastores = $this->loadPastoresDisponibles();
+        
 
         if ($this->estado_id) {
-            $this->ciudades = Ciudad::where('estado_id', $this->estado_id)->orderBy('nombre')->get();
             $this->municipios = Municipio::where('estado_id', $this->estado_id)->orderBy('nombre')->get();
+
+            if (Schema::hasColumn('ciudades', 'municipio_id')) {
+                // Si ciudades están vinculadas a municipios, no cargamos ciudades hasta seleccionar municipio
+                $this->ciudades = collect();
+            } else {
+                // Compatibilidad: cargar ciudades por estado
+                $this->ciudades = Ciudad::where('estado_id', $this->estado_id)->orderBy('nombre')->get();
+            }
         } else {
             $this->ciudades = collect();
             $this->municipios = collect();
@@ -266,8 +269,13 @@ class Edit extends Component
     public function updatedEstadoId($value)
     {
         if ($value) {
-            $this->ciudades = Ciudad::where('estado_id', $value)->orderBy('nombre')->get();
             $this->municipios = Municipio::where('estado_id', $value)->orderBy('nombre')->get();
+
+            if (Schema::hasColumn('ciudades', 'municipio_id')) {
+                $this->ciudades = collect();
+            } else {
+                $this->ciudades = Ciudad::where('estado_id', $value)->orderBy('nombre')->get();
+            }
         } else {
             $this->ciudades = collect();
             $this->municipios = collect();
@@ -295,8 +303,15 @@ class Edit extends Component
     {
         if ($value) {
             $this->parroquias = Parroquia::where('municipio_id', $value)->orderBy('nombre')->get();
+
+            if (Schema::hasColumn('ciudades', 'municipio_id')) {
+                $this->ciudades = Ciudad::where('municipio_id', $value)->orderBy('nombre')->get();
+            }
         } else {
             $this->parroquias = collect();
+            if (Schema::hasColumn('ciudades', 'municipio_id')) {
+                $this->ciudades = collect();
+            }
         }
         $this->parroquia_id = null;
     }

@@ -2,60 +2,71 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\HasSpanishActivityLog;
 
 class Municipio extends Model
 {
-    use HasFactory, LogsActivity, HasSpanishActivityLog;
-
-    protected $table = 'municipios';
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'nombre',
-        'estado_id',  // Cambiado de ciudad_id a estado_id
-        'activo'
+        'estado_id',
+        'latitud',
+        'longitud',
     ];
 
     protected $casts = [
-        'activo' => 'boolean'
+        //
     ];
 
+    /**
+     * Relación con estado
+     */
     public function estado()
     {
         return $this->belongsTo(Estado::class);
     }
 
-    // Mantener la relación con parroquias
+    /**
+     * Relación con parroquias
+     */
     public function parroquias()
     {
         return $this->hasMany(Parroquia::class);
     }
 
+    /**
+     * Relación con empresas
+     */
+    public function empresas()
+    {
+        return $this->hasMany(Empresa::class);
+    }
+
+    /**
+     * Relación con sucursales
+     */
+    public function sucursales()
+    {
+        return $this->hasMany(Sucursal::class);
+    }
+
+    /**
+     * Relación con usuarios
+     */
+    public function usuarios()
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['nombre', 'estado_id', 'activo'])  // Actualizado para reflejar el cambio
+            ->logOnly(['nombre', 'estado_id'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => static::getSpanishDescription($eventName));
-    }
-
-    public function scopeActivos($query)
-    {
-        return $query->where('activo', true);
-    }
-
-    public function scopePorEstado($query, $estadoId)  // Actualizado el nombre del scope
-    {
-        return $query->where('estado_id', $estadoId);  // Actualizado para reflejar el cambio
-    }
-
-    public function scopeBuscar($query, $search)
-    {
-        return $query->where('nombre', 'like', '%' . $search . '%');
+            ->dontSubmitEmptyLogs();
     }
 }

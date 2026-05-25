@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('municipios', function (Blueprint $table) {
+        Schema::create('ciudades', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre', 100);
-            $table->foreignId('ciudad_id')->constrained('ciudades')->onDelete('cascade');
-            $table->boolean('activo')->default(true);
+            $table->string('nombre');
+            $table->unsignedBigInteger('estado_id');
+            $table->decimal('latitud', 10, 8)->nullable();
+            $table->decimal('longitud', 11, 8)->nullable();
             $table->timestamps();
             
-            $table->index(['ciudad_id', 'activo']);
+            $table->foreign('estado_id')->references('id')->on('estados')->onDelete('cascade');
         });
     }
 
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('municipios');
+        Schema::dropIfExists('ciudades');
     }
 };

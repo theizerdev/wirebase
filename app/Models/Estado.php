@@ -2,63 +2,79 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
-use App\Traits\HasSpanishActivityLog;
 
 class Estado extends Model
 {
-    use HasFactory, LogsActivity, HasSpanishActivityLog;
-
-    protected $table = 'estados';
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'nombre',
-        'codigo',
-        'pais_id',
-        'activo'
+        'iso_3166_2',
+        'latitud',
+        'longitud',
     ];
 
     protected $casts = [
-        'activo' => 'boolean'
+        //
     ];
 
-    public function pais()
+    /**
+     * Relación con municipios
+     */
+    public function municipios()
     {
-        return $this->belongsTo(Pais::class);
+        return $this->hasMany(Municipio::class);
     }
 
+    /**
+     * Relación con ciudades
+     */
     public function ciudades()
     {
         return $this->hasMany(Ciudad::class);
     }
 
+    /**
+     * Relación con empresas
+     */
+    public function empresas()
+    {
+        return $this->hasMany(Empresa::class);
+    }
+
+    /**
+     * Relación con sucursales
+     */
+    public function sucursales()
+    {
+        return $this->hasMany(Sucursal::class);
+    }
+
+    /**
+     * Relación con usuarios
+     */
+    public function usuarios()
+    {
+        return $this->hasMany(User::class);
+    }
+
+    /**
+     * Relación con iglesias
+     */
+    public function iglesias()
+    {
+        return $this->hasMany(Iglesia::class);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['nombre', 'codigo', 'pais_id', 'activo'])
+            ->logOnly(['nombre', 'iso_3166_2'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => static::getSpanishDescription($eventName));
-    }
-
-    public function scopeActivas($query)
-    {
-        return $query->where('activo', true);
-    }
-
-    public function scopePorPais($query, $paisId)
-    {
-        return $query->where('pais_id', $paisId);
-    }
-
-    public function scopeBuscar($query, $search)
-    {
-        return $query->where(function($q) use ($search) {
-            $q->where('nombre', 'like', '%' . $search . '%')
-              ->orWhere('codigo', 'like', '%' . $search . '%');
-        });
+            ->dontSubmitEmptyLogs();
     }
 }

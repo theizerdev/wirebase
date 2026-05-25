@@ -12,10 +12,10 @@ class VenezuelaGeographicalSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            VenezuelaStatesSeeder::class,
-            VenezuelaMunicipalitiesSeeder::class,
-            VenezuelaParishesSeeder::class,
-            VenezuelaMigrationsSeeder::class,
+            EstadosSeeder::class,
+            MunicipiosSeeder::class,
+            ParroquiasSeeder::class,
+            CiudadesSeeder::class,
         ]);
 
         $this->command->info('✅ Todos los datos geográficos de Venezuela han sido procesados exitosamente');

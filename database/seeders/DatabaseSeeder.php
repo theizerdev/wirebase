@@ -24,7 +24,6 @@ class DatabaseSeeder extends Seeder
             ZonaSeeder::class,
             ZonasPermissionsSeeder::class,
             UbicacionPermissionsSeeder::class,
-            VenezuelaGeographicalSeeder::class,
         ]);
     }
 }

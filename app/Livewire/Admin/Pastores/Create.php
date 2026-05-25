@@ -11,6 +11,7 @@ use App\Models\Ciudad;
 use App\Models\Estado;
 use App\Models\Parroquia;
 use App\Models\Municipio;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Empresa;
 use App\Models\Sucursal;
 use Illuminate\Support\Facades\Storage;
@@ -190,8 +191,17 @@ class Create extends Component
     public function updatedEstadoId($value)
     {
         if ($value) {
-            $this->ciudades = Ciudad::where('estado_id', $value)->orderBy('nombre')->get();
-            $this->municipios = Municipio::where('estado_id', $value)->get(); // Cargar municipios
+            // Cargar municipios para el estado
+            $this->municipios = Municipio::where('estado_id', $value)->orderBy('nombre')->get();
+
+            // Cargar ciudades: preferir ciudades vinculadas a municipio (si existe columna municipio_id)
+            if (Schema::hasColumn('ciudades', 'municipio_id')) {
+                // Dejamos ciudades vacías hasta que se seleccione un municipio
+                $this->ciudades = collect();
+            } else {
+                // Compatibilidad: cargar ciudades por estado si la tabla ciudades aún usa estado_id
+                $this->ciudades = Ciudad::where('estado_id', $value)->orderBy('nombre')->get();
+            }
         } else {
             $this->ciudades = collect();
             $this->municipios = collect(); // Limpiar municipios
@@ -243,9 +253,19 @@ class Create extends Component
     public function updatedMunicipioId($value)
     {
         if ($value) {
+            // Cargar parroquias por municipio
             $this->parroquias = Parroquia::where('municipio_id', $value)->orderBy('nombre')->get();
+
+            // Cargar ciudades relacionadas al municipio si existe la columna municipio_id
+            if (Schema::hasColumn('ciudades', 'municipio_id')) {
+                $this->ciudades = Ciudad::where('municipio_id', $value)->orderBy('nombre')->get();
+            }
         } else {
             $this->parroquias = collect();
+            // Si la tabla ciudades no usa municipio_id, mantenerla vacía para evitar confusiones
+            if (Schema::hasColumn('ciudades', 'municipio_id')) {
+                $this->ciudades = collect();
+            }
         }
         $this->parroquia_id = null;
     }
