@@ -11,7 +11,7 @@ class AsientoContable extends Model
     protected $fillable = [
         'numero', 'fecha', 'tipo', 'descripcion', 'estado',
         'referencia_tipo', 'referencia_id', 'user_id',
-        'empresa_id', 'sucursal_id'
+        'empresa_id', 'sucursal_id', 'iglesia_id'
     ];
 
     protected $casts = [
@@ -36,6 +36,11 @@ class AsientoContable extends Model
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class);
+    }
+
+    public function iglesia()
+    {
+        return $this->belongsTo(Iglesia::class);
     }
 
     public function scopeAprobados($query)

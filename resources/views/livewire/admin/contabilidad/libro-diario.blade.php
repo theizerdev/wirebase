@@ -25,13 +25,85 @@
             </ol>
         </nav>
 
-        {{-- Hero --}}
-        <div class="ld-hero mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <h2 class="fw-semibold"><i class="ri ri-book-open-line me-2"></i>Libro Diario</h2>
-                <p class="mt-1">Registro cronológico de todos los asientos contables</p>
+        {{-- Solo buscador de iglesia (siempre visible) --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6">
+                        <div class="text-center mb-3">
+                            <div class="mb-2">
+                                <i class="ri ri-hospital-line text-primary" style="font-size: 2.5rem;"></i>
+                            </div>
+                            <h5 class="fw-bold mb-1">Seleccione una Extension</h5>
+                            <p class="text-muted mb-0 small">Busque y seleccione la extension para ver el libro diario</p>
+                        </div>
+                        
+                        <div class="position-relative">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="ri ri-search-line text-muted"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-start-0 ps-0" 
+                                       wire:model.live.debounce.300ms="iglesiaSearch"
+                                       placeholder="Escriba el nombre o dirección de la extension..."
+                                       autocomplete="off"
+                                       style="border-left: none;">
+                                
+                                @if($iglesia_id)
+                                    <button type="button" 
+                                            class="btn btn-outline-danger"
+                                            wire:click="limpiarBusquedaIglesia"
+                                            title="Limpiar búsqueda">
+                                        <i class="ri ri-close-line"></i>
+                                    </button>
+                                @endif
+                            </div>
+                            
+                            @if($mostrarResultadosIglesia && count($iglesiasBuscadas) > 0)
+                                <div class="list-group position-absolute w-100 mt-2 shadow-lg border" 
+                                     style="z-index: 1050; max-height: 300px; overflow-y: auto; background-color: #ffffff; border-radius: 0.5rem;">
+                                    @foreach($iglesiasBuscadas as $iglesia)
+                                        <button type="button" 
+                                                class="list-group-item list-group-item-action py-3"
+                                                wire:click="seleccionarIglesia({{ $iglesia->id }})">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <strong class="fs-6">{{ $iglesia->nombre }}</strong>
+                                                    @if($iglesia->direccion)
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            <i class="ri ri-map-pin-line"></i> {{ $iglesia->direccion }}
+                                                        </small>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
+                            
+                            @if($iglesia_id)
+                                @php
+                                    $iglesiaSeleccionada = \App\Models\Iglesia::find($iglesia_id);
+                                @endphp
+                                <div class="mt-3">
+                                    <div class="alert alert-success d-flex align-items-center py-3 px-4 mb-0" role="alert">
+                                        <i class="ri ri-checkbox-circle-fill me-2 fs-5"></i>
+                                        <div>
+                                            <strong>Extension seleccionada:</strong> {{ $iglesiaSeleccionada?->nombre ?? 'Extension' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        {{-- Contenido solo visible cuando hay iglesia seleccionada --}}
+        @if($iglesia_id)
 
         {{-- Filtros --}}
         <div class="card border-0 shadow-sm mb-4">
@@ -180,11 +252,11 @@
                                 <div class="text-center py-5">
                                     <div class="avatar avatar-xl mx-auto mb-3">
                                         <span class="avatar-initial rounded bg-label-secondary">
-                                            <i class="ri-book-open-line ri-2x"></i>
+                                            <i class="ri ri-book-open-line ri-2x"></i>
                                         </span>
                                     </div>
                                     <h6 class="mb-1">No hay asientos contables</h6>
-                                    <p class="text-muted">No se encontraron asientos en el período seleccionado con los filtros aplicados.</p>
+                                    <p class="text-muted">No se encontraron asientos para esta extension en el período seleccionado con los filtros aplicados.</p>
                                 </div>
                             @endforelse
                         @endif
@@ -198,5 +270,57 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+
+        @else
+            {{-- Mensaje cuando no hay iglesia seleccionada --}}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light" style="width: 100px; height: 100px;">
+                            <i class="ri ri-hospital-line text-muted" style="font-size: 3.5rem; opacity: 0.4;"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold mb-2">Seleccione una extension para comenzar</h5>
+                    <p class="text-muted mb-4">Use el buscador de arriba para encontrar y seleccionar la extension que desea consultar</p>
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="row g-3 text-start">
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3" style="flex: 0 0 auto;">
+                                            <i class="ri ri-search-line text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-semibold mb-1 small">1. Busque</h6>
+                                            <small class="text-muted">Escriba el nombre de la extension</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3" style="flex: 0 0 auto;">
+                                            <i class="ri ri-check-line text-success"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-semibold mb-1 small">2. Seleccione</h6>
+                                            <small class="text-muted">Haga clic en la extension</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3" style="flex: 0 0 auto;">
+                                            <i class="ri ri-book-open-line text-info"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-semibold mb-1 small">3. Consulte</h6>
+                                            <small class="text-muted">Vea el libro diario</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif

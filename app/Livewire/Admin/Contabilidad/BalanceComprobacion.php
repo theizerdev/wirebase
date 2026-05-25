@@ -19,11 +19,18 @@ class BalanceComprobacion extends Component
     public $mostrar_saldos_cero = false;
     public $nivel_detalle = 'todos'; // todos, solo_padres, solo_hijas
     public $search = '';
+    
+    // Properties for church search
+    public $iglesiaSearch = '';
+    public $iglesiasBuscadas = [];
+    public $mostrarResultadosIglesia = false;
+    public $iglesia_id = '';
 
     protected $queryString = [
         'tipo_cuenta' => ['except' => ''],
         'mostrar_saldos_cero' => ['except' => false],
         'nivel_detalle' => ['except' => 'todos'],
+        'iglesia_id' => ['except' => ''],
     ];
 
     public function mount()
@@ -33,9 +40,57 @@ class BalanceComprobacion extends Component
         $this->fecha_hasta = now()->endOfMonth()->format('Y-m-d');
     }
 
+    public function updatingIglesiaId()
+    {
+        // Reset page if pagination is added in the future
+    }
+
+    public function updatedIglesiaSearch($value)
+    {
+        if (strlen($value) >= 2) {
+            $this->iglesiasBuscadas = \App\Models\Iglesia::activas()
+                ->where('empresa_id', auth()->user()->empresa_id)
+                ->where(function($query) use ($value) {
+                    $query->where('nombre', 'like', '%' . $value . '%')
+                          ->orWhere('direccion', 'like', '%' . $value . '%');
+                })
+                ->orderBy('nombre')
+                ->limit(10)
+                ->get();
+            $this->mostrarResultadosIglesia = true;
+        } else {
+            $this->iglesiasBuscadas = [];
+            $this->mostrarResultadosIglesia = false;
+        }
+    }
+
+    public function seleccionarIglesia($iglesiaId)
+    {
+        $iglesia = \App\Models\Iglesia::find($iglesiaId);
+        if ($iglesia) {
+            $this->iglesia_id = $iglesiaId;
+            $this->iglesiaSearch = $iglesia->nombre;
+            $this->mostrarResultadosIglesia = false;
+        }
+    }
+
+    public function limpiarBusquedaIglesia()
+    {
+        $this->iglesia_id = '';
+        $this->iglesiaSearch = '';
+        $this->iglesiasBuscadas = [];
+        $this->mostrarResultadosIglesia = false;
+    }
+
+    #[\Livewire\Attributes\On('closeIglesiaDropdown')]
+    public function closeIglesiaDropdown()
+    {
+        $this->mostrarResultadosIglesia = false;
+    }
+
     public function resetFilters()
     {
-        $this->reset(['tipo_cuenta', 'mostrar_saldos_cero', 'nivel_detalle', 'search']);
+        $this->reset(['tipo_cuenta', 'mostrar_saldos_cero', 'nivel_detalle', 'search', 'iglesia_id', 'iglesiaSearch']);
         $this->fecha_desde = now()->startOfMonth()->format('Y-m-d');
         $this->fecha_hasta = now()->endOfMonth()->format('Y-m-d');
     }
@@ -46,7 +101,8 @@ class BalanceComprobacion extends Component
             'desde' => $this->fecha_desde,
             'hasta' => $this->fecha_hasta,
             'tipo_cuenta' => $this->tipo_cuenta,
-            'mostrar_saldos_cero' => $this->mostrar_saldos_cero
+            'mostrar_saldos_cero' => $this->mostrar_saldos_cero,
+            'iglesia_id' => $this->iglesia_id,
         ]);
     }
 
@@ -56,7 +112,8 @@ class BalanceComprobacion extends Component
             'desde' => $this->fecha_desde,
             'hasta' => $this->fecha_hasta,
             'tipo_cuenta' => $this->tipo_cuenta,
-            'mostrar_saldos_cero' => $this->mostrar_saldos_cero
+            'mostrar_saldos_cero' => $this->mostrar_saldos_cero,
+            'iglesia_id' => $this->iglesia_id,
         ]);
     }
 
@@ -77,6 +134,7 @@ class BalanceComprobacion extends Component
                 // Calcular saldo inicial (antes del período)
                 $saldoInicialQuery = AsientoDetalle::where('cuenta_id', $cuenta->id)
                     ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                        ->when($this->iglesia_id, fn($iq) => $iq->where('iglesia_id', $this->iglesia_id))
                         ->whereDate('fecha', '<', $this->fecha_desde));
 
                 $debeInicial = (float) $saldoInicialQuery->sum('debe');
@@ -86,6 +144,7 @@ class BalanceComprobacion extends Component
                 // Calcular movimientos del período
                 $movimientosQuery = AsientoDetalle::where('cuenta_id', $cuenta->id)
                     ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                        ->when($this->iglesia_id, fn($iq) => $iq->where('iglesia_id', $this->iglesia_id))
                         ->whereBetween('fecha', [$this->fecha_desde, $this->fecha_hasta]));
 
                 $debePeriodo = (float) $movimientosQuery->sum('debe');

@@ -10,7 +10,7 @@ if (!function_exists('getPermissionSectors')) {
                 'description' => 'Configuración del sistema, empresas, usuarios y roles',
                 'color' => 'purple',
                 'icon' => 'ri-settings-3-line',
-                'modules' => ['empresas', 'consultorios', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion', 'zonas', 'estados', 'ciudades', 'municipios', 'parroquias']
+                'modules' => ['empresas', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion', 'zonas', 'estados', 'ciudades', 'municipios', 'parroquias']
             ],
             'monitoreo' => [
                 'name' => '📊 Monitoreo',
@@ -141,7 +141,38 @@ if (!function_exists('getSectorMenuItems')) {
                            
                         ]
                     ],
-                    ]
+                    [
+                        'label' => 'Extensiones',
+                        'icon' => 'ri-hospital-line',
+                        'permissions' => ['access iglesias'],
+                        'active' => 'admin.iglesias.*',
+                        'children' => [
+                            ['label' => 'Listado general', 'permission' => 'access iglesias', 'route' => 'admin.iglesias.index', 'active' => 'admin.iglesias.index'],
+                            ['label' => 'Nuevo registro', 'permission' => 'access iglesias', 'route' => 'admin.iglesias.create', 'active' => 'admin.iglesias.create'],
+                           
+                        ]
+                    ],
+                    [
+                        'label' => 'Inventario',
+                        'icon' => 'ri-archive-line',
+                        'permissions' => ['access inventario iglesias'],
+                        'active' => 'admin.inventario.*',
+                        'children' => [
+                            ['label' => 'Listado general', 'permission' => 'access inventario iglesias', 'route' => 'admin.inventario.index', 'active' => 'admin.inventario.index'],
+                            ['label' => 'Nuevo ítem', 'permission' => 'create inventario iglesias', 'route' => 'admin.inventario.create', 'active' => 'admin.inventario.create'],
+                        ]
+                    ],
+                    [
+                        'label' => 'Finanzas',
+                        'icon' => 'ri-money-dollar-circle-line',
+                        'permissions' => ['access finanzas iglesias'],
+                        'active' => 'admin.finanzas.*',
+                        'children' => [
+                            ['label' => 'Listado general', 'permission' => 'access finanzas iglesias', 'route' => 'admin.finanzas.index', 'active' => 'admin.finanzas.index'],
+                            ['label' => 'Nueva transacción', 'permission' => 'create finanzas iglesias', 'route' => 'admin.finanzas.create', 'active' => 'admin.finanzas.create'],
+                        ]
+                    ],
+                ],
             ],
                'administracion' => [
                 'label' => 'Administración',

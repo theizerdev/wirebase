@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Contabilidad;
 use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use App\Models\AsientoContable;
 use Carbon\Carbon;
 
@@ -17,6 +18,13 @@ class Asientos extends Component
     public $estado = '';
     public $fecha_desde;
     public $fecha_hasta;
+    
+    // Búsqueda de iglesias en tiempo real
+    public $iglesiaSearch = '';
+    public $iglesiasBuscadas = [];
+    public $mostrarResultadosIglesia = false;
+    public $iglesia_id = '';
+    
     public $showDetalles = false;
     public $asientoSeleccionado;
     public $sortField = 'fecha';
@@ -27,6 +35,7 @@ class Asientos extends Component
         'search' => ['except' => ''],
         'tipo' => ['except' => ''],
         'estado' => ['except' => ''],
+        'iglesia_id' => ['except' => ''],
         'sortField' => ['except' => 'fecha'],
         'sortDirection' => ['except' => 'desc'],
     ];
@@ -55,6 +64,56 @@ class Asientos extends Component
         $this->resetPage();
     }
 
+    public function updatingIglesiaId()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedIglesiaSearch($value)
+    {
+        if (strlen($value) >= 2) {
+            $this->iglesiasBuscadas = \App\Models\Iglesia::activas()
+                ->where('empresa_id', auth()->user()->empresa_id)
+                ->where(function($query) use ($value) {
+                    $query->where('nombre', 'like', '%' . $value . '%')
+                          ->orWhere('direccion', 'like', '%' . $value . '%');
+                })
+                ->orderBy('nombre')
+                ->limit(10)
+                ->get();
+            $this->mostrarResultadosIglesia = true;
+        } else {
+            $this->iglesiasBuscadas = [];
+            $this->mostrarResultadosIglesia = false;
+        }
+    }
+
+    public function seleccionarIglesia($iglesiaId)
+    {
+        $iglesia = \App\Models\Iglesia::find($iglesiaId);
+        if ($iglesia) {
+            $this->iglesia_id = $iglesiaId;
+            $this->iglesiaSearch = $iglesia->nombre;
+            $this->mostrarResultadosIglesia = false;
+            $this->resetPage();
+        }
+    }
+
+    public function limpiarBusquedaIglesia()
+    {
+        $this->iglesia_id = '';
+        $this->iglesiaSearch = '';
+        $this->iglesiasBuscadas = [];
+        $this->mostrarResultadosIglesia = false;
+        $this->resetPage();
+    }
+
+    #[On('closeIglesiaDropdown')]
+    public function closeIglesiaDropdown()
+    {
+        $this->mostrarResultadosIglesia = false;
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -67,7 +126,9 @@ class Asientos extends Component
 
     public function resetFilters()
     {
-        $this->reset(['search', 'tipo', 'estado']);
+        $this->reset(['search', 'tipo', 'estado', 'iglesia_id', 'iglesiaSearch']);
+        $this->iglesiasBuscadas = [];
+        $this->mostrarResultadosIglesia = false;
         $this->fecha_desde = now()->startOfMonth()->format('Y-m-d');
         $this->fecha_hasta = now()->endOfMonth()->format('Y-m-d');
         $this->resetPage();
@@ -130,8 +191,9 @@ class Asientos extends Component
 
     public function getAsientosProperty()
     {
-        return AsientoContable::with(['user', 'detalles'])
+        return AsientoContable::with(['user', 'detalles', 'iglesia'])
             ->where('empresa_id', auth()->user()->empresa_id)
+            ->when($this->iglesia_id, fn($q) => $q->where('iglesia_id', $this->iglesia_id))
             ->when($this->search, fn($q) => $q->where('numero', 'like', "%{$this->search}%")
                 ->orWhere('descripcion', 'like', "%{$this->search}%"))
             ->when($this->tipo, fn($q) => $q->where('tipo', $this->tipo))

@@ -16,7 +16,6 @@ class DatabaseSeeder extends Seeder
             // Nuevo sistema de roles y permisos por sectores
             SectorRolesAndPermissionsSeeder::class,
             PaisSeeder::class, // Agregar países antes que empresas
-            VenezuelaGeographicalSeeder::class, // Datos geográficos de Venezuela
             ExchangeRateConfigSeeder::class, // Configuración de tasas de cambio por país
             EmpresaSeeder::class,
             SucursalSeeder::class,
@@ -24,6 +23,11 @@ class DatabaseSeeder extends Seeder
             ZonaSeeder::class,
             ZonasPermissionsSeeder::class,
             UbicacionPermissionsSeeder::class,
+            PlanDeCuentasIglesiaSeeder::class,
+            EstadosSeeder::class,
+            CiudadesSeeder::class,
+            MunicipiosSeeder::class,
+            ParroquiasSeeder::class,
         ]);
     }
 }

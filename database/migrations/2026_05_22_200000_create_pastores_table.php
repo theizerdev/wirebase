@@ -38,17 +38,24 @@ return new class extends Migration
             $table->string('instituto_teologico')->nullable(); // instituto_teologico
             $table->boolean('pertenece_ministerio')->default(false); // pertenece_ministerio
             $table->string('nombre_conyuge')->nullable(); // nombre_conyuge
+             $table->unsignedBigInteger('conyuge_id')->nullable();
             $table->string('edificio_casa_quinta')->nullable(); // edificio_casa_quinta
             $table->string('piso')->nullable(); // piso
             $table->string('apartamento')->nullable(); // apartamento
             $table->string('calle_avenida')->nullable(); // calle_avenida
             $table->string('urbanizacion')->nullable(); // urbanizacion
+            $table->unsignedBigInteger('municipio_id')->nullable();
             $table->string('telefono_hab')->nullable(); // telefono_hab
             $table->string('telefono_tlf')->nullable(); // telefono_tlf
             $table->string('telefono_otro')->nullable(); // telefono_otro
             $table->text('mencion')->nullable(); // mencion
             $table->text('municipio')->nullable(); // municipio
             $table->string('cargo_nacional')->nullable(); // cargo_nacional
+           
+            $table->foreign('conyuge_id')->references('id')->on('pastores')->onDelete('set null');
+             // Luego agregamos el campo municipio_id como clave foránea
+            
+          
 
             // Relaciones
             $table->unsignedBigInteger('user_id')->nullable(); // Relación con usuario del sistema

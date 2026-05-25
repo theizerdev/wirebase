@@ -44,6 +44,41 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'delete pastores',
                     ],
                 ],
+                 'iglesias' => [
+                    'name' => 'Iglesias',
+                    'permissions' => [
+                        'access iglesias',
+                        'create iglesias',
+                        'edit iglesias',
+                        'show iglesias',
+                        'delete iglesias',
+                    ],
+                ],
+                 // Inventario de Iglesias
+                'inventario_iglesias' => [
+                    'name' => 'Inventario de Iglesias',
+                    'permissions' => [
+                        'access inventario iglesias',
+                        'create inventario iglesias',
+                        'edit inventario iglesias',
+                        'show inventario iglesias',
+                        'delete inventario iglesias',
+                    ],
+                ],
+                // Finanzas de Iglesias
+                'finanzas_iglesias' => [
+                    'name' => 'Finanzas de Iglesias',
+                    'permissions' => [
+                        'access finanzas iglesias',
+                        'create finanzas iglesias',
+                        'edit finanzas iglesias',
+                        'show finanzas iglesias',
+                        'delete finanzas iglesias',
+                    ],
+                ],
+          
+
+            
             ],
 
 
@@ -223,6 +258,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                     ]
                 ],
             ],
+           
 
             // 💬 SECTOR CHAT INTERNO
             'chat' => [

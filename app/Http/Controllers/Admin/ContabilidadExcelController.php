@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
 class ContabilidadExcelController extends Controller
 {
@@ -73,15 +74,101 @@ class ContabilidadExcelController extends Controller
         $desde = request('desde', now()->startOfMonth()->format('Y-m-d'));
         $hasta = request('hasta', now()->endOfMonth()->format('Y-m-d'));
         $empresaId = auth()->user()->empresa_id;
+        $iglesiaId = request('iglesia_id');
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Libro Diario');
+        
+        $empresa = Empresa::find($empresaId);
+        $iglesia = $iglesiaId ? \App\Models\Iglesia::find($iglesiaId) : null;
+        $pastor = $iglesia ? $iglesia->pastor : null;
 
-        $row = $this->setupHeader($spreadsheet, 'LIBRO DIARIO', "Desde: {$desde}  Hasta: {$hasta}");
+        // Row 1-3: Logo + Empresa info
+        $row = 1;
+        
+        // Logo (column A)
+        $logoPath = null;
+        if ($empresa && $empresa->logo) {
+            $logoPath = public_path($empresa->logo);
+            if (file_exists($logoPath)) {
+                $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                $drawing->setName('Logo');
+                $drawing->setDescription('Logo de la empresa');
+                $drawing->setPath($logoPath);
+                $drawing->setHeight(60);
+                $drawing->setCoordinates('A1');
+                $drawing->setOffsetX(5);
+                $drawing->setOffsetY(5);
+                $drawing->setWorksheet($sheet);
+                $sheet->getRowDimension(1)->setRowHeight(65);
+            }
+        }
+        
+        // Company name (column B onwards)
+        $startCol = $logoPath ? 'B' : 'A';
+        $endCol = 'H';
+        
+        $sheet->setCellValue($startCol . '1', $empresa->razon_social ?? 'Empresa');
+        $sheet->mergeCells($startCol . '1:' . $endCol . '1');
+        $sheet->getStyle($startCol . '1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle($startCol . '1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        $asientos = AsientoContable::with(['detalles.cuenta', 'user'])
+        $row = 2;
+        if ($empresa->rif_fiscal) {
+            $sheet->setCellValue($startCol . '2', 'RIF: ' . $empresa->rif_fiscal);
+            $sheet->mergeCells($startCol . '2:' . $endCol . '2');
+            $sheet->getStyle($startCol . '2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row = 3;
+        }
+
+        // Iglesia info
+        if ($iglesia) {
+            $sheet->setCellValue($startCol . $row, 'EXTENSIÓN: ' . strtoupper($iglesia->nombre));
+            $sheet->mergeCells($startCol . $row . ':' . $endCol . $row);
+            $sheet->getStyle($startCol . $row)->getFont()->setBold(true)->setSize(11);
+            $sheet->getStyle($startCol . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row++;
+            
+            if ($iglesia->direccion) {
+                $sheet->setCellValue($startCol . $row, 'Dirección: ' . $iglesia->direccion);
+                $sheet->mergeCells($startCol . $row . ':' . $endCol . $row);
+                $sheet->getStyle($startCol . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+            
+            if ($pastor) {
+                $pastorInfo = 'Pastor: ' . ($pastor->nombres ?? '') . ' ' . ($pastor->apellidos ?? '');
+                if ($pastor->telefono_tlf) {
+                    $pastorInfo .= ' | Tel: ' . $pastor->telefono_tlf;
+                }
+                $sheet->setCellValue($startCol . $row, $pastorInfo);
+                $sheet->mergeCells($startCol . $row . ':' . $endCol . $row);
+                $sheet->getStyle($startCol . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+            
+            $row++; // Extra spacing
+        }
+
+        // Title
+        $sheet->setCellValue($startCol . $row, 'LIBRO DIARIO');
+        $sheet->mergeCells($startCol . $row . ':' . $endCol . $row);
+        $sheet->getStyle($startCol . $row)->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle($startCol . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $row++;
+
+        // Period
+        $sheet->setCellValue($startCol . $row, "Desde: {$desde}  Hasta: {$hasta}");
+        $sheet->mergeCells($startCol . $row . ':' . $endCol . $row);
+        $sheet->getStyle($startCol . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $row++;
+        
+        $row++; // Extra spacing
+
+        $asientos = AsientoContable::with(['detalles.cuenta', 'user', 'iglesia'])
             ->where('empresa_id', $empresaId)
+            ->when($iglesiaId, fn($q) => $q->where('iglesia_id', $iglesiaId))
             ->where('estado', 'aprobado')
             ->whereBetween('fecha', [$desde, $hasta])
             ->orderBy('fecha')
@@ -170,7 +257,11 @@ class ContabilidadExcelController extends Controller
         $sheet->getColumnDimension('F')->setWidth(16);
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'libro_diario_' . str_replace('-', '', $desde) . '_' . str_replace('-', '', $hasta) . '.xlsx';
+        $filename = 'libro_diario';
+        if ($iglesia) {
+            $filename .= '_' . strtolower(str_replace(' ', '_', preg_replace('/[^\p{L}\p{N}\s]/u', '', $iglesia->nombre)));
+        }
+        $filename .= '_' . str_replace('-', '', $desde) . '_' . str_replace('-', '', $hasta) . '.xlsx';
 
         return response()->streamDownload(function() use ($writer) {
             $writer->save('php://output');
@@ -185,18 +276,126 @@ class ContabilidadExcelController extends Controller
         $cuentaId = request('cuenta_id');
         $desde = request('desde', now()->startOfMonth()->format('Y-m-d'));
         $hasta = request('hasta', now()->endOfMonth()->format('Y-m-d'));
+        $empresaId = auth()->user()->empresa_id;
+        $iglesiaId = request('iglesia_id');
 
         if (!$cuentaId) {
             abort(400, 'Debe seleccionar una cuenta');
         }
 
         $cuenta = CuentaContable::findOrFail($cuentaId);
+        $empresa = Empresa::find($empresaId);
+        $iglesia = $iglesiaId ? \App\Models\Iglesia::find($iglesiaId) : null;
+        $pastor = $iglesia ? $iglesia->pastor : null;
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Libro Mayor');
-
-        $row = $this->setupHeader($spreadsheet, 'LIBRO MAYOR', "Cuenta: {$cuenta->codigo} - {$cuenta->nombre}  |  Desde: {$desde}  Hasta: {$hasta}");
+        
+        // Row 1-3: Logo + Empresa info
+        $row = 1;
+        
+        // Logo (column A)
+        $logoPath = null;
+        if ($empresa && $empresa->logo) {
+            $logoPath = storage_path('app/public/' . $empresa->logo);
+            if (!file_exists($logoPath)) {
+                $logoPath = null;
+            }
+        }
+        
+        if ($logoPath) {
+            $drawing = new Drawing();
+            $drawing->setName('Logo');
+            $drawing->setDescription('Logo de la empresa');
+            $drawing->setPath($logoPath);
+            $drawing->setHeight(60);
+            $drawing->setCoordinates('A1');
+            $drawing->setOffsetX(5);
+            $drawing->setOffsetY(5);
+            $drawing->setWorksheet($sheet);
+            
+            // Company name next to logo
+            $sheet->setCellValue('B' . $row, strtoupper($empresa->nombre ?? ''));
+            $sheet->getStyle('B' . $row)->getFont()->setBold(true)->setSize(14);
+            $sheet->mergeCells('B' . $row . ':F' . $row);
+            $row++;
+            
+            // RIF
+            if ($empresa->rif) {
+                $sheet->setCellValue('B' . $row, 'RIF: ' . $empresa->rif);
+                $sheet->mergeCells('B' . $row . ':F' . $row);
+                $row++;
+            }
+        } else {
+            // No logo - just text
+            $sheet->setCellValue('A' . $row, strtoupper($empresa->nombre ?? ''));
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14);
+            $sheet->mergeCells('A' . $row . ':F' . $row);
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row++;
+            
+            // RIF
+            if ($empresa->rif) {
+                $sheet->setCellValue('A' . $row, 'RIF: ' . $empresa->rif);
+                $sheet->mergeCells('A' . $row . ':F' . $row);
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+        }
+        
+        // Church/Extension info
+        if ($iglesia) {
+            $sheet->setCellValue('A' . $row, 'EXTENSIÓN: ' . strtoupper($iglesia->nombre));
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(12);
+            $sheet->mergeCells('A' . $row . ':F' . $row);
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row++;
+            
+            // Address
+            if ($iglesia->direccion) {
+                $sheet->setCellValue('A' . $row, $iglesia->direccion);
+                $sheet->mergeCells('A' . $row . ':F' . $row);
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+            
+            // Pastor info
+            if ($pastor) {
+                $pastorInfo = 'Pastor: ' . ($pastor->nombres ?? '') . ' ' . ($pastor->apellidos ?? '');
+                if ($pastor->telefono_tlf) {
+                    $pastorInfo .= ' | Tel: ' . $pastor->telefono_tlf;
+                }
+                $sheet->setCellValue('A' . $row, $pastorInfo);
+                $sheet->mergeCells('A' . $row . ':F' . $row);
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+        }
+        
+        // Empty row for spacing
+        $row++;
+        
+        // Report title
+        $sheet->setCellValue('A' . $row, 'LIBRO MAYOR');
+        $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(16);
+        $sheet->mergeCells('A' . $row . ':F' . $row);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $row++;
+        
+        // Account and period info
+        $infoText = "Cuenta: {$cuenta->codigo} - {$cuenta->nombre}  |  Desde: {$desde}  Hasta: {$hasta}";
+        if ($iglesia) {
+            $infoText .= "  |  Extensión: {$iglesia->nombre}";
+        }
+        $sheet->setCellValue('A' . $row, $infoText);
+        $sheet->mergeCells('A' . $row . ':F' . $row);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A' . $row)->getFont()->setItalic(true);
+        $row++;
+        
+        // Empty row before table
+        $row++;
 
         // Saldo anterior
         $queryAnterior = AsientoDetalle::where('cuenta_id', $cuentaId)
@@ -229,6 +428,7 @@ class ContabilidadExcelController extends Controller
         // Movimientos
         $movimientos = AsientoDetalle::where('cuenta_id', $cuentaId)
             ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                ->when($iglesiaId, fn($iq) => $iq->where('iglesia_id', $iglesiaId))
                 ->whereBetween('fecha', [$desde, $hasta]))
             ->with('asiento')
             ->get()
@@ -295,12 +495,120 @@ class ContabilidadExcelController extends Controller
         $desde = request('desde', now()->startOfMonth()->format('Y-m-d'));
         $hasta = request('hasta', now()->endOfMonth()->format('Y-m-d'));
         $empresaId = auth()->user()->empresa_id;
+        $iglesiaId = request('iglesia_id');
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Balance Comprobación');
+        
+        $empresa = Empresa::find($empresaId);
+        $iglesia = $iglesiaId ? \App\Models\Iglesia::find($iglesiaId) : null;
+        $pastor = $iglesia ? $iglesia->pastor : null;
 
-        $row = $this->setupHeader($spreadsheet, 'BALANCE DE COMPROBACIÓN', "Desde: {$desde}  Hasta: {$hasta}");
+        // Row 1-3: Logo + Empresa info
+        $row = 1;
+        
+        // Logo (column A)
+        $logoPath = null;
+        if ($empresa && $empresa->logo) {
+            $logoPath = storage_path('app/public/' . $empresa->logo);
+            if (!file_exists($logoPath)) {
+                $logoPath = null;
+            }
+        }
+        
+        if ($logoPath) {
+            $drawing = new Drawing();
+            $drawing->setName('Logo');
+            $drawing->setDescription('Logo de la empresa');
+            $drawing->setPath($logoPath);
+            $drawing->setHeight(60);
+            $drawing->setCoordinates('A1');
+            $drawing->setOffsetX(5);
+            $drawing->setOffsetY(5);
+            $drawing->setWorksheet($sheet);
+            
+            // Company name next to logo
+            $sheet->setCellValue('B' . $row, strtoupper($empresa->nombre ?? ''));
+            $sheet->getStyle('B' . $row)->getFont()->setBold(true)->setSize(14);
+            $sheet->mergeCells('B' . $row . ':F' . $row);
+            $row++;
+            
+            // RIF
+            if ($empresa->rif) {
+                $sheet->setCellValue('B' . $row, 'RIF: ' . $empresa->rif);
+                $sheet->mergeCells('B' . $row . ':F' . $row);
+                $row++;
+            }
+        } else {
+            // No logo - just text
+            $sheet->setCellValue('A' . $row, strtoupper($empresa->nombre ?? ''));
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14);
+            $sheet->mergeCells('A' . $row . ':F' . $row);
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row++;
+            
+            // RIF
+            if ($empresa->rif) {
+                $sheet->setCellValue('A' . $row, 'RIF: ' . $empresa->rif);
+                $sheet->mergeCells('A' . $row . ':F' . $row);
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+        }
+        
+        // Church/Extension info
+        if ($iglesia) {
+            $sheet->setCellValue('A' . $row, 'EXTENSIÓN: ' . strtoupper($iglesia->nombre));
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(12);
+            $sheet->mergeCells('A' . $row . ':F' . $row);
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row++;
+            
+            // Address
+            if ($iglesia->direccion) {
+                $sheet->setCellValue('A' . $row, $iglesia->direccion);
+                $sheet->mergeCells('A' . $row . ':F' . $row);
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+            
+            // Pastor info
+            if ($pastor) {
+                $pastorInfo = 'Pastor: ' . ($pastor->nombres ?? '') . ' ' . ($pastor->apellidos ?? '');
+                if ($pastor->telefono_tlf) {
+                    $pastorInfo .= ' | Tel: ' . $pastor->telefono_tlf;
+                }
+                $sheet->setCellValue('A' . $row, $pastorInfo);
+                $sheet->mergeCells('A' . $row . ':F' . $row);
+                $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $row++;
+            }
+        }
+        
+        // Empty row for spacing
+        $row++;
+        
+        // Report title
+        $sheet->setCellValue('A' . $row, 'BALANCE DE COMPROBACIÓN');
+        $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(16);
+        $sheet->mergeCells('A' . $row . ':F' . $row);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $row++;
+        
+        // Period and church info
+        $infoText = "Desde: {$desde}  Hasta: {$hasta}";
+        if ($iglesia) {
+            $infoText .= "  |  Extensión: {$iglesia->nombre}";
+        }
+        $sheet->setCellValue('A' . $row, $infoText);
+        $sheet->mergeCells('A' . $row . ':F' . $row);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A' . $row)->getFont()->setItalic(true);
+        $row++;
+        
+        // Empty row before table
+        $row++;
 
         // Headers
         $sheet->setCellValue('A' . $row, 'Código');
@@ -314,6 +622,7 @@ class ContabilidadExcelController extends Controller
 
         $cuentas = CuentaContable::where('empresa_id', $empresaId)
             ->where('acepta_movimientos', true)->where('activo', true)
+            ->when($iglesiaId, fn($q) => $q->whereHas('asientosDetalles.asiento', fn($aq) => $aq->where('iglesia_id', $iglesiaId)))
             ->orderBy('codigo')->get();
 
         $totDebe = $totHaber = $totSD = $totSA = 0;
@@ -321,6 +630,7 @@ class ContabilidadExcelController extends Controller
         foreach ($cuentas as $cuenta) {
             $detalles = AsientoDetalle::where('cuenta_id', $cuenta->id)
                 ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                    ->when($iglesiaId, fn($iq) => $iq->where('iglesia_id', $iglesiaId))
                     ->whereBetween('fecha', [$desde, $hasta]));
             $debe = (float) $detalles->sum('debe');
             $haber = (float) (clone $detalles)->sum('haber');

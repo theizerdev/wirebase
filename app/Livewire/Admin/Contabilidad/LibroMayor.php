@@ -20,11 +20,18 @@ class LibroMayor extends Component
     public $search = '';
     public $mostrar_saldos_cero = false;
     public $perPage = 50;
+    
+    // Properties for church search
+    public $iglesiaSearch = '';
+    public $iglesiasBuscadas = [];
+    public $mostrarResultadosIglesia = false;
+    public $iglesia_id = '';
 
     protected $queryString = [
         'cuenta_id' => ['except' => null],
         'tipo_cuenta' => ['except' => ''],
         'search' => ['except' => ''],
+        'iglesia_id' => ['except' => ''],
     ];
 
     protected $paginationTheme = 'bootstrap';
@@ -41,6 +48,56 @@ class LibroMayor extends Component
         $this->resetPage();
     }
 
+    public function updatingIglesiaId()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedIglesiaSearch($value)
+    {
+        if (strlen($value) >= 2) {
+            $this->iglesiasBuscadas = \App\Models\Iglesia::activas()
+                ->where('empresa_id', auth()->user()->empresa_id)
+                ->where(function($query) use ($value) {
+                    $query->where('nombre', 'like', '%' . $value . '%')
+                          ->orWhere('direccion', 'like', '%' . $value . '%');
+                })
+                ->orderBy('nombre')
+                ->limit(10)
+                ->get();
+            $this->mostrarResultadosIglesia = true;
+        } else {
+            $this->iglesiasBuscadas = [];
+            $this->mostrarResultadosIglesia = false;
+        }
+    }
+
+    public function seleccionarIglesia($iglesiaId)
+    {
+        $iglesia = \App\Models\Iglesia::find($iglesiaId);
+        if ($iglesia) {
+            $this->iglesia_id = $iglesiaId;
+            $this->iglesiaSearch = $iglesia->nombre;
+            $this->mostrarResultadosIglesia = false;
+            $this->resetPage();
+        }
+    }
+
+    public function limpiarBusquedaIglesia()
+    {
+        $this->iglesia_id = '';
+        $this->iglesiaSearch = '';
+        $this->iglesiasBuscadas = [];
+        $this->mostrarResultadosIglesia = false;
+        $this->resetPage();
+    }
+
+    #[\Livewire\Attributes\On('closeIglesiaDropdown')]
+    public function closeIglesiaDropdown()
+    {
+        $this->mostrarResultadosIglesia = false;
+    }
+
     public function updatingTipoCuenta()
     {
         $this->resetPage();
@@ -49,7 +106,7 @@ class LibroMayor extends Component
 
     public function resetFilters()
     {
-        $this->reset(['cuenta_id', 'tipo_cuenta', 'search', 'mostrar_saldos_cero']);
+        $this->reset(['cuenta_id', 'tipo_cuenta', 'search', 'mostrar_saldos_cero', 'iglesia_id', 'iglesiaSearch']);
         $this->fecha_desde = now()->startOfMonth()->format('Y-m-d');
         $this->fecha_hasta = now()->endOfMonth()->format('Y-m-d');
         $this->resetPage();
@@ -66,6 +123,7 @@ class LibroMayor extends Component
         return CuentaContable::where('empresa_id', auth()->user()->empresa_id)
             ->where('acepta_movimientos', true)
             ->where('activo', true)
+            ->when($this->iglesia_id, fn($q) => $q->whereHas('asientosDetalles.asiento', fn($aq) => $aq->where('iglesia_id', $this->iglesia_id)))
             ->when($this->tipo_cuenta, fn($q) => $q->where('tipo', $this->tipo_cuenta))
             ->when($this->search, fn($q) => $q->where('codigo', 'like', "%{$this->search}%")
                 ->orWhere('nombre', 'like', "%{$this->search}%"))
@@ -95,6 +153,7 @@ class LibroMayor extends Component
 
         return AsientoDetalle::where('cuenta_id', $this->cuenta_id)
             ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                ->when($this->iglesia_id, fn($iq) => $iq->where('iglesia_id', $this->iglesia_id))
                 ->whereBetween('fecha', [$this->fecha_desde, $this->fecha_hasta]))
             ->with(['asiento'])
             ->get()
@@ -132,6 +191,7 @@ class LibroMayor extends Component
 
         $queryInicial = AsientoDetalle::where('cuenta_id', $this->cuenta_id)
             ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                ->when($this->iglesia_id, fn($iq) => $iq->where('iglesia_id', $this->iglesia_id))
                 ->whereDate('fecha', '<', $this->fecha_desde));
         
         $debe = (float) $queryInicial->sum('debe');
@@ -192,11 +252,13 @@ class LibroMayor extends Component
     private function calcularSaldoCuenta($cuenta)
     {
         $debe = AsientoDetalle::where('cuenta_id', $cuenta->id)
-            ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado'))
+            ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                ->when($this->iglesia_id, fn($iq) => $iq->where('iglesia_id', $this->iglesia_id)))
             ->sum('debe');
         
         $haber = AsientoDetalle::where('cuenta_id', $cuenta->id)
-            ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado'))
+            ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                ->when($this->iglesia_id, fn($iq) => $iq->where('iglesia_id', $this->iglesia_id)))
             ->sum('haber');
 
         return $cuenta->naturaleza === 'deudora' ? ($debe - $haber) : ($haber - $debe);

@@ -55,3 +55,6 @@ require_once __DIR__ . '/admin/contabilidad.php';
 require_once __DIR__ . '/admin/seniat.php';
 require_once __DIR__ . '/admin/template.php';
 require_once __DIR__ . '/admin/pastores.php';
+require_once __DIR__ . '/admin/iglesias.php';
+require_once __DIR__ . '/admin/inventario.php';
+require_once __DIR__ . '/admin/finanzas.php';

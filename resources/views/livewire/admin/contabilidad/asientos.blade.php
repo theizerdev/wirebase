@@ -29,75 +29,157 @@
             </ol>
         </nav>
 
-        {{-- Hero --}}
-        <div class="as-hero mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <h2 class="fw-semibold"><i class="ri ri-file-list-3-line me-2"></i>Asientos Contables</h2>
-                <p class="mt-1">Gestión de asientos contables</p>
+        {{-- Solo buscador de iglesia (siempre visible) --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6">
+                        <div class="text-center mb-3">
+                            <div class="mb-2">
+                                <i class="ri ri-hospital-line text-primary" style="font-size: 2.5rem;"></i>
+                            </div>
+                            <h5 class="fw-bold mb-1">Seleccione una Extension</h5>
+                            <p class="text-muted mb-0 small">Busque y seleccione la extension para ver sus asientos contables</p>
+                        </div>
+                        
+                        <div class="position-relative">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="ri ri-search-line text-muted"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-start-0 ps-0" 
+                                       wire:model.live.debounce.300ms="iglesiaSearch"
+                                       placeholder="Escriba el nombre o dirección de la iglesia..."
+                                       autocomplete="off"
+                                       style="border-left: none;">
+                                
+                                @if($iglesia_id)
+                                    <button type="button" 
+                                            class="btn btn-outline-danger"
+                                            wire:click="limpiarBusquedaIglesia"
+                                            title="Limpiar búsqueda">
+                                        <i class="ri ri-close-line"></i>
+                                    </button>
+                                @endif
+                            </div>
+                            
+                            @if($mostrarResultadosIglesia && count($iglesiasBuscadas) > 0)
+                                <div class="list-group position-absolute w-100 mt-2 shadow-lg border" 
+                                     style="z-index: 1050; max-height: 300px; overflow-y: auto; background-color: #ffffff; border-radius: 0.5rem;">
+                                    @foreach($iglesiasBuscadas as $iglesia)
+                                        <button type="button" 
+                                                class="list-group-item list-group-item-action py-3"
+                                                wire:click="seleccionarIglesia({{ $iglesia->id }})">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <strong class="fs-6">{{ $iglesia->nombre }}</strong>
+                                                    @if($iglesia->direccion)
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            <i class="ri ri-map-pin-line"></i> {{ $iglesia->direccion }}
+                                                        </small>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
+                            
+                            @if($iglesia_id)
+                                @php
+                                    $iglesiaSeleccionada = \App\Models\Iglesia::find($iglesia_id);
+                                @endphp
+                                <div class="mt-3">
+                                    <div class="alert alert-success d-flex align-items-center py-3 px-4 mb-0" role="alert">
+                                        <i class="ri ri-checkbox-circle-fill me-2 fs-5"></i>
+                                        <div>
+                                            <strong>Iglesia seleccionada:</strong> {{ $iglesiaSeleccionada?->nombre ?? 'Iglesia' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        {{-- KPIs --}}
+        {{-- Contenido solo visible cuando hay iglesia seleccionada --}}
+        @if($iglesia_id)
+
+        {{-- KPIs / Estadísticas --}}
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-xl-3">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="ri ri-file-list-3-line"></i></div>
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="ri ri-file-list-3-line"></i>
+                    </div>
                     <div>
-                        <div class="stat-label">Total asientos</div>
                         <div class="stat-value">{{ $stats['total'] }}</div>
+                        <div class="stat-label">Total Asientos</div>
                     </div>
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="ri ri-check-line"></i></div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="ri ri-checkbox-circle-line"></i>
+                    </div>
                     <div>
-                        <div class="stat-label">Aprobados</div>
                         <div class="stat-value">{{ $stats['aprobados'] }}</div>
+                        <div class="stat-label">Aprobados</div>
                     </div>
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#fef3c7;color:#d97706;"><i class="ri ri-draft-line"></i></div>
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="ri ri-draft-line"></i>
+                    </div>
                     <div>
-                        <div class="stat-label">Borradores</div>
                         <div class="stat-value">{{ $stats['borradores'] }}</div>
+                        <div class="stat-label">Borradores</div>
                     </div>
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background:#fee2e2;color:#ef4444;"><i class="ri ri-close-circle-line"></i></div>
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="ri ri-close-circle-line"></i>
+                    </div>
                     <div>
-                        <div class="stat-label">Anulados</div>
                         <div class="stat-value">{{ $stats['anulados'] }}</div>
+                        <div class="stat-label">Anulados</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Filtros compactos --}}
+        {{-- Filtros --}}
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
-                <div class="row g-3 align-items-end">
+                <div class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label small fw-semibold"><i class="ri ri-search-line me-1"></i>Buscar</label>
-                        <input type="text" class="form-control form-control-sm" wire:model.live.debounce.300ms="search" placeholder="Número o descripción...">
+                        <label class="form-label small fw-semibold">Buscar</label>
+                        <input type="text" 
+                               class="form-control" 
+                               wire:model.live.debounce.300ms="search"
+                               placeholder="Número o descripción...">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Tipo</label>
-                        <select class="form-select form-select-sm" wire:model.live="tipo">
+                        <select class="form-select" wire:model.live="tipo">
                             <option value="">Todos</option>
-                            <option value="apertura">Apertura</option>
                             <option value="diario">Diario</option>
-                            <option value="ajuste">Ajuste</option>
+                            <option value="apertura">Apertura</option>
                             <option value="cierre">Cierre</option>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Estado</label>
-                        <select class="form-select form-select-sm" wire:model.live="estado">
+                        <select class="form-select" wire:model.live="estado">
                             <option value="">Todos</option>
                             <option value="borrador">Borrador</option>
                             <option value="aprobado">Aprobado</option>
@@ -106,14 +188,21 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Desde</label>
-                        <input type="date" class="form-control form-select-sm" wire:model.live="fecha_desde">
+                        <input type="date" 
+                               class="form-control" 
+                               wire:model.live="fecha_desde">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Hasta</label>
-                        <input type="date" class="form-control form-select-sm" wire:model.live="fecha_hasta">
+                        <input type="date" 
+                               class="form-control" 
+                               wire:model.live="fecha_hasta">
                     </div>
-                    <div class="col-md-1">
-                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" wire:click="resetFilters" title="Limpiar filtros">
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" 
+                                class="btn btn-outline-secondary w-100"
+                                wire:click="resetFilters"
+                                title="Limpiar filtros">
                             <i class="ri ri-refresh-line"></i>
                         </button>
                     </div>
@@ -141,6 +230,7 @@
                                         @endif
                                     </a>
                                 </th>
+                                <th class="fw-semibold">Iglesia</th>
                                 <th class="fw-semibold">
                                     <a wire:click.prevent="sortBy('fecha')" href="#" class="text-decoration-none text-white">
                                         Fecha
@@ -178,8 +268,15 @@
                                         default    => 'bg-label-warning',
                                     };
                                 @endphp
-                                <tr class="asiento-row">
+                                <tr>
                                     <td class="fw-semibold">{{ $asiento->numero }}</td>
+                                    <td>
+                                        @if($asiento->iglesia)
+                                            <small class="text-muted"><i class="ri ri-church-line me-1"></i>{{ Str::limit($asiento->iglesia->nombre, 25) }}</small>
+                                        @else
+                                            <small class="text-muted">—</small>
+                                        @endif
+                                    </td>
                                     <td><small>{{ $asiento->fecha->format('d/m/Y') }}</small></td>
                                     <td><span class="badge {{ $tipoBadge }}">{{ ucfirst($asiento->tipo) }}</span></td>
                                     <td>{{ Str::limit($asiento->descripcion, 50) }}</td>
@@ -220,9 +317,8 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">
-                                        <i class="ri ri-search-line" style="font-size:1.5rem;opacity:.3;"></i>
-                                        <p class="mb-0 mt-1 small">No se encontraron asientos</p>
+                                    <td colspan="9" class="text-center py-4">
+                                        <p class="text-muted mb-0">No se encontraron asientos contables para esta iglesia</p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -234,6 +330,61 @@
                 </div>
             </div>
         </div>
+
+        @else
+            {{-- Mensaje cuando no hay iglesia seleccionada --}}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light" style="width: 100px; height: 100px;">
+                            <i class="ri ri-hospital-line text-muted" style="font-size: 3.5rem; opacity: 0.4;"></i>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold mb-2">Seleccione una iglesia para comenzar</h5>
+                    <p class="text-muted mb-4">Use el buscador de arriba para encontrar y seleccionar la iglesia que desea consultar</p>
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="row g-3 text-start">
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3" style="flex: 0 0 auto;">
+                                            <i class="ri ri-search-line text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-semibold mb-1 small">1. Busque</h6>
+                                            <small class="text-muted">Escriba el nombre de la iglesia</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3" style="flex: 0 0 auto;">
+                                            <i class="ri ri-check-line text-success"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-semibold mb-1 small">2. Seleccione</h6>
+                                            <small class="text-muted">Haga clic en la iglesia</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3" style="flex: 0 0 auto;">
+                                            <i class="ri ri-bar-chart-line text-info"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-semibold mb-1 small">3. Consulte</h6>
+                                            <small class="text-muted">Vea estadísticas y asientos</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
     </div>
 
     {{-- Modal Detalles --}}
@@ -270,6 +421,9 @@
                         <div class="col-md-4"><i class="ri ri-calendar-line me-1 text-muted"></i><strong>Fecha:</strong> {{ $asientoSeleccionado->fecha->format('d/m/Y') }}</div>
                         <div class="col-md-4"><i class="ri ri-user-line me-1 text-muted"></i><strong>Usuario:</strong> {{ $asientoSeleccionado->user->name }}</div>
                         <div class="col-md-4"><i class="ri ri-bookmark-line me-1 text-muted"></i><strong>Descripción:</strong> {{ $asientoSeleccionado->descripcion }}</div>
+                        @if($asientoSeleccionado->iglesia)
+                        <div class="col-md-6"><i class="ri ri-church-line me-1 text-muted"></i><strong>Iglesia:</strong> {{ $asientoSeleccionado->iglesia->nombre }}</div>
+                        @endif
                     </div>
 
                     <div class="table-responsive">
@@ -329,6 +483,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
     @endif
 </div>

@@ -18,11 +18,18 @@ class BalanceGeneral extends Component
     public $agrupar_por_categoria = true;
     public $comparativo = false;
     public $fecha_comparativa;
+    
+    // Church search properties
+    public $iglesiaSearch = '';
+    public $iglesiasBuscadas = [];
+    public $mostrarResultadosIglesia = false;
+    public $iglesia_id = '';
 
     protected $queryString = [
         'mostrar_cuentas_cero' => ['except' => false],
         'agrupar_por_categoria' => ['except' => true],
         'comparativo' => ['except' => false],
+        'iglesia_id' => ['except' => ''],
     ];
 
     public function mount()
@@ -32,17 +39,69 @@ class BalanceGeneral extends Component
         $this->fecha_comparativa = now()->subYear()->format('Y-m-d');
     }
 
+    public function updatingIglesiaId($value)
+    {
+        if ($value === '') {
+            $this->reset(['iglesiaSearch', 'iglesiasBuscadas', 'mostrarResultadosIglesia']);
+        }
+    }
+
+    public function updatedIglesiaSearch($value)
+    {
+        if (strlen($value) >= 2) {
+            $this->iglesiasBuscadas = \App\Models\Iglesia::activas()
+                ->where('empresa_id', auth()->user()->empresa_id)
+                ->where(function($query) use ($value) {
+                    $query->where('nombre', 'like', '%' . $value . '%')
+                          ->orWhere('direccion', 'like', '%' . $value . '%');
+                })
+                ->orderBy('nombre')
+                ->limit(10)
+                ->get();
+            $this->mostrarResultadosIglesia = true;
+        } else {
+            $this->iglesiasBuscadas = [];
+            $this->mostrarResultadosIglesia = false;
+        }
+    }
+
+    public function seleccionarIglesia($iglesiaId)
+    {
+        $iglesia = \App\Models\Iglesia::find($iglesiaId);
+        if ($iglesia) {
+            $this->iglesia_id = $iglesiaId;
+            $this->iglesiaSearch = $iglesia->nombre;
+            $this->mostrarResultadosIglesia = false;
+        }
+    }
+
+    public function limpiarBusquedaIglesia()
+    {
+        $this->iglesia_id = '';
+        $this->iglesiaSearch = '';
+        $this->iglesiasBuscadas = [];
+        $this->mostrarResultadosIglesia = false;
+    }
+
+    #[\Livewire\Attributes\On('closeIglesiaDropdown')]
+    public function closeIglesiaDropdown()
+    {
+        $this->mostrarResultadosIglesia = false;
+    }
+
     public function resetFilters()
     {
         $this->reset(['mostrar_cuentas_cero', 'agrupar_por_categoria', 'comparativo']);
         $this->fecha_corte = now()->format('Y-m-d');
         $this->fecha_comparativa = now()->subYear()->format('Y-m-d');
+        $this->limpiarBusquedaIglesia();
     }
 
     private function getSaldoCuenta($cuenta, $fechaCorte)
     {
         $query = AsientoDetalle::where('cuenta_id', $cuenta->id)
             ->whereHas('asiento', fn($q) => $q->where('estado', 'aprobado')
+                ->when($this->iglesia_id, fn($iq) => $iq->where('iglesia_id', $this->iglesia_id))
                 ->whereDate('fecha', '<=', $fechaCorte));
         
         $debe = (float) $query->sum('debe');

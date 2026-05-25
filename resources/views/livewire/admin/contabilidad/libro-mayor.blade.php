@@ -44,27 +44,98 @@
             </ol>
         </nav>
 
-        {{-- Hero + acciones --}}
-        <div class="lm-hero mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <h2 class="fw-semibold"><i class="ri ri-book-open-line me-2"></i>Libro Mayor</h2>
-                <p class="mt-1">Movimientos detallados por cuenta contable</p>
+        {{-- Church search (always visible) --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 col-lg-6">
+                        <div class="text-center mb-3">
+                            <i class="ri ri-hospital-line text-primary" style="font-size: 2.5rem;"></i>
+                            <h5 class="fw-bold mb-1">Seleccione una Extension</h5>
+                            <p class="text-muted mb-0 small">Busque y seleccione la extension para ver el libro mayor</p>
+                        </div>
+                        
+                        <div class="position-relative">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="ri ri-search-line text-muted"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-start-0 ps-0" 
+                                       wire:model.live.debounce.300ms="iglesiaSearch"
+                                       placeholder="Escriba el nombre o dirección de la extension..."
+                                       autocomplete="off"
+                                       @click.away="$dispatch('closeIglesiaDropdown')">
+                                
+                                @if($iglesia_id)
+                                    <button type="button" 
+                                            class="btn btn-outline-danger"
+                                            wire:click="limpiarBusquedaIglesia"
+                                            title="Limpiar busqueda">
+                                        <i class="ri ri-close-line"></i>
+                                    </button>
+                                @endif
+                            </div>
+                            
+                            {{-- Results dropdown --}}
+                            @if($mostrarResultadosIglesia && count($iglesiasBuscadas) > 0)
+                                <div class="list-group position-absolute w-100 mt-2 shadow-lg border" 
+                                     style="z-index: 1050; max-height: 300px; overflow-y: auto; background-color: #ffffff;">
+                                    @foreach($iglesiasBuscadas as $iglesia)
+                                        <button type="button" 
+                                                class="list-group-item list-group-item-action py-3"
+                                                wire:click="seleccionarIglesia({{ $iglesia->id }})">
+                                            <strong>{{ $iglesia->nombre }}</strong>
+                                            @if($iglesia->direccion)
+                                                <br><small class="text-muted">
+                                                    <i class="ri ri-map-pin-line"></i> {{ $iglesia->direccion }}
+                                                </small>
+                                            @endif
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                        
+                        {{-- Selected church alert --}}
+                        @if($iglesia_id)
+                            @php
+                                $iglesiaSeleccionada = \App\Models\Iglesia::find($iglesia_id);
+                            @endphp
+                            <div class="mt-3">
+                                <div class="alert alert-success d-flex align-items-center py-3 px-4 mb-0">
+                                    <i class="ri ri-checkbox-circle-fill me-2 fs-5"></i>
+                                    <div>
+                                        <strong>Extension seleccionada:</strong> {{ $iglesiaSeleccionada?->nombre ?? 'Extension' }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
-            @if($cuentaSeleccionada)
-            <div class="d-flex gap-2">
-                <a href="{{ route('admin.contabilidad.libro-mayor.excel', ['cuenta_id' => $cuenta_id, 'desde' => $fecha_desde, 'hasta' => $fecha_hasta]) }}"
-                   class="btn btn-light btn-sm">
-                    <i class="ri ri-file-excel-line me-1 text-success"></i>Excel
-                </a>
-                <a href="{{ route('admin.contabilidad.libro-mayor.pdf', ['cuenta_id' => $cuenta_id, 'desde' => $fecha_desde, 'hasta' => $fecha_hasta]) }}"
-                   target="_blank" class="btn btn-light btn-sm">
-                    <i class="ri ri-file-pdf-line me-1 text-danger"></i>PDF
-                </a>
-            </div>
-            @endif
         </div>
 
-        {{-- KPIs --}}
+        {{-- Content only visible when church selected --}}
+        @if($iglesia_id)
+            <div class="lm-hero mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h2 class="fw-semibold"><i class="ri ri-book-open-line me-2"></i>Libro Mayor</h2>
+                    <p class="mt-1">Movimientos detallados por cuenta contable</p>
+                </div>
+                @if($cuentaSeleccionada)
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.contabilidad.libro-mayor.excel', ['cuenta_id' => $cuenta_id, 'desde' => $fecha_desde, 'hasta' => $fecha_hasta, 'iglesia_id' => $iglesia_id]) }}"
+                       class="btn btn-light btn-sm">
+                        <i class="ri ri-file-excel-line me-1 text-success"></i>Excel
+                    </a>
+                    <a href="{{ route('admin.contabilidad.libro-mayor.pdf', ['cuenta_id' => $cuenta_id, 'desde' => $fecha_desde, 'hasta' => $fecha_hasta, 'iglesia_id' => $iglesia_id]) }}"
+                       target="_blank" class="btn btn-light btn-sm">
+                        <i class="ri ri-file-pdf-line me-1 text-danger"></i>PDF
+                    </a>
+                </div>
+                @endif
+            </div>
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <div class="stat-card">
@@ -353,5 +424,60 @@
                 </div>
             </div>
         </div>
+    @else
+        {{-- Empty state with 3-step guide --}}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light" 
+                         style="width: 100px; height: 100px;">
+                        <i class="ri ri-hospital-line text-muted" style="font-size: 3.5rem; opacity: 0.4;"></i>
+                    </div>
+                </div>
+                <h5 class="fw-bold mb-2">Seleccione una extension para comenzar</h5>
+                <p class="text-muted mb-4">Use el buscador de arriba para encontrar y seleccionar la extension que desea consultar</p>
+                
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="row g-3 text-start">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="ri ri-search-line text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-semibold mb-1 small">1. Busque</h6>
+                                        <small class="text-muted">Escriba el nombre de la extension</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="ri ri-check-line text-success"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-semibold mb-1 small">2. Seleccione</h6>
+                                        <small class="text-muted">Haga clic en la extension</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="ri ri-book-open-line text-info"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-semibold mb-1 small">3. Consulte</h6>
+                                        <small class="text-muted">Vea el libro mayor</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
     </div>
 </div>

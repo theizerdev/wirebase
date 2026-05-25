@@ -3,164 +3,306 @@
 namespace App\Livewire\Admin;
 
 use Livewire\Component;
+use App\Models\Pastor;
+use App\Models\Iglesia;
+use App\Models\TipoLocal;
+use App\Models\Estado;
 use App\Traits\HasDynamicLayout;
 use Carbon\Carbon;
-use App\Models\Cita;
-use App\Models\Medico;
-use App\Models\Paciente;
-use App\Models\Pago;
+use Illuminate\Support\Facades\DB;
 
 class Dashboard extends Component
 {
     use HasDynamicLayout;
 
-    public $stats = [];
-    public $recentCitas = [];
-    public $citasChartData = [];
-    public $alerts = [];
-    public $recentPayments = [];
-    public $topMedicos = [];
+    public $totalPastores;
+    public $totalPastoresReconocidos;
+    public $totalColaboradores;
+    public $totalLicenciados;
+    public $totalMinistroOrdenado;
+    public $totalLaico;
+    public $pastoresActivos;
+    public $totalIglesias;
+    public $iglesiasActivas;
+    public $miembrosActivos;
+    public $camposBlancos;
+
+    // Datos para gráficos
+    public $pastoresPorGenero;
+    public $pastoresPorEstadoCivil;
+    public $pastoresPorRangoEdad;
+    public $pastoresPorGradoMinisterial;
+    public $iglesiasPorTipoLocal;
+    public $iglesiasPorEstado;
+
+    // Crecimiento anual
+    public $crecimientoPastores;
+    public $crecimientoIglesias;
+
+    // Datos para el mapa de distribución
+    public $estadosConIglesias;
+    public $totalIglesiasMapa;
+    public $mapboxAccessToken;
+
+    // Filtros y mejoras
+    public $selectedYear;
+    public $availableYears;
+    public $isLoading = false;
+    public $chartColors = [
+        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+    ];
 
     public function mount()
     {
-        $this->loadDashboardData();
+        $this->selectedYear = now()->year;
+        $this->availableYears = range(now()->year - 5, now()->year);
+        $this->cargarDatos();
     }
 
-    public function loadDashboardData()
+    public function updatedSelectedYear()
     {
-        $this->stats = [
-            'citas_hoy' => 200,
-            'pacientes_total' => 150,
-            'medicos_total' => 50,
-            'ingresos_mes' => 5000,
-            'ingresos_hoy' => 1000,
-            'tasa_asistencia' => $this->calcularTasaAsistencia(),
+        $this->cargarDatos();
+        $this->dispatch('yearUpdated');
+    }
+
+    public function cargarDatos()
+    {
+        $this->isLoading = true;
+
+        // KPIs principales
+        $this->totalPastores = Pastor::count();
+
+        $this->totalColaboradores = Pastor::whereRaw("LOWER(TRIM(nivel_ministerial)) = ?", ['colaborador'])->count();
+        $this->totalLaico = Pastor::whereRaw("LOWER(TRIM(nivel_ministerial)) = ?", ['laico'])->count();
+        $this->totalLicenciados = Pastor::whereRaw("LOWER(TRIM(nivel_ministerial)) = ?", ['licenciado'])->count();
+        $this->totalMinistroOrdenado = Pastor::whereRaw("LOWER(TRIM(nivel_ministerial)) = ?", ['ministro ordenado'])->count();
+
+        $this->totalPastoresReconocidos = Pastor::whereRaw("LOWER(TRIM(nivel_ministerial)) IN (?, ?, ?)", ['laico', 'licenciado', 'ministro ordenado'])->count();
+
+        $this->pastoresActivos = Pastor::where('status', true)->count();
+        $this->totalIglesias = Iglesia::count();
+        $this->iglesiasActivas = Iglesia::where('activa', true)->count();
+        $this->miembrosActivos = Iglesia::sum('miembros_activos');
+        $this->camposBlancos = Iglesia::sum('cantidad_campos_blancos');
+
+        // Pastores por género
+        $this->pastoresPorGenero = Pastor::selectRaw('genero, COUNT(*) as total')
+            ->groupBy('genero')
+            ->get()
+            ->map(function ($item) {
+                if ($item->genero === 'M') {
+                    $item->genero = 'Masculino';
+                } elseif ($item->genero === 'F') {
+                    $item->genero = 'Femenino';
+                }
+                return $item;
+            });
+
+        // Pastores por estado civil
+        $this->pastoresPorEstadoCivil = Pastor::selectRaw('estado_civil, COUNT(*) as total')
+            ->whereNotNull('estado_civil')
+            ->groupBy('estado_civil')
+            ->get();
+
+        // Pastores por rango de edad
+        $this->pastoresPorRangoEdad = collect([
+            ['rango_edad' => '20-30 años', 'total' => Pastor::whereBetween('edad', [20, 30])->count()],
+            ['rango_edad' => '31-40 años', 'total' => Pastor::whereBetween('edad', [31, 40])->count()],
+            ['rango_edad' => '41-50 años', 'total' => Pastor::whereBetween('edad', [41, 50])->count()],
+            ['rango_edad' => '51-60 años', 'total' => Pastor::whereBetween('edad', [51, 60])->count()],
+            ['rango_edad' => '60+ años', 'total' => Pastor::where('edad', '>', 60)->count()],
+        ])->filter(function ($item) {
+            return $item['total'] > 0;
+        });
+
+        // Pastores por grado ministerial
+        $this->pastoresPorGradoMinisterial = Pastor::selectRaw('nivel_ministerial, COUNT(*) as total')
+            ->whereNotNull('nivel_ministerial')
+            ->groupBy('nivel_ministerial')
+            ->orderBy('total', 'desc')
+            ->get();
+
+        // iglesias por tipo de local
+        $this->iglesiasPorTipoLocal = TipoLocal::withCount('iglesias')
+            ->orderBy('iglesias_count', 'desc')
+            ->get()
+            ->filter(function ($item) {
+                return $item->iglesias_count > 0;
+            });
+
+        // iglesias por estado
+        $this->iglesiasPorEstado = Estado::withCount('iglesias')
+            ->orderBy('iglesias_count', 'desc')
+            ->get()
+            ->filter(function ($item) {
+                return $item->iglesias_count > 0;
+            });
+
+        $this->calcularCrecimientoAnual();
+        $this->cargarDatosMapa();
+        $this->isLoading = false;
+    }
+
+    private function cargarDatosMapa()
+    {
+        // Obtener token de Mapbox desde configuración
+        $this->mapboxAccessToken = config('services.mapbox.token');
+
+        // Debug: verificar que el token se esté cargando
+        if (empty($this->mapboxAccessToken)) {
+            \Log::warning('Token de Mapbox no configurado en services.php');
+        }
+
+        // Cargar estados con cantidad de iglesias
+        $this->estadosConIglesias = Estado::query()
+            ->select('estados.id', 'estados.nombre', 'estados.iso_3166_2')
+            ->selectRaw('COUNT(iglesias.id) as cantidad_iglesias')
+            ->selectRaw('MAX(iglesias.nombre) as ejemplo_iglesia')
+            ->leftJoin('iglesias', 'estados.id', '=', 'iglesias.estado_id')
+            ->groupBy('estados.id', 'estados.nombre', 'estados.iso_3166_2')
+            ->orderBy('cantidad_iglesias', 'desc')
+            ->get()
+            ->map(function ($estado) {
+                return [
+                    'id' => $estado->id,
+                    'nombre' => $estado->nombre,
+                    'codigo' => $estado->iso_3166_2,
+                    'cantidad_iglesias' => $estado->cantidad_iglesias,
+                    'ejemplo_iglesia' => $estado->ejemplo_iglesia,
+                    'color' => $this->getColorPorCantidad($estado->cantidad_iglesias)
+                ];
+            });
+
+        $this->totalIglesiasMapa = $this->estadosConIglesias->sum('cantidad_iglesias');
+    }
+
+    private function getColorPorCantidad($cantidad)
+    {
+        if ($cantidad == 0) return '#e0e0e0'; // Gris para estados sin iglesias
+        return '#2196f3'; // Azul para estados con iglesias
+    }
+
+    private function calcularCrecimientoAnual()
+    {
+        $currentYear = $this->selectedYear;
+        $lastYear = $currentYear - 1;
+
+        // Crecimiento de pastores - Total activos por año
+        $pastoresCurrentYear = Pastor::where('status', true)
+            ->whereYear('created_at', '<=', $currentYear)
+            ->count();
+        $pastoresLastYear = Pastor::where('status', true)
+            ->whereYear('created_at', '<=', $lastYear)
+            ->count();
+
+        $this->crecimientoPastores = [
+            'current_year' => $pastoresCurrentYear,
+            'last_year' => $pastoresLastYear,
+            'diferencia' => $pastoresCurrentYear - $pastoresLastYear,
+            'porcentaje' => $pastoresLastYear > 0 ? round((($pastoresCurrentYear - $pastoresLastYear) / $pastoresLastYear) * 100, 2) : 0
         ];
 
-        $this->recentCitas = 200;
+        // Crecimiento de iglesias - Total activas por año
+        $iglesiasCurrentYear = Iglesia::where('activa', true)
+            ->whereYear('created_at', '<=', $currentYear)
+            ->count();
+        $iglesiasLastYear = Iglesia::where('activa', true)
+            ->whereYear('created_at', '<=', $lastYear)
+            ->count();
 
-        $this->loadChartData();
-        $this->loadAlerts();
-        $this->loadRecentPayments();
-        $this->loadTopMedicos();
-
-        $this->dispatch('chartDataUpdated', [
-            'citasChartData' => $this->citasChartData,
-        ]);
-    }
-
-    public function loadChartData()
-    {
-        $citasPorDia = 12;
-
-        $labels = [];
-        $data = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $labels[] = $date->format('D d/m');
-            $found = [12, 15, 20, 18, 22, 25, 30][$i] ?? null;
-            $data[] = $found ? $found : 0;
-        }
-
-        $this->citasChartData = [
-            'labels' => $labels,
-            'data' => $data,
+        $this->crecimientoIglesias = [
+            'current_year' => $iglesiasCurrentYear,
+            'last_year' => $iglesiasLastYear,
+            'diferencia' => $iglesiasCurrentYear - $iglesiasLastYear,
+            'porcentaje' => $iglesiasLastYear > 0 ? round((($iglesiasCurrentYear - $iglesiasLastYear) / $iglesiasLastYear) * 100, 2) : 0
         ];
-    }
 
-    public function calcularTasaAsistencia()
-    {
-        $totalCitasPasadas = 12;
-
-        if ($totalCitasPasadas == 0) {
-            return 0;
-        }
-
-        $citasCompletadas = 8; // Ejemplo de valor, reemplazar con lógica real
-
-        return round(($citasCompletadas / $totalCitasPasadas) * 100, 1);
-    }
-
-    public function loadAlerts()
-    {
-        $this->alerts = [];
-
-        // Citas sin confirmar (próximas 24h)
-        $citasSinConfirmar = 50;
-
-        if ($citasSinConfirmar > 0) {
-            $this->alerts[] = [
-                'type' => 'warning',
-                'icon' => 'ri-time-line',
-                'title' => 'Citas sin confirmar',
-                'message' => "$citasSinConfirmar citas en las próximas 24 horas",
-                'color' => '#f59e0b',
-            ];
-        }
-
-        // Recordatorios fallidos
-        $recordatoriosFallidos = 12;
-
-        if ($recordatoriosFallidos > 0) {
-            $this->alerts[] = [
-                'type' => 'error',
-                'icon' => 'ri-error-warning-line',
-                'title' => 'Recordatorios fallidos',
-                'message' => "$recordatoriosFallidos recordatorios no enviados hoy",
-                'color' => '#ef4444',
-            ];
-        }
-
-        // Pagos pendientes
-        $pagosPendientes = 15;
-
-        if ($pagosPendientes > 0) {
-            $this->alerts[] = [
-                'type' => 'info',
-                'icon' => 'ri-money-dollar-circle-line',
-                'title' => 'Pagos pendientes',
-                'message' => "$pagosPendientes pagos por aprobar hoy",
-                'color' => '#3b82f6',
-            ];
-        }
-
-        // Citas canceladas hoy
-        $citasCanceladas = 0;
-
-        if ($citasCanceladas > 0) {
-            $this->alerts[] = [
-                'type' => 'danger',
-                'icon' => 'ri-close-circle-line',
-                'title' => 'Citas canceladas',
-                'message' => "$citasCanceladas citas canceladas hoy",
-                'color' => '#dc2626',
-            ];
-        }
-    }
-
-    public function loadRecentPayments()
-    {
-        $this->recentPayments = 8;
-    }
-
-    public function loadTopMedicos()
-    {
-        $this->topMedicos = [
-            ['nombre' => 'Dr. Juan Pérez', 'citas' => 30],
-            ['nombre' => 'Dra. María Gómez', 'citas' => 25],
-            ['nombre' => 'Dr. Carlos Sánchez', 'citas' => 20],
-        ];
+        $this->isLoading = false;
     }
 
     public function render()
     {
-        return view('livewire.admin.dashboard', [
-            'stats' => $this->stats,
-            'recentCitas' => $this->recentCitas,
-            'citasChartData' => $this->citasChartData,
-            'alerts' => $this->alerts,
-            'recentPayments' => $this->recentPayments,
-            'topMedicos' => $this->topMedicos
-        ])->layout($this->getLayout());
+        return view('livewire.admin.dashboard')
+        ->layout($this->getLayout());
+    }
+
+    // Listener para ver detalles de un estado
+    protected $listeners = ['verDetallesEstado' => 'mostrarDetallesEstado'];
+
+    public function cargarExtensionesPorEstado($estadoId)
+    {
+        $estadoModel = Estado::find($estadoId);
+        
+        if (!$estadoModel) {
+            $this->dispatch('error', 'Estado no encontrado');
+            return;
+        }
+
+        // Obtener extensiones con latitud y longitud válidas
+        $extensiones = Iglesia::with(['pastor', 'ciudad'])
+            ->where('estado_id', $estadoModel->id)
+            ->where('activa', true)
+            ->whereNotNull('latitud')
+            ->whereNotNull('longitud')
+            ->get()
+            ->map(function ($iglesia) {
+                return [
+                    'id' => $iglesia->id,
+                    'nombre' => $iglesia->nombre,
+                    'latitud' => (float) $iglesia->latitud,
+                    'longitud' => (float) $iglesia->longitud,
+                    'direccion' => $iglesia->direccion,
+                    'pastor' => $iglesia->pastor ? $iglesia->pastor->nombres . ' ' . $iglesia->pastor->apellidos : 'Sin pastor asignado',
+                    'ciudad' => $iglesia->ciudad ? $iglesia->ciudad->nombre : 'N/A',
+                ];
+            });
+
+        if ($extensiones->isEmpty()) {
+            $this->dispatch('error', 'No hay extensiones con coordenadas registradas en este estado.');
+            return;
+        }
+
+        $this->dispatch('mostrarExtensionesEnMapa', [
+            'estado' => $estadoModel->nombre,
+            'extensiones' => $extensiones
+        ]);
+    }
+
+    public function mostrarDetallesEstado($estado)
+    {
+        // Buscar el estado por nombre
+        $estadoModel = Estado::where('nombre', 'like', '%' . $estado . '%')->first();
+
+        if (!$estadoModel) {
+            $this->dispatch('error', 'Estado no encontrado');
+            return;
+        }
+
+        // Obtener iglesias del estado con información del pastor
+        $iglesias = Iglesia::with(['pastor', 'ciudad', 'municipio', 'parroquia'])
+            ->where('estado_id', $estadoModel->id)
+            ->where('activa', true)
+            ->orderBy('nombre')
+            ->get()
+            ->map(function ($iglesia) {
+                return [
+                    'nombre' => $iglesia->nombre,
+                    'pastor' => $iglesia->pastor ? $iglesia->pastor->nombres . ' ' . $iglesia->pastor->apellidos : 'Sin pastor asignado',
+                    'ciudad' => $iglesia->ciudad ? $iglesia->ciudad->nombre : 'N/A',
+                    'municipio' => $iglesia->municipio ? $iglesia->municipio->nombre : 'N/A',
+                    'parroquia' => $iglesia->parroquia ? $iglesia->parroquia->nombre : 'N/A',
+                    'direccion' => $iglesia->direccion,
+                    'miembros_activos' => $iglesia->miembros_activos
+                ];
+            });
+
+        // Enviar evento para mostrar modal
+        $this->dispatch('mostrarModalEstado', [
+            'estado' => $estadoModel->nombre,
+            'total_iglesias' => $iglesias->count(),
+            'iglesias' => $iglesias->take(10), // Mostrar primeras 10 iglesias
+            'tiene_mas' => $iglesias->count() > 10
+        ]);
     }
 }
