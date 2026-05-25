@@ -13,7 +13,7 @@ class Index extends Component
     use WithPagination, HasDynamicLayout;
 
     public $search = '';
-    public $filterPais = '';
+
     public $filterActivo = '';
     public $sortBy = 'nombre';
     public $sortDirection = 'asc';
@@ -21,7 +21,7 @@ class Index extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'filterPais' => ['except' => ''],
+
         'filterActivo' => ['except' => ''],
         'sortBy' => ['except' => 'nombre'],
         'sortDirection' => ['except' => 'asc'],
@@ -40,10 +40,7 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function updatingFilterPais()
-    {
-        $this->resetPage();
-    }
+
 
     public function updatingFilterActivo()
     {
@@ -121,7 +118,7 @@ class Index extends Component
 
     public function clearFilters()
     {
-        $this->reset(['search', 'filterPais', 'filterActivo', 'sortBy', 'sortDirection', 'perPage']);
+        $this->reset(['search', 'filterActivo', 'sortBy', 'sortDirection', 'perPage']);
         $this->sortBy = 'nombre';
         $this->sortDirection = 'asc';
         $this->perPage = 10;
@@ -129,7 +126,7 @@ class Index extends Component
 
     private function getBaseQuery()
     {
-        $query = Estado::with(['pais'])->withCount('ciudades');
+        $query = Estado::withCount('ciudades');
 
         // Filtro por búsqueda
         if ($this->search) {
@@ -139,10 +136,7 @@ class Index extends Component
             });
         }
 
-        // Filtro por país
-        if ($this->filterPais) {
-            $query->where('pais_id', $this->filterPais);
-        }
+      
 
         // Filtro por estado
         if ($this->filterActivo !== '') {
@@ -164,8 +158,8 @@ class Index extends Component
 
         // Calcular estadísticas
         $totalEstados = Estado::count();
-        $estadosActivos = Estado::where('activo', true)->count();
-        $estadosInactivos = Estado::where('activo', false)->count();
+        $estadosActivos = Estado::count();
+        $estadosInactivos = 0;
         $estadosConCiudades = Estado::has('ciudades')->count();
 
         return view('livewire.admin.estados.index', compact(

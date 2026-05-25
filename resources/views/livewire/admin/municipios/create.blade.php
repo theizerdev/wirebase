@@ -23,30 +23,19 @@
                                     @error('nombre') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Código</label>
-                                    <input type="text" class="form-control" wire:model="codigo" placeholder="Código opcional">
-                                    @error('codigo') <span class="text-danger small">{{ $message }}</span> @enderror
-                                </div>
-
+                                
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
                                     <select class="form-select" wire:model="estado_id">
                                         <option value="">Seleccione un estado</option>
-                                        @foreach(\App\Models\Estado::where('activo', true)->get() as $estado)
+                                        @foreach(\App\Models\Estado::get() as $estado)
                                             <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
                                         @endforeach
                                     </select>
                                     @error('estado_id') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Estado</label>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="activo" wire:model="activo">
-                                        <label class="form-check-label" for="activo">Activo</label>
-                                    </div>
-                                </div>
+                              
                             </div>
 
                             <div class="pt-4">

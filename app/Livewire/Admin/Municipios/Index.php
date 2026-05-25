@@ -134,8 +134,7 @@ class Index extends Component
         // Filtro por búsqueda
         if ($this->search) {
             $query->where(function($q) {
-                $q->where('nombre', 'like', '%' . $this->search . '%')
-                  ->orWhere('codigo', 'like', '%' . $this->search . '%');
+                $q->where('nombre', 'like', '%' . $this->search . '%');
             });
         }
 
@@ -164,8 +163,8 @@ class Index extends Component
 
         // Calcular estadísticas
         $totalMunicipios = Municipio::count();
-        $municipiosActivos = Municipio::where('activo', true)->count();
-        $municipiosInactivos = Municipio::where('activo', false)->count();
+        $municipiosActivos = Municipio::count();
+        $municipiosInactivos = 0;
         $municipiosConParroquias = Municipio::has('parroquias')->count();
 
         return view('livewire.admin.municipios.index', compact(

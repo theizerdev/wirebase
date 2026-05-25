@@ -20,8 +20,6 @@ class Edit extends Component
     protected $rules = [
         'nombre' => 'required|string|max:100',
         'codigo' => 'nullable|string|max:20',
-        'pais_id' => 'required|exists:pais,id',
-        'activo' => 'boolean'
     ];
 
     public function mount($id)
@@ -32,7 +30,7 @@ class Edit extends Component
 
         $this->estado = Estado::findOrFail($id);
         $this->nombre = $this->estado->nombre;
-        $this->codigo = $this->estado->codigo;
+        $this->codigo = $this->estado->iso_3166_2;
         $this->pais_id = $this->estado->pais_id;
         $this->activo = $this->estado->activo;
     }
@@ -43,9 +41,7 @@ class Edit extends Component
 
         $this->estado->update([
             'nombre' => $this->nombre,
-            'codigo' => $this->codigo,
-            'pais_id' => $this->pais_id,
-            'activo' => $this->activo
+            'iso_3166_2' => $this->codigo,
         ]);
 
         session()->flash('message', 'Estado actualizado exitosamente.');

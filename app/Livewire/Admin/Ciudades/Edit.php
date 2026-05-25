@@ -13,15 +13,14 @@ class Edit extends Component
 
     public $ciudad;
     public $nombre = '';
-    public $codigo = '';
+
     public $estado_id = '';
-    public $activo = true;
+
 
     protected $rules = [
         'nombre' => 'required|string|max:100',
-        'codigo' => 'nullable|string|max:20',
         'estado_id' => 'required|exists:estados,id',
-        'activo' => 'boolean'
+
     ];
 
     public function mount($id)
@@ -32,9 +31,8 @@ class Edit extends Component
 
         $this->ciudad = Ciudad::findOrFail($id);
         $this->nombre = $this->ciudad->nombre;
-        $this->codigo = $this->ciudad->codigo;
         $this->estado_id = $this->ciudad->estado_id;
-        $this->activo = $this->ciudad->activo;
+
     }
 
     public function update()
@@ -43,9 +41,9 @@ class Edit extends Component
 
         $this->ciudad->update([
             'nombre' => $this->nombre,
-            'codigo' => $this->codigo,
+
             'estado_id' => $this->estado_id,
-            'activo' => $this->activo
+
         ]);
 
         session()->flash('message', 'Ciudad actualizada exitosamente.');

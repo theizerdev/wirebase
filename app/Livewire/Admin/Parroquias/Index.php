@@ -154,8 +154,8 @@ class Index extends Component
 
         // Calcular estadísticas
         $totalParroquias = Parroquia::count();
-        $parroquiasActivas = Parroquia::where('activo', true)->count();
-        $parroquiasInactivas = Parroquia::where('activo', false)->count();
+        $parroquiasActivas = Parroquia::count();
+        $parroquiasInactivas = 0;
 
         return view('livewire.admin.parroquias.index', compact(
             'parroquias',

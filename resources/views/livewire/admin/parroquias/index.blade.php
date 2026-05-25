@@ -94,19 +94,12 @@
                         <label class="form-label small fw-semibold">Municipio</label>
                         <select class="form-select form-select-sm" wire:model.live="filterMunicipio">
                             <option value="">Todos</option>
-                            @foreach(\App\Models\Municipio::with('estado')->where('activo', true)->get() as $municipio)
+                            @foreach(\App\Models\Municipio::with('estado')->get() as $municipio)
                                 <option value="{{ $municipio->id }}">{{ $municipio->nombre }} ({{ $municipio->estado->nombre }})</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-semibold">Estado</label>
-                        <select class="form-select form-select-sm" wire:model.live="filterActivo">
-                            <option value="">Todos</option>
-                            <option value="1">Activas</option>
-                            <option value="0">Inactivas</option>
-                        </select>
-                    </div>
+                   
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Mostrar</label>
                         <select class="form-select form-select-sm" wire:model.live="perPage">
@@ -140,15 +133,11 @@
                                 <th wire:click="sortBy('nombre')" style="cursor: pointer;">
                                     Nombre @if($sortBy === 'nombre') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th wire:click="sortBy('codigo')" style="cursor: pointer;">
-                                    Código @if($sortBy === 'codigo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
+                               
                                 <th wire:click="sortBy('municipio_id')" style="cursor: pointer;">
                                     Municipio @if($sortBy === 'municipio_id') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th wire:click="sortBy('activo')" style="cursor: pointer;">
-                                    Estado @if($sortBy === 'activo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
+                               
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -165,13 +154,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
-                                        @if($parroquia->codigo)
-                                            <span class="badge bg-light text-dark">{{ $parroquia->codigo }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
+                                    
                                     <td>
                                         @if($parroquia->municipio)
                                             <span class="badge bg-info-subtle text-info-emphasis">{{ $parroquia->municipio->nombre }}</span>
@@ -180,17 +163,7 @@
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox"
-                                                   id="statusSwitch{{ $parroquia->id }}"
-                                                   {{ $parroquia->activo ? 'checked' : '' }}
-                                                   @can('edit parroquias') wire:click="toggleStatus({{ $parroquia->id }})" @endcan>
-                                            <label class="form-check-label" for="statusSwitch{{ $parroquia->id }}">
-                                                {{ $parroquia->activo ? 'Activa' : 'Inactiva' }}
-                                            </label>
-                                        </div>
-                                    </td>
+                                    
                                     <td>
                                         <div class="dropdown">
                                             <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

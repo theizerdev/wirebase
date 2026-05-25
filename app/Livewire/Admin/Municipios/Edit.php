@@ -13,15 +13,11 @@ class Edit extends Component
 
     public $municipio;
     public $nombre = '';
-    public $codigo = '';
     public $estado_id = '';
-    public $activo = true;
 
     protected $rules = [
         'nombre' => 'required|string|max:100',
-        'codigo' => 'nullable|string|max:20',
         'estado_id' => 'required|exists:estados,id',
-        'activo' => 'boolean'
     ];
 
     public function mount($id)
@@ -34,21 +30,17 @@ class Edit extends Component
 
         $this->fill([
             'nombre' => $this->municipio->nombre,
-            'codigo' => $this->municipio->codigo,
             'estado_id' => $this->municipio->estado_id,
-            'activo' => $this->municipio->activo
         ]);
     }
 
-    public function update()
+    public function save()
     {
         $this->validate();
 
         $this->municipio->update([
             'nombre' => $this->nombre,
-            'codigo' => $this->codigo,
             'estado_id' => $this->estado_id,
-            'activo' => $this->activo
         ]);
 
         session()->flash('message', 'Municipio actualizado exitosamente.');

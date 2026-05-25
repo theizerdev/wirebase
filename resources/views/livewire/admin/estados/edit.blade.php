@@ -29,24 +29,8 @@
                             @error('codigo') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">País <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model="pais_id">
-                                <option value="">Seleccione un país</option>
-                                @foreach(\App\Models\Pais::where('activo', true)->get() as $pais)
-                                    <option value="{{ $pais->id }}">{{ $pais->nombre }}</option>
-                                @endforeach
-                            </select>
-                            @error('pais_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Estado</label>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="activo" wire:model="activo">
-                                <label class="form-check-label" for="activo">Activo</label>
-                            </div>
-                        </div>
+                
+                
                     </div>
 
                     <div class="mt-4 d-flex gap-2">

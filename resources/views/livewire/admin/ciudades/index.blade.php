@@ -94,19 +94,12 @@
                         <label class="form-label small fw-semibold">Estado</label>
                         <select class="form-select form-select-sm" wire:model.live="filterEstado">
                             <option value="">Todos</option>
-                            @foreach(\App\Models\Estado::where('activo', true)->get() as $estado)
+                            @foreach(\App\Models\Estado::get() as $estado)
                                 <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-semibold">Estado</label>
-                        <select class="form-select form-select-sm" wire:model.live="filterActivo">
-                            <option value="">Todos</option>
-                            <option value="1">Activas</option>
-                            <option value="0">Inactivas</option>
-                        </select>
-                    </div>
+                    
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Mostrar</label>
                         <select class="form-select form-select-sm" wire:model.live="perPage">
@@ -140,12 +133,8 @@
                                 <th wire:click="sortBy('nombre')" style="cursor: pointer;">
                                     Nombre @if($sortBy === 'nombre') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th wire:click="sortBy('codigo')" style="cursor: pointer;">
-                                    Código @if($sortBy === 'codigo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
-                                <th wire:click="sortBy('estado_id')" style="cursor: pointer;">
-                                    Estado @if($sortBy === 'estado_id') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
+                               
+                               
                                 <th wire:click="sortBy('activo')" style="cursor: pointer;">
                                     Estado @if($sortBy === 'activo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
@@ -165,13 +154,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
-                                        @if($ciudad->codigo)
-                                            <span class="badge bg-light text-dark">{{ $ciudad->codigo }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
+                                    
                                     <td>
                                         @if($ciudad->estado)
                                             <span class="badge bg-purple-subtle text-purple-emphasis">{{ $ciudad->estado->nombre }}</span>
@@ -179,17 +162,7 @@
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox"
-                                                   id="statusSwitch{{ $ciudad->id }}"
-                                                   {{ $ciudad->activo ? 'checked' : '' }}
-                                                   @can('edit ciudades') wire:click="toggleStatus({{ $ciudad->id }})" @endcan>
-                                            <label class="form-check-label" for="statusSwitch{{ $ciudad->id }}">
-                                                {{ $ciudad->activo ? 'Activa' : 'Inactiva' }}
-                                            </label>
-                                        </div>
-                                    </td>
+                                  
                                     <td>
                                         <div class="dropdown">
                                             <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

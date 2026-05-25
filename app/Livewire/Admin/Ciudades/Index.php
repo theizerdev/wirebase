@@ -13,7 +13,6 @@ class Index extends Component
     use WithPagination, HasDynamicLayout;
 
     public $search = '';
-    public $filterEstado = '';
     public $filterActivo = '';
     public $sortBy = 'nombre';
     public $sortDirection = 'asc';
@@ -21,8 +20,7 @@ class Index extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'filterEstado' => ['except' => ''],
-        'filterActivo' => ['except' => ''],
+      
         'sortBy' => ['except' => 'nombre'],
         'sortDirection' => ['except' => 'asc'],
         'perPage' => ['except' => 10]
@@ -40,10 +38,6 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function updatingFilterEstado()
-    {
-        $this->resetPage();
-    }
 
     public function updatingFilterActivo()
     {
@@ -65,19 +59,7 @@ class Index extends Component
         }
     }
 
-    public function toggleStatus($ciudadId)
-    {
-        if (!Auth::user()->can('edit ciudades')) {
-            session()->flash('error', 'No tienes permiso para editar ciudades.');
-            return;
-        }
-
-        $ciudad = Ciudad::findOrFail($ciudadId);
-        $ciudad->activo = !$ciudad->activo;
-        $ciudad->save();
-
-        session()->flash('message', $ciudad->activo ? 'Ciudad activada exitosamente.' : 'Ciudad desactivada exitosamente.');
-    }
+    
 
     public function deleteCiudad($ciudadId)
     {
@@ -115,7 +97,7 @@ class Index extends Component
 
     public function clearFilters()
     {
-        $this->reset(['search', 'filterEstado', 'filterActivo', 'sortBy', 'sortDirection', 'perPage']);
+        $this->reset(['search', 'filterActivo', 'sortBy', 'sortDirection', 'perPage']);
         $this->sortBy = 'nombre';
         $this->sortDirection = 'asc';
         $this->perPage = 10;
@@ -133,15 +115,7 @@ class Index extends Component
             });
         }
 
-        // Filtro por estado
-        if ($this->filterEstado) {
-            $query->where('estado_id', $this->filterEstado);
-        }
-
-        // Filtro por estado activo/inactivo
-        if ($this->filterActivo !== '') {
-            $query->where('activo', $this->filterActivo === '1');
-        }
+    
 
         return $query;
     }
@@ -158,8 +132,8 @@ class Index extends Component
 
         // Calcular estadísticas (actualizar para reflejar la nueva estructura)
         $totalCiudades = Ciudad::count();
-        $ciudadesActivas = Ciudad::where('activo', true)->count();
-        $ciudadesInactivas = Ciudad::where('activo', false)->count();
+        $ciudadesActivas = Ciudad::count();
+        $ciudadesInactivas = 0;
         // Remover referencia a ciudades con municipios
         $totalEstados = \App\Models\Estado::count();
         $totalMunicipios = \App\Models\Municipio::count();

@@ -12,15 +12,11 @@ class Create extends Component
     use HasDynamicLayout;
 
     public $nombre = '';
-    public $codigo = '';
     public $estado_id = '';
-    public $activo = true;
 
     protected $rules = [
         'nombre' => 'required|string|max:100',
-        'codigo' => 'nullable|string|max:20',
         'estado_id' => 'required|exists:estados,id',
-        'activo' => 'boolean'
     ];
 
     public function mount()
@@ -36,9 +32,7 @@ class Create extends Component
 
         Ciudad::create([
             'nombre' => $this->nombre,
-            'codigo' => $this->codigo,
-            'estado_id' => $this->estado_id,
-            'activo' => $this->activo
+            'estado_id' => $this->estado_id
         ]);
 
         session()->flash('message', 'Ciudad creada exitosamente.');

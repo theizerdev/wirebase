@@ -90,23 +90,7 @@
                         <label class="form-label small fw-semibold"><i class="ri ri-search-line me-1"></i>Buscar</label>
                         <input type="text" class="form-control form-control-sm" wire:model.live.debounce.300ms="search" placeholder="Nombre, código...">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">País</label>
-                        <select class="form-select form-select-sm" wire:model.live="filterPais">
-                            <option value="">Todos</option>
-                            @foreach(\App\Models\Pais::where('activo', true)->get() as $pais)
-                                <option value="{{ $pais->id }}">{{ $pais->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-semibold">Estado</label>
-                        <select class="form-select form-select-sm" wire:model.live="filterActivo">
-                            <option value="">Todos</option>
-                            <option value="1">Activos</option>
-                            <option value="0">Inactivos</option>
-                        </select>
-                    </div>
+                    
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Mostrar</label>
                         <select class="form-select form-select-sm" wire:model.live="perPage">
@@ -143,15 +127,7 @@
                                 <th wire:click="sortBy('codigo')" style="cursor: pointer;">
                                     Código @if($sortBy === 'codigo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
-                                <th wire:click="sortBy('pais_id')" style="cursor: pointer;">
-                                    País @if($sortBy === 'pais_id') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
-                                <th wire:click="sortBy('ciudades_count')" style="cursor: pointer;">
-                                    Ciudades @if($sortBy === 'ciudades_count') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
-                                <th wire:click="sortBy('activo')" style="cursor: pointer;">
-                                    Estado @if($sortBy === 'activo') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                </th>
+                               
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -169,33 +145,13 @@
                                         </div>
                                     </td>
                                     <td>
-                                        @if($estado->codigo)
-                                            <span class="badge bg-light text-dark">{{ $estado->codigo }}</span>
+                                        @if($estado->iso_3166_2)
+                                            <span class="badge bg-light text-dark">{{ $estado->iso_3166_2 }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        @if($estado->pais)
-                                            <span class="badge bg-info-subtle text-info-emphasis">{{ $estado->pais->nombre }}</span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-label-primary">{{ $estado->ciudades_count ?? 0 }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox"
-                                                   id="statusSwitch{{ $estado->id }}"
-                                                   {{ $estado->activo ? 'checked' : '' }}
-                                                   @can('edit estados') wire:click="toggleStatus({{ $estado->id }})" @endcan>
-                                            <label class="form-check-label" for="statusSwitch{{ $estado->id }}">
-                                                {{ $estado->activo ? 'Activo' : 'Inactivo' }}
-                                            </label>
-                                        </div>
-                                    </td>
+                                    
                                     <td>
                                         <div class="dropdown">
                                             <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
