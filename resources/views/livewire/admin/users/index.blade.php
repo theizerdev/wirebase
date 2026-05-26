@@ -156,6 +156,7 @@
                                     Empresa @if($sortBy === 'empresa.razon_social') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
                                 <th>Sucursal</th>
+                                <th>Zona</th>
                                 <th wire:click="sortBy('status')" style="cursor: pointer;">
                                     Estado @if($sortBy === 'status') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                 </th>
@@ -216,6 +217,9 @@
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
+                                    </td>
+                                    <td>
+                                        {{ $user->zona ?? '-' }}
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">

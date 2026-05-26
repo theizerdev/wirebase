@@ -192,6 +192,22 @@ class Pastor extends Model
     }
 
     /**
+     * Relación con solicitudes de modificación
+     */
+    public function solicitudesModificacion()
+    {
+        return $this->hasMany(SolicitudModificacionPastor::class, 'pastor_id');
+    }
+
+    /**
+     * Relación con preguntas de seguridad
+     */
+    public function preguntasSeguridad()
+    {
+        return $this->hasOne(PreguntasSeguridadPastor::class, 'pastor_id');
+    }
+
+    /**
      * Obtener el nombre completo del pastor
      */
     public function getNombreCompletoAttribute()

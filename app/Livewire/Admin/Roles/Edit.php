@@ -22,6 +22,8 @@ class Edit extends Component
     public $selectAll = false;
     public $activeSector = '';
     public $sectors = [];
+    public $searchPermission = '';
+    public $expandedModules = [];
 
     public function mount(Role $role)
     {
@@ -33,6 +35,13 @@ class Edit extends Component
         $this->name = $role->name;
         $this->selectedPermissions = $role->permissions->pluck('id')->toArray();
         $this->loadPermissions();
+        
+        // Inicializar todos los módulos como expandidos
+        foreach ($this->sectorPermissions as $sector => $modules) {
+            foreach ($modules as $module => $permissions) {
+                $this->expandedModules[$sector . '.' . $module] = true;
+            }
+        }
     }
 
     public function loadPermissions()
@@ -55,6 +64,16 @@ class Edit extends Component
             $this->sectorPermissions[$sector][$module][] = $permission;
         }
 
+        $this->updateStates();
+
+        $sectorKeys = array_keys($this->sectorPermissions);
+        $this->activeSector = !empty($sectorKeys) ? $sectorKeys[0] : '';
+
+        $this->updateSelectAllState();
+    }
+
+    private function updateStates()
+    {
         foreach ($this->sectorPermissions as $sector => $modules) {
             $allSectorSelected = true;
             foreach ($modules as $module => $permissions) {
@@ -69,11 +88,12 @@ class Edit extends Component
             }
             $this->sectorStates[$sector] = $allSectorSelected;
         }
+    }
 
-        $sectorKeys = array_keys($this->sectorPermissions);
-        $this->activeSector = !empty($sectorKeys) ? $sectorKeys[0] : '';
-
-        $this->updateSelectAllState();
+    public function toggleModule($sector, $module)
+    {
+        $key = $sector . '.' . $module;
+        $this->expandedModules[$key] = !($this->expandedModules[$key] ?? false);
     }
 
     public function setActiveSector($sector)
@@ -146,23 +166,62 @@ class Edit extends Component
         $this->updateSelectAllState();
     }
 
-    public function updatedSelectedPermissions()
+    public function updatedSearchPermission()
     {
-        foreach ($this->sectorPermissions as $sector => $modules) {
-            $allSectorSelected = true;
-            foreach ($modules as $module => $permissions) {
-                $allModuleSelected = true;
-                foreach ($permissions as $permission) {
-                    if (!in_array($permission->id, $this->selectedPermissions)) {
-                        $allModuleSelected = false;
-                        $allSectorSelected = false;
-                    }
-                }
-                $this->moduleStates[$sector . '.' . $module] = $allModuleSelected;
-            }
-            $this->sectorStates[$sector] = $allSectorSelected;
+        // Resetear página si es necesario
+    }
+
+    public function getFilteredPermissionsProperty()
+    {
+        if (empty($this->searchPermission)) {
+            return $this->sectorPermissions;
         }
 
+        $filtered = [];
+        $search = strtolower($this->searchPermission);
+
+        foreach ($this->sectorPermissions as $sector => $modules) {
+            foreach ($modules as $module => $permissions) {
+                $filteredPerms = array_filter($permissions, function($permission) use ($search) {
+                    return stripos($permission->name, $search) !== false ||
+                           stripos(str_replace('-', ' ', $permission->name), $search) !== false;
+                });
+
+                if (!empty($filteredPerms)) {
+                    if (!isset($filtered[$sector])) {
+                        $filtered[$sector] = [];
+                    }
+                    $filtered[$sector][$module] = array_values($filteredPerms);
+                }
+            }
+        }
+
+        return $filtered;
+    }
+
+    public function getPermissionStatsProperty()
+    {
+        $totalPermissions = 0;
+        $selectedCount = count($this->selectedPermissions);
+
+        foreach ($this->sectorPermissions as $modules) {
+            foreach ($modules as $permissions) {
+                $totalPermissions += count($permissions);
+            }
+        }
+
+        $percentage = $totalPermissions > 0 ? round(($selectedCount / $totalPermissions) * 100, 1) : 0;
+
+        return [
+            'total' => $totalPermissions,
+            'selected' => $selectedCount,
+            'percentage' => $percentage,
+        ];
+    }
+
+    public function updatedSelectedPermissions()
+    {
+        $this->updateStates();
         $this->updateSelectAllState();
     }
 
@@ -271,6 +330,9 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.admin.roles.edit')->layout($this->getLayout());
+        return view('livewire.admin.roles.edit', [
+            'filteredPermissions' => $this->filteredPermissions,
+            'stats' => $this->permissionStats,
+        ])->layout($this->getLayout());
     }
 }

@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin' => App\Http\Middleware\RedirectIfSuperAdmin::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'checkAdminPermission' => \App\Http\Middleware\CheckAdminPermission::class,
+            'verify.pastor.security' => \App\Http\Middleware\VerifyPastorSecurityProtection::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

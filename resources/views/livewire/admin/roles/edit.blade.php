@@ -3,8 +3,8 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Editar Rol: {{ $role->name }}</h5>
-                    <p class="text-muted mb-0">Modifica el nombre y permisos del rol organizados por sector</p>
+                    <h5 class="card-title mb-0">Ediar Rol</h5>
+                    <p class="text-muted mb-0">Define el  rol y asigna los permisos por sector</p>
                 </div>
                 <div class="card-body">
                     @if (session()->has('message'))
@@ -21,10 +21,6 @@
                         </div>
                     @endif
 
-                    @php
-                        $isSystemRole = in_array($role->name, ['super-admin', 'admin', 'empresa-admin', 'user']);
-                    @endphp
-
                     <form wire:submit.prevent="save">
                         <div class="mb-4">
                             <label for="name" class="form-label fw-bold">Nombre del Rol</label>
@@ -32,39 +28,31 @@
                                    class="form-control @error('name') is-invalid @enderror"
                                    id="name"
                                    wire:model="name"
-                                   placeholder="Ej. editor, supervisor, etc."
-                                   @if($isSystemRole) disabled @endif>
+                                   placeholder="Ej. editor, supervisor, etc.">
                             @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <div class="form-text">El nombre debe ser único y descriptivo</div>
-                            @if($isSystemRole)
-                                <div class="alert alert-warning mt-2 mb-0">
-                                    <i class="ri ri-alert-line"></i> Este es un rol del sistema y no puede ser modificado.
-                                </div>
-                            @endif
                         </div>
 
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div>
                                     <h6 class="mb-0 fw-bold">Permisos del Rol</h6>
-                                    <p class="text-muted mb-0">Permisos organizados por sector</p>
+                                    <p class="text-muted mb-0">Selecciona los permisos organizados por sector</p>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="badge bg-primary me-3">{{ count($selectedPermissions) }} permisos seleccionados</span>
-                                    @if(!$isSystemRole)
-                                        <div class="form-check form-switch mb-0">
-                                            <input class="form-check-input"
-                                                   type="checkbox"
-                                                   id="selectAll"
-                                                   wire:click="toggleSelectAll"
-                                                   @if($selectAll) checked @endif>
-                                            <label class="form-check-label fw-bold" for="selectAll">
-                                                Seleccionar todos
-                                            </label>
-                                        </div>
-                                    @endif
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               id="selectAll"
+                                               wire:click="toggleSelectAll"
+                                               @if($selectAll) checked @endif>
+                                        <label class="form-check-label fw-bold" for="selectAll">
+                                            Seleccionar todos
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
@@ -117,20 +105,16 @@
                                                 <h6 class="mb-0 {{ $colors['text'] }}">{{ $sectorInfo['name'] }}</h6>
                                                 <small class="text-muted">{{ $sectorInfo['description'] ?? '' }}</small>
                                             </div>
-                                            @if(!$isSystemRole)
-                                                <div class="form-check form-switch mb-0">
-                                                    <input class="form-check-input"
-                                                           type="checkbox"
-                                                           id="toggleSector{{ $sectorKey }}"
-                                                           wire:click="toggleSectorPermissions('{{ $sectorKey }}')"
-                                                           {{ ($sectorStates[$sectorKey] ?? false) ? 'checked' : '' }}>
-                                                    <label class="form-check-label fw-bold" for="toggleSector{{ $sectorKey }}">
-                                                        Todo el sector
-                                                    </label>
-                                                </div>
-                                            @else
-                                                <span class="badge bg-secondary"><i class="ri ri-lock-line"></i> Solo lectura</span>
-                                            @endif
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="toggleSector{{ $sectorKey }}"
+                                                       wire:click="toggleSectorPermissions('{{ $sectorKey }}')"
+                                                       {{ ($sectorStates[$sectorKey] ?? false) ? 'checked' : '' }}>
+                                                <label class="form-check-label fw-bold" for="toggleSector{{ $sectorKey }}">
+                                                    Todo el sector
+                                                </label>
+                                            </div>
                                         </div>
 
                                         <div class="row">
@@ -153,22 +137,16 @@
                                                             </div>
                                                         </div>
                                                         <div class="card-body">
-                                                            @if(!$isSystemRole)
-                                                                <div class="form-check mb-2">
-                                                                    <input class="form-check-input"
-                                                                           type="checkbox"
-                                                                           id="toggleModule{{ $sectorKey }}{{ $module }}"
-                                                                           wire:click="toggleModulePermissions('{{ $sectorKey }}', '{{ $module }}')"
-                                                                           {{ ($moduleStates[$moduleKey] ?? false) ? 'checked' : '' }}>
-                                                                    <label class="form-check-label fw-bold" for="toggleModule{{ $sectorKey }}{{ $module }}">
-                                                                        Seleccionar todos
-                                                                    </label>
-                                                                </div>
-                                                            @else
-                                                                <div class="alert alert-warning py-2 mb-3">
-                                                                    <i class="ri ri-lock-line"></i> Permisos del sistema - Solo lectura
-                                                                </div>
-                                                            @endif
+                                                            <div class="form-check mb-2">
+                                                                <input class="form-check-input"
+                                                                       type="checkbox"
+                                                                       id="toggleModule{{ $sectorKey }}{{ $module }}"
+                                                                       wire:click="toggleModulePermissions('{{ $sectorKey }}', '{{ $module }}')"
+                                                                       {{ ($moduleStates[$moduleKey] ?? false) ? 'checked' : '' }}>
+                                                                <label class="form-check-label fw-bold" for="toggleModule{{ $sectorKey }}{{ $module }}">
+                                                                    Seleccionar todos
+                                                                </label>
+                                                            </div>
 
                                                             <div class="permission-list" style="max-height: 200px; overflow-y: auto;">
                                                                 @foreach($permissions as $permission)
@@ -177,8 +155,7 @@
                                                                                type="checkbox"
                                                                                id="permission{{ $permission->id }}"
                                                                                value="{{ $permission->id }}"
-                                                                               wire:model.live="selectedPermissions"
-                                                                               @if($isSystemRole) disabled @endif>
+                                                                               wire:model.live="selectedPermissions">
                                                                         <label class="form-check-label" for="permission{{ $permission->id }}">
                                                                             {{ ucfirst(str_replace('-', ' ', $permission->name)) }}
                                                                         </label>
@@ -207,10 +184,8 @@
                             <a href="{{ route('admin.roles.index') }}" class="btn btn-label-secondary">
                                 <i class="ri ri-arrow-left-line"></i> Volver
                             </a>
-                            <button type="submit" class="btn btn-primary"
-                                    @cannot('edit roles') disabled @endcannot
-                                    @if($isSystemRole) disabled @endif>
-                                <i class="ri ri-save-line"></i> Actualizar Rol
+                            <button type="submit" class="btn btn-primary" @cannot('create roles') disabled @endcannot>
+                                <i class="ri ri-save-line"></i> Editar Rol
                             </button>
                         </div>
                     </form>

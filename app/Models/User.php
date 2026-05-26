@@ -34,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'verification_code_sent_at',
         'empresa_id',
         'sucursal_id',
+        'zona',
         'status',
         'failed_login_attempts',
         'locked_until',

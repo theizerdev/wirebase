@@ -31,6 +31,7 @@ class Create extends Component
     public $sucursales = [];
     public $username;
     public $phone;
+    public $zona;
     public $showPassword = false;
     public $showPasswordConfirmation = false;
     public $zonasDisponibles = [];
@@ -43,8 +44,7 @@ class Create extends Component
             'username' => ['required', 'string', 'max:255', 'unique:users'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'empresa_id' => ['required', 'exists:empresas,id'],
-            'sucursal_id' => ['required', 'exists:sucursales,id'],
+            'zona' => ['nullable', 'string', 'max:255'],
             'status' => ['boolean'],
             'role' => ['required', 'exists:roles,name'],
             'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone']
@@ -228,27 +228,26 @@ class Create extends Component
     public function save()
     {
         $this->validate();
+     
 
-        $plainPassword = $this->password;
+     try {
+           $plainPassword = $this->password;
 
         $user = new User();
         $user->name = $this->name;
         $user->username = $this->username;
         $user->email = $this->email;
         $user->password = Hash::make($plainPassword);
-        $user->empresa_id = $this->empresa_id;
-        $user->sucursal_id = $this->sucursal_id;
+        $user->empresa_id = auth()->user()->empresa_id;
+        $user->sucursal_id = auth()->user()->sucursal_id;
+        $user->zona = $this->zona;
         $user->status = $this->status;
         $user->phone = $this->phone;
         $user->save();
 
         $user->assignRole($this->role);
 
-        // Asignar zonas seleccionadas al usuario
-        if (!empty($this->selectedZonas)) {
-            $user->zonas()->attach($this->selectedZonas);
-        }
-
+   
         // Enviar mensaje de WhatsApp de bienvenida
         $this->enviarMensajeBienvenida($user, $plainPassword);
 
@@ -259,6 +258,9 @@ class Create extends Component
         ]);
 
         return redirect()->route('admin.users.index');
+     } catch (\Throwable $th) {
+        dd($th);
+     }
     }
 
     private function enviarMensajeBienvenida($user, $plainPassword = null)

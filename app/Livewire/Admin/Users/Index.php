@@ -80,7 +80,7 @@ class Index extends Component
 
     protected function getExportHeaders(): array
     {
-        return ['ID', 'Nombre', 'Email', 'Empresa', 'Sucursal', 'Rol', 'Status'];
+        return ['ID', 'Nombre', 'Email', 'Empresa', 'Sucursal', 'Zona', 'Rol', 'Status'];
     }
 
     protected function formatExportRow($user): array
@@ -91,6 +91,7 @@ class Index extends Component
             $user->email,
             $user->empresa->razon_social ?? 'N/A',
             $user->sucursal->nombre ?? 'N/A',
+            $user->zona ?? '-',
             $user->roles->pluck('name')->join(', '),
             $user->status ? 'Activo' : 'Inactivo'
         ];

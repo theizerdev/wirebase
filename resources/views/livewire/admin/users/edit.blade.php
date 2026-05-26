@@ -89,40 +89,16 @@
                     @enderror
                 </div>
 
-                <!-- Zonas de Acceso -->
-                <div class="col-12 mb-3">
-                    <label class="form-label">Zonas de Acceso</label>
-                    <div class="border rounded p-3 bg-light">
-                        @if(count($zonasDisponibles) > 0)
-                            <div class="row">
-                                @foreach($zonasDisponibles as $zona)
-                                    <div class="col-md-6 col-lg-4 mb-2">
-                                        <div class="form-check">
-                                            <input 
-                                                class="form-check-input" 
-                                                type="checkbox" 
-                                                wire:model="selectedZonas" 
-                                                value="{{ $zona['id'] }}"
-                                                id="zona_{{ $zona['id'] }}"
-                                            >
-                                            <label class="form-check-label" for="zona_{{ $zona['id'] }}">
-                                                {{ $zona['nombre'] }}
-                                                @if(!empty($zona['codigo']))
-                                                    <small class="text-muted">({{ $zona['codigo'] }})</small>
-                                                @endif
-                                            </label>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <small class="text-muted mt-2 d-block">
-                                Seleccione las zonas a las que este usuario tendrá acceso ({{ count($selectedZonas) }} seleccionadas)
-                            </small>
-                        @else
-                            <p class="text-muted mb-0">No hay zonas disponibles para la empresa seleccionada</p>
-                        @endif
-                    </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Zona</label>
+                    <input type="text" class="form-control @error('zona') is-invalid @enderror"
+                           wire:model="zona" placeholder="Ingrese la zona">
+                    @error('zona')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
+
+                
 
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Rol <span class="text-danger">*</span></label>

@@ -32,6 +32,14 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'manage contabilidad',
                     ]
                 ],
+                'tasa' => [
+                    'name' => 'Tasa de Cambio',
+                    'permissions' => [
+                        'access exchange-rates',
+                        'view exchange-rates',
+                        'manage exchange-rates',
+                    ]
+                ],
             ],
             'Registro nacional' => [
                 'pastores' => [
@@ -298,71 +306,169 @@ class SectorRolesAndPermissionsSeeder extends Seeder
     private function createRoles(): void
     {
         // Rol Super Administrador - Acceso total
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Administrador']);
+        $superAdmin = Role::firstOrCreate(['name' => 'Administrador']);
         $superAdmin->syncPermissions(Permission::all());
 
-        // Rol Administrador - Todos los sectores excepto asignación de roles/permisos
-        $admin = Role::firstOrCreate(['name' => 'Administrador']);
-        $adminPermissions = Permission::whereNotIn('name', [
-            'assign roles',
-            'assign permissions',
-            'manage permissions',
+        // ============================================
+        // ROLES NUEVOS PARA GESTIÓN DE IGLESIAS
+        // ============================================
+
+        // 1. PRESBÍTERO (Obreros, Extensiones, Inventario, Finanzas, Contabilidad)
+        $presbitero = Role::firstOrCreate(['name' => 'Presbitero']);
+        $presbiteroPermissions = Permission::whereIn('name', [
+            // Obreros (Pastores)
+            'access pastores',
+            'create pastores',
+            'edit pastores',
+            'show pastores',
+            'delete pastores',
+            // Extensiones (Iglesias)
+            'access iglesias',
+            'create iglesias',
+            'edit iglesias',
+            'show iglesias',
+            'delete iglesias',
+            // Inventario de Iglesias
+            'access inventario iglesias',
+            'create inventario iglesias',
+            'edit inventario iglesias',
+            'show inventario iglesias',
+            'delete inventario iglesias',
+            // Finanzas de Iglesias
+            'access finanzas iglesias',
+            'create finanzas iglesias',
+            'edit finanzas iglesias',
+            'show finanzas iglesias',
+            'delete finanzas iglesias',
+            // Contabilidad
+            'access contabilidad',
+            'view contabilidad',
+            'manage contabilidad',
         ])->get();
-        $admin->syncPermissions($adminPermissions);
+        $presbitero->syncPermissions($presbiteroPermissions);
 
-        // Rol Médico - Solo sector médico
-        $medico = Role::firstOrCreate(['name' => 'Médico']);
-        $medicoPermissions = Permission::where('sector', 'medico')
-            ->whereNotIn('name', [
-                'delete medicos',
-                'delete tipo-consultas',
-                'delete especialidades',
-                'delete subespecialidades',
-            ])->get();
-        $chatPermission = Permission::where('name', 'access chat interno')->get();
-        $medico->syncPermissions($medicoPermissions->merge($chatPermission));
+        // 2. JUNTA NACIONAL (Obreros, Extensiones, Inventario, Finanzas, Contabilidad)
+        $juntaNacional = Role::firstOrCreate(['name' => 'Junta Nacional']);
+        $juntaNacional->syncPermissions($presbiteroPermissions); // Mismos permisos que Presbítero
 
+        // 3. CONTADOR (Inventario, Finanzas, Tasa de Cambio)
+        $contador = Role::firstOrCreate(['name' => 'Contador']);
+        $contadorPermissions = Permission::whereIn('name', [
+            // Inventario de Iglesias
+            'access inventario iglesias',
+            'create inventario iglesias',
+            'edit inventario iglesias',
+            'show inventario iglesias',
+            'delete inventario iglesias',
+            // Finanzas de Iglesias
+            'access finanzas iglesias',
+            'create finanzas iglesias',
+            'edit finanzas iglesias',
+            'show finanzas iglesias',
+            'delete finanzas iglesias',
+            // Tasa de Cambio
+            'access exchange-rates',
+            'view exchange-rates',
+            'manage exchange-rates',
+        ])->get();
+        $contador->syncPermissions($contadorPermissions);
 
+        // 4. SUPERVISOR NACIONAL (Obreros, Extensiones, Inventario, Finanzas, Contabilidad, Tasa de Cambio)
+        $supervisorNacional = Role::firstOrCreate(['name' => 'Supervisor Nacional']);
+        $supervisorNacionalPermissions = Permission::whereIn('name', [
+            // Obreros (Pastores)
+            'access pastores',
+            'create pastores',
+            'edit pastores',
+            'show pastores',
+            'delete pastores',
+            // Extensiones (Iglesias)
+            'access iglesias',
+            'create iglesias',
+            'edit iglesias',
+            'show iglesias',
+            'delete iglesias',
+            // Inventario de Iglesias
+            'access inventario iglesias',
+            'create inventario iglesias',
+            'edit inventario iglesias',
+            'show inventario iglesias',
+            'delete inventario iglesias',
+            // Finanzas de Iglesias
+            'access finanzas iglesias',
+            'create finanzas iglesias',
+            'edit finanzas iglesias',
+            'show finanzas iglesias',
+            'delete finanzas iglesias',
+            // Contabilidad
+            'access contabilidad',
+            'view contabilidad',
+            'manage contabilidad',
+            // Tasa de Cambio
+            'access exchange-rates',
+            'view exchange-rates',
+            'manage exchange-rates',
+        ])->get();
+        $supervisorNacional->syncPermissions($supervisorNacionalPermissions);
 
-        // Rol Recepción - Sector médico + administración limitada
-        $recepcion = Role::firstOrCreate(['name' => 'Recepción']);
-        $recepcionPermissions = Permission::whereIn('sector', ['medico', 'administracion', 'recepcion'])
-            ->whereIn('name', [
-                // Recepción
-                'access recepcion dashboard',
-                //'manage consultorios',
-                // Apertura de Consultas (nuevo módulo)
-                'access consulta apertura',
-                'iniciar consulta',
-                'enviar cuestionario whatsapp',
-                'ver respuestas preconsulta',
-                // Médico limitado
-                'access tipo-consultas',
-                'create tipo-consultas',
-                'edit tipo-consultas',
-                'access pacientes',
-                'create pacientes',
-                'edit pacientes',
-                'access medicos',
-                'view medicos',
-                'access citas',
-                'create citas',
-                'edit citas',
-                'confirm citas',
-                'cancel citas',
-                // Administración limitada
-               // 'access conceptos pago',
-               // 'view conceptos pago',
-                //'access series',
-                //'access cajas',
-               // 'view cajas',
-                //'access pagos',
-               // 'create pagos',
-               // 'view pagos',
-            ])->get();
-        $recepcion->syncPermissions($recepcionPermissions->merge($chatPermission));
+        // 5. OFICINA NACIONAL (Obreros, Extensiones, Inventario, Finanzas, Contabilidad, Usuarios, Tasa de Cambio)
+        $oficinaNacional = Role::firstOrCreate(['name' => 'Oficina Nacional']);
+        $oficinaNacionalPermissions = Permission::whereIn('name', [
+            // Obreros (Pastores)
+            'access pastores',
+            'create pastores',
+            'edit pastores',
+            'show pastores',
+            'delete pastores',
+            // Extensiones (Iglesias)
+            'access iglesias',
+            'create iglesias',
+            'edit iglesias',
+            'show iglesias',
+            'delete iglesias',
+            // Inventario de Iglesias
+            'access inventario iglesias',
+            'create inventario iglesias',
+            'edit inventario iglesias',
+            'show inventario iglesias',
+            'delete inventario iglesias',
+            // Finanzas de Iglesias
+            'access finanzas iglesias',
+            'create finanzas iglesias',
+            'edit finanzas iglesias',
+            'show finanzas iglesias',
+            'delete finanzas iglesias',
+            // Contabilidad
+            'access contabilidad',
+            'view contabilidad',
+            'manage contabilidad',
+            // Usuarios
+            'access users',
+            'create users',
+            'edit users',
+            'delete users',
+            'view users',
+            'activate users',
+            'deactivate users',
+            'reset users password',
+            'manage users profile',
+            'assign users roles',
+            'export users',
+            'view users history',
+            // Tasa de Cambio
+            'access exchange-rates',
+            'view exchange-rates',
+            'manage exchange-rates',
+        ])->get();
+        $oficinaNacional->syncPermissions($oficinaNacionalPermissions);
 
-         $this->command->info('✅ Roles y permisos procesados exitosamente');
+        $this->command->info('✅ Roles y permisos procesados exitosamente');
         $this->command->info('📊 Total de permisos procesados: ' . count(Permission::all()));
+        $this->command->info('👥 Roles creados:');
+        $this->command->info('   - Presbitero');
+        $this->command->info('   - Junta Nacional');
+        $this->command->info('   - Contador');
+        $this->command->info('   - Supervisor Nacional');
+        $this->command->info('   - Oficina Nacional');
     }
 }

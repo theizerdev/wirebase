@@ -12,6 +12,7 @@ use App\Livewire\Admin\Pastores\Show as PastoresShow;
 
 
 
+
 // Pastores
 Route::get('/pastores', PastoresIndex::class)->name('pastores.index');
 Route::get('/pastores/crear', PastoresCreate::class)->name('pastores.create');

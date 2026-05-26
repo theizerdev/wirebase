@@ -95,7 +95,18 @@
                         
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Teléfono Móvil:</label>
-                            <p>{{ $pastor->telefono_tlf ?? 'No especificado' }}</p>
+                            <div class="d-flex align-items-center gap-2">
+                                <p class="mb-0">{{ $pastor->telefono_tlf ?? 'No especificado' }}</p>
+                                @if($pastor->user_id)
+                                    @php
+                                        $user = \App\Models\User::find($pastor->user_id);
+                                        $tieneSeguridad = $pastor->preguntasSeguridad && $pastor->preguntasSeguridad->activado;
+                                    @endphp
+                                    @if(!$tieneSeguridad)
+                                        <livewire:admin.pastores.solicitar-modificacion-telefono :pastor="$pastor" />
+                                    @endif
+                                @endif
+                            </div>
                         </div>
                         
                         <div class="col-md-3 mb-3">
@@ -150,6 +161,52 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Coordenadas:</label>
                             <p>Lat: {{ $pastor->latitud }}, Lng: {{ $pastor->longitud }}</p>
+                        </div>
+                        @endif
+                        
+                        <!-- Seguridad de la Cuenta -->
+                        @if($pastor->user_id)
+                        <div class="col-12 mt-4 mb-4">
+                            <h6 class="text-primary">
+                                <i class="ri ri-shield-keyhole-line me-2"></i>Seguridad de la Cuenta
+                            </h6>
+                            <hr>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            @php
+                                $tieneSeguridad = $pastor->preguntasSeguridad && $pastor->preguntasSeguridad->activado;
+                            @endphp
+                            
+                            @if($tieneSeguridad)
+                                <div class="alert alert-success d-flex align-items-center">
+                                    <i class="ri ri-shield-check-fill fs-4 me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">✅ Protección Activada</h6>
+                                        <p class="mb-0 small">
+                                            Este pastor tiene configuradas preguntas de seguridad y códigos de respaldo.
+                                            <br>
+                                            <strong>Backup codes disponibles:</strong> {{ $pastor->preguntasSeguridad->backupCodesDisponibles() }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="alert alert-warning d-flex align-items-center">
+                                    <i class="ri ri-alert-line fs-4 me-3"></i>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 fw-bold">⚠️ Sin Protección de Seguridad</h6>
+                                        <p class="mb-2 small">
+                                            Este pastor aún no ha configurado sus preguntas de seguridad. Se recomienda configurarlas para proteger su cuenta.
+                                        </p>
+                                        @can('edit pastores')
+                                            <a href="{{ route('admin.pastores.configurar-seguridad', $pastor->id) }}" class="btn btn-warning btn-sm">
+                                                <i class="ri ri-shield-keyhole-line me-1"></i>
+                                                Configurar Seguridad Ahora
+                                            </a>
+                                        @endcan
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                         @endif
                         
