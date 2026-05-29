@@ -11,11 +11,15 @@ use Illuminate\Support\Facades\Session;
 
 
 Route::get('/', function () {
-   if (\Auth::check()) {
-      return redirect()->to('admin/dashboard');
-   } else {
          return redirect()->route('public.pastores.busqueda');
-      }
+});
+
+// PWA - Servir Service Worker con headers correctos
+Route::get('/sw.js', function () {
+    return response()->file(public_path('sw.js'), [
+        'Content-Type' => 'application/javascript',
+        'Cache-Control' => 'no-cache',
+    ]);
 });
 
 // Include auth routes

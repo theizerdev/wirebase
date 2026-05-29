@@ -4,7 +4,13 @@ if (!function_exists('getPermissionSectors')) {
     function getPermissionSectors(): array
     {
         return [
-
+            'pastores' => [
+                'name' => '👥 Pastores',
+                'description' => 'Gestión de pastores, iglesias y solicitudes de modificación',
+                'color' => 'blue',
+                'icon' => 'ri-user-line',
+                'modules' => ['pastores', 'iglesias', 'inventario iglesias', 'finanzas iglesias', 'solicitudes']
+            ],
             'configuracion' => [
                 'name' => '⚙️ Configuración',
                 'description' => 'Configuración del sistema, empresas, usuarios y roles',
@@ -126,8 +132,8 @@ if (!function_exists('getSectorMenuItems')) {
     function getSectorMenuItems(): array
     {
         return [
-             'registro_nacional' => [
-                'label' => 'Registro Nacional',
+             'pastores' => [
+                'label' => 'Pastores',
                 'icon' => 'ri-user-line',
                 'items' => [
                     [
@@ -170,6 +176,16 @@ if (!function_exists('getSectorMenuItems')) {
                         'children' => [
                             ['label' => 'Listado general', 'permission' => 'access finanzas iglesias', 'route' => 'admin.finanzas.index', 'active' => 'admin.finanzas.index'],
                             ['label' => 'Nueva transacción', 'permission' => 'create finanzas iglesias', 'route' => 'admin.finanzas.create', 'active' => 'admin.finanzas.create'],
+                        ]
+                    ],
+                    [
+                        'label' => 'Solicitudes',
+                        'icon' => 'ri-file-list-3-line',
+                        'permissions' => ['access solicitudes'],
+                        'active' => 'admin.solicitudes.*',
+                        'children' => [
+                            ['label' => 'Dashboard', 'permission' => 'access solicitudes', 'route' => 'admin.solicitudes.dashboard', 'active' => 'admin.solicitudes.dashboard'],
+                            ['label' => 'Todas las solicitudes', 'permission' => 'view solicitudes', 'route' => 'admin.solicitudes.index', 'active' => 'admin.solicitudes.index'],
                         ]
                     ],
                 ],

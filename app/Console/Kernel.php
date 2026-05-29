@@ -28,6 +28,7 @@ class Kernel extends ConsoleKernel
         Commands\VerificarRecordatoriosCitas::class, // Verificar estado de recordatorios
         Commands\ProcessConfirmationsCommand::class, // Procesar confirmaciones de citas
         Commands\ProcessDilatacionConsultas::class,
+        Commands\ProcesarEscalamientoSolicitudes::class, // Escalamiento automático de solicitudes
     ];
 
     /**
@@ -102,6 +103,13 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('consultas:procesar-dilataciones')
                  ->everyMinute()
+                 ->withoutOverlapping()
+                 ->onOneServer();
+
+        // Procesar escalamiento automático de solicitudes cada hora
+        $schedule->command('solicitudes:procesar-escalamiento')
+                 ->hourly()
+                 ->timezone('America/Caracas')
                  ->withoutOverlapping()
                  ->onOneServer();
     }

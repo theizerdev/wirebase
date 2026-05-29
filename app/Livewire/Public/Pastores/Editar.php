@@ -255,38 +255,8 @@ class Editar extends Component
         // Cargar listas desplegables
         $this->estados = Estado::orderBy('nombre')->get();
 
-        // Cargar pastores disponibles para cónyuge según el género del pastor actual
-        // Si el pastor actual es femenino (cónyuge), debe poder seleccionar al esposo (masculino)
-        // Si el pastor actual es masculino, debe poder seleccionar a la esposa (femenina)
-        if ($pastor->genero == 'Femenino') {
-            // La persona actual es la esposa, por lo tanto debe poder seleccionar al esposo (masculino)
-            $this->pastores = Pastor::whereNull('conyuge_id')
-                ->where('genero', 'Masculino')
-                ->where('id', '!=', $pastor->id)  // No se puede seleccionar a sí misma
-                ->when($pastor->zona, function ($query, $zona) {
-                    return $query->where('zona', $zona);
-                })
-                ->when($pastor->distrito, function ($query, $distrito) {
-                    return $query->where('distrito', $distrito);
-                })
-                ->orderBy('nombres')
-                ->orderBy('apellidos')
-                ->get();
-        } else {
-            // La persona actual es el esposo, por lo tanto debe poder seleccionar a la esposa (femenina)
-            $this->pastores = Pastor::whereNull('conyuge_id')
-                ->where('genero', 'Femenino')
-                ->where('id', '!=', $pastor->id)  // No se puede seleccionar a sí mismo
-                ->when($pastor->zona, function ($query, $zona) {
-                    return $query->where('zona', $zona);
-                })
-                ->when($pastor->distrito, function ($query, $distrito) {
-                    return $query->where('distrito', $distrito);
-                })
-                ->orderBy('nombres')
-                ->orderBy('apellidos')
-                ->get();
-        }
+        // NO cargar pastores inicialmente - se cargarán solo cuando el usuario busque
+        $this->pastores = collect();
 
 
         if ($this->estado_id) {
@@ -443,11 +413,11 @@ class Editar extends Component
         // Si el estado civil ya no es Casado, limpiar el cónyuge
         if ($value !== 'Casado') {
             $this->conyuge_id = null;
+            $this->pastores = collect();
+        } else {
+            // Recargar la lista de pastores disponibles cuando cambia a Casado
+            $this->pastores = $this->loadPastoresDisponiblesConyuge();
         }
-
-        // Recargar la lista de pastores disponibles
-        $conyugeActualId = $this->pastor->conyuge_id;
-
     }
 
     #[On('location-updated')]
@@ -933,45 +903,57 @@ class Editar extends Component
     
     public function updatedConyugeBusqueda($value)
     { 
-         if (!empty($value)) {
-                $this->buscarConyugePorTexto($value);
-            } else {
-                $this->resultados_conyuge = collect([]);
-            }
+        // Recargar la lista de pastores disponibles para cónyuge
+        $this->pastores = $this->loadPastoresDisponiblesConyuge();
     }
 
-    public function buscarConyugePorTexto($texto)
-{
-    $query = Pastor::whereNull('conyuge_id')
-        ->where('id', '!=', $this->pastor->id); // No se puede seleccionar a sí mismo
+    private function loadPastoresDisponiblesConyuge()
+    {
+        if ($this->estado_civil !== 'Casado') {
+            return collect();
+        }
+        
+        // SOLO mostrar resultados si hay búsqueda activa
+        $search = trim($this->conyuge_busqueda);
+        if ($search === '') {
+            return collect(); // No mostrar nada si no hay búsqueda
+        }
 
-    // Filtrar por género opuesto al actual
-    if ($this->genero === 'Femenino') {
-        $query->where('genero', 'Masculino');
-    } else {
-        $query->where('genero', 'Femenino');
+        // Verificar que el género esté definido
+        if (!in_array($this->genero, ['Masculino', 'Femenino'])) {
+            return collect(); // No mostrar nada si no hay género
+        }
+
+        $query = Pastor::query()
+            ->where('id', '!=', $this->pastor->id) // Excluir al pastor actual
+            ->where(function ($query) {
+                $query->whereNull('conyuge_id');
+                if ($this->conyuge_id) {
+                    $query->orWhere('id', $this->conyuge_id); // Incluir cónyuge actual si existe
+                }
+            });
+
+        // Aplicar filtro de género
+        if ($this->genero === 'Masculino') {
+            $query->where('genero', 'Femenino'); // Pastor masculino busca esposa femenina
+        } elseif ($this->genero === 'Femenino') {
+            $query->where('genero', 'Masculino'); // Pastor femenino busca esposo masculino
+        }
+
+        // Filtrar por término de búsqueda
+        if ($search !== '') {
+            $like = "%{$search}%";
+            $query->where(function ($q) use ($like) {
+                $q->where('nombres', 'like', $like)
+                  ->where('zona', '=', $this->pastor->zona)
+                  ->where('distrito', '=', $this->pastor->distrito)
+                  ->orWhere('apellidos', 'like', $like)
+                  ->orWhere('documento', 'like', $like);
+            });
+        }
+
+        return $query->orderBy('nombres')->orderBy('apellidos')->get();
     }
-
-    // Filtrar por zona y distrito del pastor actual
-    if ($this->zona) {
-        $query->where('zona', $this->zona);
-    }
-    if ($this->distrito) {
-        $query->where('distrito', $this->distrito);
-    }
-
-    // Filtrar por nombre o documento
-    $query->where(function($q) use ($texto) {
-        $q->where('nombres', 'LIKE', '%' . $texto . '%')
-          ->orWhere('apellidos', 'LIKE', '%' . $texto . '%')
-          ->orWhere('documento', 'LIKE', '%' . $texto . '%');
-    });
-
-    $this->resultados_conyuge = $query->limit(10)
-        ->orderBy('nombres')
-        ->orderBy('apellidos')
-        ->get();
-}
 
 
 public function seleccionarConyuge($id)
@@ -980,8 +962,10 @@ public function seleccionarConyuge($id)
     if ($pastor) {
         $this->conyuge_id = $pastor->id;
         $this->conyuge_encontrado = $pastor;
-        $this->conyuge_busqueda = $pastor->nombres . ' ' . $pastor->apellidos;
-        $this->resultados_conyuge = collect([]);
+        $this->conyuge_busqueda = $pastor->nombres . ' ' . $pastor->apellidos . ' (' . $pastor->documento . ')';
+        
+        // Mantener el cónyuge seleccionado en la lista y recargar disponibles
+        $this->pastores = $this->loadPastoresDisponiblesConyuge();
     }
 }
 
@@ -991,6 +975,9 @@ public function limpiarConyuge()
     $this->conyuge_encontrado = null;
     $this->conyuge_busqueda = '';
     $this->resultados_conyuge = collect([]);
+    
+    // Recargar la lista de pastores disponibles
+    $this->pastores = $this->loadPastoresDisponiblesConyuge();
 }
 
     
@@ -1006,107 +993,23 @@ public function limpiarConyuge()
     public function updatedZona($value)
     {
         // Recargar la lista de pastores disponibles cuando se cambia la zona
-        if ($this->genero == 'Femenino') {
-            // La persona actual es la esposa, por lo tanto debe poder seleccionar al esposo (masculino)
-            $this->pastores = Pastor::whereNull('conyuge_id')
-                ->where('genero', 'Masculino')
-                ->where('id', '!=', $this->pastor->id)  // No se puede seleccionar a sí misma
-                ->when($value, function ($query, $zona) {
-                    return $query->where('zona', $zona);
-                })
-                ->when($this->distrito, function ($query, $distrito) {
-                    return $query->where('distrito', $distrito);
-                })
-                ->orderBy('nombres')
-                ->orderBy('apellidos')
-                ->get();
-        } else {
-            // La persona actual es el esposo, por lo tanto debe poder seleccionar a la esposa (femenina)
-            $this->pastores = Pastor::whereNull('conyuge_id')
-                ->where('genero', 'Femenino')
-                ->where('id', '!=', $this->pastor->id)  // No se puede seleccionar a sí mismo
-                ->when($value, function ($query, $zona) {
-                    return $query->where('zona', $zona);
-                })
-                ->when($this->distrito, function ($query, $distrito) {
-                    return $query->where('distrito', $distrito);
-                })
-                ->orderBy('nombres')
-                ->orderBy('apellidos')
-                ->get();
-        }
+        // Ahora usamos loadPastoresDisponiblesConyuge() para mantener consistencia
+        $this->pastores = $this->loadPastoresDisponiblesConyuge();
     }
 
     public function updatedDistrito($value)
     {
         // Recargar la lista de pastores disponibles cuando se cambia el distrito
-        if ($this->genero == 'Femenino') {
-            // La persona actual es la esposa, por lo tanto debe poder seleccionar al esposo (masculino)
-            $this->pastores = Pastor::whereNull('conyuge_id')
-                ->where('genero', 'Masculino')
-                ->where('id', '!=', $this->pastor->id)  // No se puede seleccionar a sí misma
-                ->when($this->zona, function ($query, $zona) {
-                    return $query->where('zona', $zona);
-                })
-                ->when($value, function ($query, $distrito) {
-                    return $query->where('distrito', $distrito);
-                })
-                ->orderBy('nombres')
-                ->orderBy('apellidos')
-                ->get();
-        } else {
-            // La persona actual es el esposo, por lo tanto debe poder seleccionar a la esposa (femenina)
-            $this->pastores = Pastor::whereNull('conyuge_id')
-                ->where('genero', 'Femenino')
-                ->where('id', '!=', $this->pastor->id)  // No se puede seleccionar a sí mismo
-                ->when($this->zona, function ($query, $zona) {
-                    return $query->where('zona', $zona);
-                })
-                ->when($value, function ($query, $distrito) {
-                    return $query->where('distrito', $distrito);
-                })
-                ->orderBy('nombres')
-                ->orderBy('apellidos')
-                ->get();
-        }
+        // Ahora usamos loadPastoresDisponiblesConyuge() para mantener consistencia
+        $this->pastores = $this->loadPastoresDisponiblesConyuge();
     }
 
-    // Propiedad para almacenar resultados de búsqueda de cónyuge
+    // Propiedad para almacenar resultados de búsqueda de cónyuge (mantenida por compatibilidad)
     public $searchResults = [];
 
+    // Mantener el método por compatibilidad pero no se usa
     public function searchConyuge($searchTerm = '')
     {
-        $query = Pastor::whereNull('conyuge_id')
-            ->where('id', '!=', $this->pastor->id); // No se puede seleccionar a sí mismo
-
-        // Filtrar por género opuesto al actual
-        if ($this->pastor->genero === 'Femenino') {
-            $query->where('genero', 'Masculino');
-        } else {
-            $query->where('genero', 'Femenino');
-        }
-
-        // Filtrar por zona y distrito del pastor actual
-        if ($this->pastor->zona) {
-            $query->where('zona', $this->pastor->zona);
-        }
-        if ($this->pastor->distrito) {
-            $query->where('distrito', $this->pastor->distrito);
-        }
-
-        // Si hay término de búsqueda, filtrar por nombre o documento
-        if ($searchTerm) {
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('nombres', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('apellidos', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('documento', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
-
-        $this->searchResults = $query->limit(10) // Limitar resultados
-            ->orderBy('nombres')
-            ->orderBy('apellidos')
-            ->get()
-            ->toArray();
+        $this->loadPastoresDisponiblesConyuge();
     }
 }

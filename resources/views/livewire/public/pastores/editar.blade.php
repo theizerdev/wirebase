@@ -155,39 +155,40 @@
                                                 <div class="input-group">
                                                     <input type="text" 
                                                            class="form-control @error('conyuge_busqueda') is-invalid @enderror" 
-                                                           wire:model.live.debounce.500ms="conyuge_busqueda"
-                                                           placeholder="Buscar cónyuge por nombre o documento...">
-                                                    @if($resultados_conyuge && $resultados_conyuge->count() > 0)
-                                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                            {{ $resultados_conyuge->count() }} encontrado(s)
-                                                        </button>
-                                                        <ul class="dropdown-menu dropdown-menu-end">
-                                                            @foreach($resultados_conyuge as $pastor_resultado)
-                                                                <li>
-                                                                    <a class="dropdown-item" href="#" wire:click.prevent="seleccionarConyuge({{ $pastor_resultado->id }})">
-                                                                        {{ $pastor_resultado->nombres }} {{ $pastor_resultado->apellidos }} ({{ $pastor_resultado->documento }})
-                                                                    </a>
-                                                                </li>
+                                                           wire:model.live.debounce.300ms="conyuge_busqueda"
+                                                           placeholder="Buscar cónyuge por nombre, apellido o cédula...">
+                                                </div>
+                                                @if(!empty($conyuge_busqueda))
+                                                    @if($pastores && $pastores->count() > 0)
+                                                        <div class="form-text mt-2">
+                                                            <i class="ri ri-check-line text-success"></i> {{ $pastores->count() }} resultado(s) encontrado(s)
+                                                        </div>
+                                                        <div class="list-group mt-2">
+                                                            @foreach($pastores as $p)
+                                                                @php
+                                                                    $label = $p->nombres . ' ' . $p->apellidos . ' — ' . $p->documento;
+                                                                    $pattern = '/' . preg_quote(trim($conyuge_busqueda), '/') . '/i';
+                                                                    $labelHighlighted = preg_replace($pattern, '<mark>$0</mark>', e($label));
+                                                                @endphp
+                                                                <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                                                   wire:click.prevent="seleccionarConyuge({{ $p->id }})">
+                                                                    <span>{!! $labelHighlighted !!}</span>
+                                                                    <i class="ri ri-arrow-right-line text-muted"></i>
+                                                                </a>
                                                             @endforeach
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <li>
-                                                                <a class="dropdown-item" href="#" wire:click.prevent="openConyugeModal">
-                                                                    <i class="ri ri-user-add-line me-1"></i>Crear nuevo cónyuge
-                                                                </a>
-                                                            </li>
-                                                        </ul>
-                                                    @elseif(!empty($conyuge_busqueda))
-                                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                            Opciones
-                                                        </button>
-                                                        <ul class="dropdown-menu dropdown-menu-end">
-                                                            <li>
-                                                                <a class="dropdown-item" href="#" wire:click.prevent="openConyugeModal">
-                                                                    <i class="ri ri-user-add-line me-1"></i>Crear nuevo cónyuge: "{{ $conyuge_busqueda }}"
-                                                                </a>
-                                                            </li>
-                                                        </ul>
+                                                        </div>
+                                                    @else
+                                                        <div class="form-text mt-2 text-muted">
+                                                            <i class="ri ri-error-warning-line text-warning"></i> No se encontraron resultados para "{{ $conyuge_busqueda }}"
+                                                        </div>
                                                     @endif
+                                                @else
+                                                    <div class="form-text mt-2 text-muted">
+                                                        <i class="ri ri-information-line"></i> Escribe para buscar un cónyuge (nombre, apellido o cédula)
+                                                    </div>
+                                                @endif
+                                                <div class="mt-2">
+                                                   
                                                 </div>
                                                 @if($conyuge_encontrado)
                                                     <div class="mt-2 alert alert-success p-2">
@@ -200,44 +201,42 @@
                                                 @endif
                                             @endif
                                         @else
-                                            {{-- Mostrar campo de texto con búsqueda --}}
                                             <div class="input-group">
                                                 <input type="text" 
                                                        class="form-control @error('conyuge_busqueda') is-invalid @enderror" 
-                                                       wire:model.live.debounce.500ms="conyuge_busqueda"
-                                                       placeholder="Buscar cónyuge por nombre o documento...">
-                                                @if($resultados_conyuge && $resultados_conyuge->count() > 0)
-                                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                        {{ $resultados_conyuge->count() }} encontrado(s)
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end">
-                                                        @foreach($resultados_conyuge as $pastor_resultado)
-                                                            <li>
-                                                                <a class="dropdown-item" href="#" wire:click.prevent="seleccionarConyuge({{ $pastor_resultado->id }})">
-                                                                    {{ $pastor_resultado->nombres }} {{ $pastor_resultado->apellidos }} ({{ $pastor_resultado->documento }})
-                                                                </a>
-                                                            </li>
-                                                        @endforeach
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li>
-                                                            <a class="dropdown-item" href="#" wire:click.prevent="openConyugeModal">
-                                                                <i class="ri ri-user-add-line me-1"></i>Crear nuevo cónyuge
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                @elseif(!empty($conyuge_busqueda))
-                                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                        Opciones
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end">
-                                                        <li>
-                                                            <a class="dropdown-item" href="#" wire:click.prevent="openConyugeModal">
-                                                                <i class="ri ri-user-add-line me-1"></i>Crear nuevo cónyuge: "{{ $conyuge_busqueda }}"
-                                                            </a>
-                                                        </li>
-                                                    </ul>
-                                                @endif
+                                                       wire:model.live.debounce.300ms="conyuge_busqueda"
+                                                       placeholder="Buscar cónyuge por nombre, apellido o cédula...">
                                             </div>
+                                            @if(!empty($conyuge_busqueda))
+                                                @if($pastores && $pastores->count() > 0)
+                                                    <div class="form-text mt-2">
+                                                        <i class="ri ri-check-line text-success"></i> {{ $pastores->count() }} resultado(s) encontrado(s)
+                                                    </div>
+                                                    <div class="list-group mt-2">
+                                                        @foreach($pastores as $p)
+                                                            @php
+                                                                $label = $p->nombres . ' ' . $p->apellidos . ' — ' . $p->documento;
+                                                                $pattern = '/' . preg_quote(trim($conyuge_busqueda), '/') . '/i';
+                                                                $labelHighlighted = preg_replace($pattern, '<mark>$0</mark>', e($label));
+                                                            @endphp
+                                                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                                               wire:click.prevent="seleccionarConyuge({{ $p->id }})">
+                                                                <span>{!! $labelHighlighted !!}</span>
+                                                                <i class="ri ri-arrow-right-line text-muted"></i>
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <div class="form-text mt-2 text-muted">
+                                                        <i class="ri ri-error-warning-line text-warning"></i> No se encontraron resultados para "{{ $conyuge_busqueda }}"
+                                                    </div>
+                                                @endif
+                                            @else
+                                                <div class="form-text mt-2 text-muted">
+                                                    <i class="ri ri-information-line"></i> Escribe para buscar un cónyuge (nombre, apellido o cédula)
+                                                </div>
+                                            @endif
+                                            
                                             @if($conyuge_encontrado)
                                                 <div class="mt-2 alert alert-success p-2">
                                                     <small>

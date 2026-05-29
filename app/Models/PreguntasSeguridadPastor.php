@@ -55,6 +55,38 @@ class PreguntasSeguridadPastor extends Model
     }
 
     /**
+     * Verificar una sola respuesta de seguridad
+     * 
+     * @param string $pregunta Texto de la pregunta
+     * @param string $respuesta Respuesta ingresada por el usuario
+     * @return bool
+     */
+    public function verificarRespuesta(string $pregunta, string $respuesta): bool
+    {
+        if (!$this->activado || empty($this->preguntas)) {
+            return false;
+        }
+
+        // Buscar la pregunta en el array de preguntas
+        $preguntaEncontrada = collect($this->preguntas)->firstWhere('pregunta', $pregunta);
+
+        if (!$preguntaEncontrada) {
+            return false;
+        }
+
+        // Verificar la respuesta (case-insensitive y trim)
+        $respuestaCorrecta = Hash::check(
+            strtolower(trim($respuesta)),
+            $preguntaEncontrada['respuesta_hash']
+        );
+
+        // Registrar intento
+        $this->registrarIntento($respuestaCorrecta);
+
+        return $respuestaCorrecta;
+    }
+
+    /**
      * Verificar respuestas de seguridad
      * 
      * @param array $respuestas [{pregunta: string, respuesta: string}]

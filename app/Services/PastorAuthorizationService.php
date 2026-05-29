@@ -61,8 +61,9 @@ class PastorAuthorizationService
      */
     private function buscarPresbiteroPorZona(string $zona, int $empresaId): ?User
     {
+        $zonaSinEspacios = str_replace(' ', '', $zona);
         return User::where('empresa_id', $empresaId)
-            ->where('zona', $zona)
+            ->where('zona', $zonaSinEspacios)
             ->role('Presbitero')
             ->where('status', true)
             ->first();

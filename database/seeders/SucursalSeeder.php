@@ -22,28 +22,7 @@ class SucursalSeeder extends Seeder
                 'telefono' => $empresa->telefono,
             ]);
 
-            // Crear Super Administrador
-            $superAdmin = User::create([
-                'name' => 'Super Admin ' . $empresa->razon_social,
-                'email' => 'superadmin@devtechvnzla.com',
-                'password' => Hash::make('password'),
-                'empresa_id' => $empresa->id,
-                'sucursal_id' => 1,
-                'status' => true,
-            ]);
-
-            $superAdmin->assignRole('Super Administrador');
-
-            // Crear Administrador
-            $admin = User::create([
-                'name' => 'Admin ' . $empresa->razon_social,
-                'email' => 'admin@devtechvnzla.com',
-                'password' => Hash::make('password'),
-                'empresa_id' => $empresa->id,
-                'sucursal_id' => 1,
-                'status' => true,
-            ]);
-            $admin->assignRole('Administrador');
+          
         }
     }
 }

@@ -19,6 +19,14 @@
     <meta name="robots" content="noindex, nofollow" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#8B5CF6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PUPILAINC">
+    <link rel="apple-touch-icon" href="/pwa-icons/icon-192x192.png">
+    <link rel="manifest" href="/manifest.json">
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/logo/1719430882.png" />
 
@@ -117,5 +125,38 @@
 
     <!-- Livewire -->
     @livewireScripts
+
+      
+    <script>
+      // Registrar Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('[PWA] Service Worker registrado con éxito:', registration.scope);
+            })
+            .catch(error => {
+              console.log('[PWA] Error al registrar Service Worker:', error);
+            });
+        });
+      }
+
+      // Manejo de la instalación PWA
+      let deferredPrompt;
+      let installButton = null;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevenir el prompt automático del navegador
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Crear botón flotante de instalación
+        createInstallButton();
+        
+        console.log('[PWA] beforeinstallprompt event fired');
+      });
+
+     </script>
+
   </body>
 </html>

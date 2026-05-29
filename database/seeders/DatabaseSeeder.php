@@ -20,8 +20,6 @@ class DatabaseSeeder extends Seeder
             EmpresaSeeder::class,
             SucursalSeeder::class,
             UsersTableSeeder::class,
-            ZonaSeeder::class,
-            ZonasPermissionsSeeder::class,
             UbicacionPermissionsSeeder::class,
             PlanDeCuentasIglesiaSeeder::class,
             EstadosSeeder::class,

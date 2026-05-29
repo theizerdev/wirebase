@@ -6,7 +6,9 @@
         <div class="app-brand justify-content-center mt-5">
           <a href="{{ url('/') }}" class="app-brand-link gap-2">
 
-            <span class="app-brand-text demo text-heading fw-semibold">{{ strtoupper(config('app.name', 'Laravel')) }}</span>
+            <div class="mb-5 text-center">
+          @include('auth.header.logo')
+        </div>
           </a>
         </div>
         <!-- /Logo -->
@@ -139,7 +141,7 @@
             <div class="card-body py-3">
               <div class="d-flex align-items-center">
                 @if($pastorData->foto)
-                  <img src="{{ asset('storage/' . $pastorData->foto) }}" 
+                  <img src="{{ asset('pastores/' . str_replace(' ', '', $pastorData->foto)) }}" 
                        alt="{{ $pastorData->nombre_completo }}"
                        class="rounded-circle me-3"
                        style="width: 60px; height: 60px; object-fit: cover;">
@@ -226,6 +228,84 @@
   </style>
   @endif
 
+  <!-- Modal de Pregunta de Seguridad -->
+  @if($showSecurityQuestionModal)
+  <div class="modal-backdrop fade show" style="z-index: 1050;"></div>
+  <div class="modal fade show d-block" tabindex="-1" style="z-index: 1051;" id="securityQuestionModal">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"> Verificación de Seguridad</h5>
+          <button type="button" class="btn-close" wire:click="$set('showSecurityQuestionModal', false)" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Por seguridad, responda la siguiente pregunta:</p>
+          
+          @if($failedAttemptsCount > 0)
+          <div class="alert alert-warning mb-3">
+            <i class="ri ri-alert-line me-2"></i>
+            <strong>Intentos fallidos:</strong> {{ $failedAttemptsCount }}
+            @if($failedAttemptsCount >= 2)
+            <br><small>Después de 3 intentos fallidos se aplicará un período de espera.</small>
+            @endif
+          </div>
+          @endif
+          
+          <div class="alert alert-info mb-3">
+            <i class="ri ri-question-line me-2"></i>
+            <strong>{{ $securityQuestion }}</strong>
+          </div>
+
+          @if($showCaptcha)
+          <div class="alert alert-warning mb-3">
+            <i class="ri ri-shield-check-line me-2"></i>
+            <strong>Verificación adicional:</strong>
+            <p class="mb-1 mt-2">{{ $captchaQuestion }}</p>
+            <input 
+              type="number" 
+              class="form-control form-control-sm" 
+              wire:model="captchaInput"
+              wire:keydown.enter="verifySecurityAnswer"
+              placeholder="Ingrese el resultado"
+              autocomplete="off">
+            @error('captchaInput') <div class="text-danger mt-1 small">{{ $message }}</div> @enderror
+          </div>
+          @endif
+
+          <div class="mb-3">
+            <label for="securityAnswer" class="form-label">Su Respuesta</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="securityAnswer" 
+              wire:model="securityAnswer"
+              wire:keydown.enter="verifySecurityAnswer"
+              placeholder="Ingrese su respuesta"
+              autocomplete="off">
+            @error('securityAnswer') <div class="text-danger mt-1">{{ $message }}</div> @enderror
+            @if($verificationError)
+              <div class="alert alert-danger mt-2 mb-0">
+                <i class="ri ri-error-warning-line me-1"></i>
+                {{ $verificationError }}
+              </div>
+            @endif
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" wire:click="$set('showSecurityQuestionModal', false)">Cerrar</button>
+          <button type="button" class="btn btn-primary" wire:click="verifySecurityAnswer" wire:loading.attr="disabled">
+            <span wire:loading.remove>Verificar Respuesta</span>
+            <span wire:loading>
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              Verificando...
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  @endif
+
   <!-- Modal de Validación OTP -->
   @if($showOtpModal)
   <div class="modal-backdrop fade show" style="z-index: 1050;"></div>
@@ -238,15 +318,35 @@
         </div>
         <div class="modal-body">
           @if(!$otpSent)
+          @if($phoneNumber)
+          <div class="alert alert-success mb-3">
+            <i class="ri ri-check-line me-2"></i>
+            <strong> Verificación de seguridad completada!</strong>
+            <p class="mb-0 mt-1">Se enviará un código de verificación a su número registrado.</p>
+          </div>
+          @else
           <p class="text-muted">Por seguridad, ingrese su número de teléfono para recibir un código de verificación.</p>
+          @endif
+          
           <div class="mb-3">
             <label for="phoneNumber" class="form-label">Número de Teléfono</label>
+            @if($phoneNumber)
+            <input 
+              type="tel" 
+              class="form-control" 
+              id="phoneNumber" 
+              value="{{ $phoneNumber }}"
+              disabled
+              readonly>
+              <input type="hidden" wire:model="phoneNumber">
+            @else
             <input 
               type="tel" 
               class="form-control" 
               id="phoneNumber" 
               wire:model="phoneNumber"
               placeholder="Ingrese su número de teléfono">
+            @endif
             @error('phoneNumber') <div class="text-danger mt-1">{{ $message }}</div> @enderror
           </div>
           @elseif($otpSent && !$otpVerified)

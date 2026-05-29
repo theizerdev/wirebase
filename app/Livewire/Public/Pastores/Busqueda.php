@@ -4,6 +4,7 @@ namespace App\Livewire\Public\Pastores;
 
 use Livewire\Component;
 use App\Models\Pastor;
+use App\Models\HistorialVerificacionPastor;
 use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,20 @@ class Busqueda extends Component
     public $otpVerified = false;
     public $verificationError = '';
     public $pastorData = null; // Variable para almacenar los datos del pastor
+    
+    // Variables para verificación de seguridad
+    public $showSecurityQuestionModal = false;
+    public $securityQuestion = '';
+    public $securityAnswer = '';
+    public $securityVerificationStep = 'question'; // 'question' o 'otp'
+    public $lastFailedAttempt = null; // Timestamp del último intento fallido
+    public $failedAttemptsCount = 0; // Contador de intentos fallidos consecutivos
+    
+    // Variables para CAPTCHA matemático (después de 2 intentos fallidos)
+    public $showCaptcha = false;
+    public $captchaQuestion = '';
+    public $captchaAnswer = 0;
+    public $captchaInput = '';
     
     // Variables para solicitudes de autorización
     public $showSolicitudModal = false;
@@ -66,6 +81,19 @@ class Busqueda extends Component
     public function seleccionarPastor($id)
     {
         Log::info('seleccionarPastor llamado con ID:', ['id' => $id]);
+        
+        // VERIFICAR BLOQUEO POR IP
+        $ip = request()->ip();
+        $ipBlocked = Cache::get('ip_blocked_' . $ip);
+        
+        if ($ipBlocked) {
+            Log::warning('Intento bloqueado por IP', [
+                'ip' => $ip,
+                'pastor_id' => $id
+            ]);
+            session()->flash('error', 'Demasiados intentos fallidos desde su ubicación. Por favor espere 15 minutos antes de intentar nuevamente.');
+            return;
+        }
         
         $pastor = Pastor::find($id);
         
@@ -113,12 +141,57 @@ class Busqueda extends Component
         
         // VERIFICAR SI TIENE PROTECCIÓN ACTIVADA
         Log::info('Verificando protección:', [
+            'pastor_id' => $pastor->id,
             'tiene_relacion' => $pastor->preguntasSeguridad ? 'SÍ' : 'NO',
             'activado' => $pastor->preguntasSeguridad ? ($pastor->preguntasSeguridad->activado ? 'SÍ' : 'NO') : 'N/A',
+            'tiene_preguntas' => $pastor->preguntasSeguridad ? (!empty($pastor->preguntasSeguridad->preguntas) ? 'SÍ (' . count($pastor->preguntasSeguridad->preguntas) . ')' : 'NO') : 'N/A',
+            'tiene_telefono' => $pastor->telefono_tlf ? 'SÍ' : 'NO',
         ]);
         
         if ($pastor->preguntasSeguridad && $pastor->preguntasSeguridad->activado) {
-            // Protección activada - usar OTP para verificar identidad antes de editar
+            // Protección activada
+            
+            // Si tiene teléfono registrado Y tiene preguntas de seguridad, mostrar pregunta de seguridad
+            if ($pastor->telefono_tlf && $pastor->telefono_tlf !== '0' && !empty($pastor->preguntasSeguridad->preguntas)) {
+                Log::info('Mostrando pregunta de seguridad antes de OTP');
+                
+                // Verificar rate limiting (cooldown después de intentos fallidos)
+                $cooldownKey = 'security_cooldown_' . $pastor->id;
+                $cooldownUntil = Cache::get($cooldownKey);
+                
+                if ($cooldownUntil && now()->lt($cooldownUntil)) {
+                    $remainingSeconds = now()->diffInSeconds($cooldownUntil);
+                    $this->verificationError = "Demasiados intentos fallidos. Por favor espere {$remainingSeconds} segundos antes de intentar nuevamente.";
+                    Log::warning('Intento bloqueado por rate limiting', [
+                        'pastor_id' => $pastor->id,
+                        'cooldown_remaining' => $remainingSeconds
+                    ]);
+                    return;
+                }
+                
+                // Obtener todas las preguntas de seguridad
+                $preguntas = collect($pastor->preguntasSeguridad->preguntas);
+                if ($preguntas->isNotEmpty()) {
+                    // Seleccionar pregunta de forma inteligente para evitar repeticiones
+                    $preguntaSeleccionada = $this->seleccionarPreguntaInteligente($preguntas, $pastor->id);
+                    
+                    Log::info('Pregunta seleccionada inteligentemente:', [
+                        'pregunta' => $preguntaSeleccionada['pregunta'],
+                        'total_preguntas' => $preguntas->count(),
+                        'intentos_fallidos' => $this->failedAttemptsCount
+                    ]);
+                    
+                    $this->securityQuestion = $preguntaSeleccionada['pregunta'];
+                    $this->securityAnswer = '';
+                    $this->securityVerificationStep = 'question';
+                    $this->showSecurityQuestionModal = true;
+                    $this->modoSolicitud = false;
+                    return;
+                }
+            }
+            
+            // Si no tiene teléfono o no tiene preguntas, usar el flujo antiguo con OTP
+            Log::info('Usando flujo antiguo con OTP (no cumple condiciones para pregunta de seguridad)');
             if ($pastor->telefono_tlf) {
                 $this->phoneNumber = $pastor->telefono_tlf;
             }
@@ -242,6 +315,169 @@ class Busqueda extends Component
         }
     }
 
+    /**
+     * Verificar respuesta de seguridad y enviar OTP si es correcta
+     */
+    public function verifySecurityAnswer()
+    {
+        // Validar CAPTCHA si está activo (después de 2 intentos fallidos)
+        if ($this->showCaptcha) {
+            $this->validate([
+                'captchaInput' => 'required|numeric'
+            ], [
+                'captchaInput.required' => 'Debe resolver el CAPTCHA.',
+                'captchaInput.numeric' => 'El CAPTCHA debe ser un número.'
+            ]);
+            
+            if ((int)$this->captchaInput !== $this->captchaAnswer) {
+                $this->verificationError = 'CAPTCHA incorrecto. Intente nuevamente.';
+                $this->generarCaptcha(); // Generar nuevo CAPTCHA
+                return;
+            }
+        }
+        
+        $this->validate([
+            'securityAnswer' => 'required|string|min:1'
+        ], [
+            'securityAnswer.required' => 'Debe ingresar una respuesta.'
+        ]);
+
+        $pastor = $this->pastorData;
+        
+        if (!$pastor || !$pastor->preguntasSeguridad) {
+            $this->verificationError = 'Error: No se encontraron datos de seguridad.';
+            return;
+        }
+
+        // Verificar la respuesta
+        $respuestaCorrecta = $pastor->preguntasSeguridad->verificarRespuesta(
+            $this->securityQuestion,
+            $this->securityAnswer
+        );
+
+        if ($respuestaCorrecta) {
+            // Respuesta correcta - cerrar modal de pregunta y mostrar OTP
+            $this->showSecurityQuestionModal = false;
+            
+            // Resetear contador de intentos fallidos
+            $this->failedAttemptsCount = 0;
+            Cache::forget('security_cooldown_' . $pastor->id);
+            Cache::forget('last_question_' . $pastor->id);
+            
+            // REGISTRAR EN HISTORIAL - Verificación exitosa de pregunta de seguridad
+            HistorialVerificacionPastor::create([
+                'pastor_id' => $pastor->id,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'metodo_verificacion' => 'seguridad_otp',
+                'exitoso' => true,
+                'pregunta_mostrada' => $this->securityQuestion,
+                'verificado_en' => now(),
+            ]);
+            
+            Log::info('Verificación de seguridad exitosa registrada en historial', [
+                'pastor_id' => $pastor->id,
+                'ip' => request()->ip()
+            ]);
+            
+            // Pre-llenar el teléfono y mostrar modal de OTP
+            if ($pastor->telefono_tlf) {
+                $this->phoneNumber = $pastor->telefono_tlf;
+            }
+            
+            $this->showOtpModal = true;
+            $this->modoSolicitud = false;
+            $this->otpSent = false;
+            $this->otpVerified = false;
+            $this->otpCode = '';
+            $this->verificationError = '';
+            
+            session()->flash('success', '¡Respuesta correcta! Ahora ingrese su código de verificación.');
+        } else {
+            // Respuesta incorrecta - incrementar contador y aplicar cooldown
+            $this->failedAttemptsCount++;
+            $this->lastFailedAttempt = now();
+            
+            // TRACKING POR IP - Incrementar contador de fallos por IP
+            $ip = request()->ip();
+            $ipFailuresKey = 'ip_failures_' . $ip;
+            $ipFailures = Cache::get($ipFailuresKey, 0) + 1;
+            Cache::put($ipFailuresKey, $ipFailures, now()->addMinutes(30));
+            
+            // REGISTRAR EN HISTORIAL - Intento fallido
+            HistorialVerificacionPastor::create([
+                'pastor_id' => $pastor->id,
+                'ip_address' => $ip,
+                'user_agent' => request()->userAgent(),
+                'metodo_verificacion' => 'seguridad_otp',
+                'exitoso' => false,
+                'pregunta_mostrada' => $this->securityQuestion,
+            ]);
+            
+            Log::warning('Intento fallido de respuesta de seguridad', [
+                'pastor_id' => $pastor->id,
+                'intentos_consecutivos' => $this->failedAttemptsCount,
+                'pregunta' => $this->securityQuestion,
+                'ip' => $ip,
+                'ip_total_fallos' => $ipFailures
+            ]);
+            
+            // BLOQUEO POR IP después de 5 intentos fallidos (acumulados entre todos los pastores)
+            if ($ipFailures >= 5) {
+                Cache::put('ip_blocked_' . $ip, true, now()->addMinutes(15));
+                Cache::forget($ipFailuresKey);
+                
+                Log::error('IP BLOQUEADA por múltiples intentos fallidos', [
+                    'ip' => $ip,
+                    'total_fallos' => $ipFailures,
+                    'pastor_actual' => $pastor->id
+                ]);
+                
+                $this->verificationError = 'Demasiados intentos fallidos desde su ubicación. Su acceso ha sido bloqueado por 15 minutos por seguridad.';
+                $this->showSecurityQuestionModal = false;
+                return;
+            }
+            
+            // NOTIFICAR AL PASTOR después de 2 intentos fallidos
+            if ($this->failedAttemptsCount == 2 && $pastor->telefono_tlf && $pastor->telefono_tlf !== '0') {
+                $this->notificarPastorIntentosSospechosos($pastor, $ip);
+            }
+            
+            // GENERAR CAPTCHA después de 2 intentos fallidos
+            if ($this->failedAttemptsCount >= 2) {
+                $this->generarCaptcha();
+                $this->showCaptcha = true;
+            }
+            
+            // Aplicar cooldown progresivo según número de intentos
+            if ($this->failedAttemptsCount >= 3) {
+                // Después de 3 intentos fallidos: cooldown de 60 segundos
+                $cooldownSeconds = 60;
+                Cache::put('security_cooldown_' . $pastor->id, now()->addSeconds($cooldownSeconds), now()->addMinutes(5));
+                
+                $this->verificationError = "Demasiados intentos fallidos. Debe esperar {$cooldownSeconds} segundos antes de intentar nuevamente.";
+                
+                Log::warning('Cooldown aplicado por múltiples intentos fallidos', [
+                    'pastor_id' => $pastor->id,
+                    'cooldown_seconds' => $cooldownSeconds,
+                    'intentos' => $this->failedAttemptsCount
+                ]);
+            } elseif ($this->failedAttemptsCount >= 2) {
+                // Después de 2 intentos fallidos: cooldown de 30 segundos
+                $cooldownSeconds = 30;
+                Cache::put('security_cooldown_' . $pastor->id, now()->addSeconds($cooldownSeconds), now()->addMinutes(5));
+                
+                $this->verificationError = "Intento fallido. Debe esperar {$cooldownSeconds} segundos antes de intentar nuevamente.";
+            } else {
+                // Primer intento fallido: solo mensaje de error
+                $this->verificationError = 'Respuesta incorrecta. Intente nuevamente.';
+            }
+            
+            // Limpiar respuesta para reintentar
+            $this->securityAnswer = '';
+        }
+    }
+
     public function verifyOtp()
     {
         $validatedData = $this->validate([
@@ -267,6 +503,105 @@ class Busqueda extends Component
         } else {
             $this->verificationError = 'Código OTP inválido. Intente nuevamente.';
             $this->otpCode = '';
+        }
+    }
+
+    /**
+     * Seleccionar pregunta de seguridad de forma inteligente para evitar repeticiones
+     * 
+     * @param \Illuminate\Support\Collection $preguntas Colección de preguntas disponibles
+     * @param int $pastorId ID del pastor
+     * @return array Pregunta seleccionada
+     */
+    private function seleccionarPreguntaInteligente($preguntas, $pastorId)
+    {
+        // Obtener la última pregunta mostrada (almacenada en caché por 10 minutos)
+        $cacheKey = 'last_question_' . $pastorId;
+        $ultimaPregunta = Cache::get($cacheKey);
+        
+        // Filtrar preguntas que no sean la última mostrada
+        $preguntasDisponibles = $preguntas->filter(function($pregunta) use ($ultimaPregunta) {
+            return $pregunta['pregunta'] !== $ultimaPregunta;
+        });
+        
+        // Si hay preguntas disponibles (diferentes a la última), seleccionar una aleatoria entre ellas
+        if ($preguntasDisponibles->isNotEmpty()) {
+            $preguntaSeleccionada = $preguntasDisponibles->random();
+        } else {
+            // Si todas las preguntas son iguales a la última (caso raro con solo 1 pregunta),
+            // seleccionar cualquier pregunta aleatoriamente
+            $preguntaSeleccionada = $preguntas->random();
+        }
+        
+        // Guardar la pregunta seleccionada en caché para la próxima vez (10 minutos)
+        Cache::put($cacheKey, $preguntaSeleccionada['pregunta'], now()->addMinutes(10));
+        
+        return $preguntaSeleccionada;
+    }
+
+    /**
+     * Generar CAPTCHA matemático simple
+     */
+    private function generarCaptcha()
+    {
+        $num1 = rand(2, 15);
+        $num2 = rand(2, 15);
+        $this->captchaQuestion = "¿Cuánto es {$num1} + {$num2}?";
+        $this->captchaAnswer = $num1 + $num2;
+        $this->captchaInput = '';
+    }
+
+    /**
+     * Notificar al pastor sobre intentos sospechosos de acceso
+     * 
+     * @param Pastor $pastor
+     * @param string $ip Dirección IP del intento
+     */
+    private function notificarPastorIntentosSospechosos($pastor, $ip)
+    {
+        try {
+            // Obtener información de geolocalización básica (si está disponible)
+            $geoInfo = '';
+            try {
+                $geoData = \Illuminate\Support\Facades\Http::timeout(2)->get("https://ipapi.co/{$ip}/json/")->json();
+                if (isset($geoData['city']) && isset($geoData['country_name'])) {
+                    $geoInfo = " desde {$geoData['city']}, {$geoData['country_name']}";
+                }
+            } catch (\Exception $e) {
+                // Si falla la geolocalización, continuar sin ella
+            }
+            
+            $mensaje = "⚠️ ALERTA DE SEGURIDAD\n\n" .
+                       "Hola {$pastor->nombre_completo}, hemos detectado 2 intentos fallidos de verificación en su cuenta.\n\n" .
+                       "Hora: " . now()->format('d/m/Y H:i') . "\n" .
+                       "IP: {$ip}{$geoInfo}\n\n" .
+                       "Si no fue usted, contacte inmediatamente a su presbítero o administrador del sistema.\n\n" .
+                       "Equipo SAPRCOE";
+            
+            // Formatear teléfono
+            $telefono = $this->formatPhoneNumber($pastor->telefono_tlf);
+            
+            // Enviar WhatsApp usando el servicio con la empresa del pastor
+            $whatsappService = app(\App\Services\WhatsAppService::class, ['empresa' => $pastor->empresa_id]);
+            
+            if ($whatsappService->isConfigured()) {
+                $whatsappService->sendMessage($telefono, $mensaje);
+                
+                Log::info('Notificación de seguridad enviada al pastor', [
+                    'pastor_id' => $pastor->id,
+                    'telefono' => $telefono,
+                    'ip' => $ip
+                ]);
+            } else {
+                Log::warning('No se pudo enviar notificación de seguridad - WhatsApp no configurado', [
+                    'pastor_id' => $pastor->id
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al enviar notificación de seguridad al pastor', [
+                'pastor_id' => $pastor->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 

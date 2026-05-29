@@ -14,10 +14,10 @@ class UsersTableSeeder extends Seeder
     public function run(): void
     {
         // Create demo users
-          $superUser =  User::create([
-                    'name' => 'Test User',
-                    'username' => 'superadministrador',
-                    'email' => 'test@example.com',
+          $office =  User::create([
+                    'name' => 'Rebeca Gutiérrez',
+                    'username' => 'rgutierrez',
+                    'email' => 'rebeca@example.com',
                     'password' => Hash::make('password'),
                     'email_verified_at' => now(),
                     'empresa_id' => 1,
@@ -25,7 +25,7 @@ class UsersTableSeeder extends Seeder
         ]);
 
 
-        $superUser->assignRole('Super Administrador');
+        $office->assignRole('Oficina Nacional');
 
          $adminUser =  User::create([
                     'name' => 'Usuario Administrador',
@@ -38,6 +38,6 @@ class UsersTableSeeder extends Seeder
         ]);
 
 
-             $adminUser->assignRole('Administrador');
+        $adminUser->assignRole('Administrador');
     }
 }
