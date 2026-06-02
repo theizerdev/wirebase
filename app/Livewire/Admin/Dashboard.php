@@ -5,21 +5,18 @@ namespace App\Livewire\Admin;
 use Livewire\Component;
 use App\Traits\HasDynamicLayout;
 use Carbon\Carbon;
-use App\Models\Cita;
-use App\Models\Medico;
-use App\Models\Paciente;
-use App\Models\Pago;
+use App\Models\Beneficiario;
+use App\Models\Responsable;
 
 class Dashboard extends Component
 {
     use HasDynamicLayout;
 
     public $stats = [];
-    public $recentCitas = [];
-    public $citasChartData = [];
+    public $chartData = [];
     public $alerts = [];
-    public $recentPayments = [];
-    public $topMedicos = [];
+    public $recentBeneficiarios = [];
+    public $topResponsables = [];
 
     public function mount()
     {
@@ -28,139 +25,152 @@ class Dashboard extends Component
 
     public function loadDashboardData()
     {
-        $this->stats = [
-            'citas_hoy' => 200,
-            'pacientes_total' => 150,
-            'medicos_total' => 50,
-            'ingresos_mes' => 5000,
-            'ingresos_hoy' => 1000,
-            'tasa_asistencia' => $this->calcularTasaAsistencia(),
-        ];
-
-        $this->recentCitas = 200;
-
+        $this->loadStats();
         $this->loadChartData();
         $this->loadAlerts();
-        $this->loadRecentPayments();
-        $this->loadTopMedicos();
+        $this->loadRecentBeneficiarios();
+        $this->loadTopResponsables();
 
         $this->dispatch('chartDataUpdated', [
-            'citasChartData' => $this->citasChartData,
+            'chartData' => $this->chartData,
         ]);
     }
 
-    public function loadChartData()
+    protected function loadStats()
     {
-        $citasPorDia = 12;
-
-        $labels = [];
-        $data = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $labels[] = $date->format('D d/m');
-            $found = [12, 15, 20, 18, 22, 25, 30][$i] ?? null;
-            $data[] = $found ? $found : 0;
-        }
-
-        $this->citasChartData = [
-            'labels' => $labels,
-            'data' => $data,
+        $this->stats = [
+            'total_beneficiarios' => Beneficiario::count(),
+            'con_responsable' => Beneficiario::whereNotNull('responsable_id')->count(),
+            'con_discapacidad' => Beneficiario::where('padece_discapacidad_enfermedad', true)->count(),
+            'embarazadas' => Beneficiario::where('es_mujer_embarazada', true)->count(),
+            'promedio_edad' => round((float) Beneficiario::avg('edad'), 1),
+            'nuevos_ultimos_7_dias' => Beneficiario::where('created_at', '>=', Carbon::now()->subDays(7))->count(),
         ];
     }
 
-    public function calcularTasaAsistencia()
+    protected function loadChartData()
     {
-        $totalCitasPasadas = 12;
+        $groups = [
+            '0-12' => Beneficiario::whereBetween('edad', [0, 12])->count(),
+            '13-18' => Beneficiario::whereBetween('edad', [13, 18])->count(),
+            '19-35' => Beneficiario::whereBetween('edad', [19, 35])->count(),
+            '36-60' => Beneficiario::whereBetween('edad', [36, 60])->count(),
+            '60+' => Beneficiario::where('edad', '>=', 61)->count(),
+        ];
 
-        if ($totalCitasPasadas == 0) {
-            return 0;
+        $labels = array_keys($groups);
+        $data = array_values($groups);
+
+        if (empty(array_filter($data))) {
+            $data = array_fill(0, count($labels), 0);
         }
 
-        $citasCompletadas = 8; // Ejemplo de valor, reemplazar con lógica real
-
-        return round(($citasCompletadas / $totalCitasPasadas) * 100, 1);
+        $this->chartData = [
+            'labels' => $labels,
+            'data' => $data,
+            'subtitle' => 'Beneficiarios por grupo de edad',
+        ];
     }
 
-    public function loadAlerts()
+    protected function loadAlerts()
     {
-        $this->alerts = [];
+        $alerts = [];
 
-        // Citas sin confirmar (próximas 24h)
-        $citasSinConfirmar = 50;
-
-        if ($citasSinConfirmar > 0) {
-            $this->alerts[] = [
+        $sinResponsable = Beneficiario::whereNull('responsable_id')->count();
+        if ($sinResponsable > 0) {
+            $alerts[] = [
                 'type' => 'warning',
-                'icon' => 'ri-time-line',
-                'title' => 'Citas sin confirmar',
-                'message' => "$citasSinConfirmar citas en las próximas 24 horas",
+                'icon' => 'ri-user-unfollow-line',
+                'title' => 'Beneficiarios sin responsable',
+                'message' => "$sinResponsable beneficiarios sin responsable asignado",
                 'color' => '#f59e0b',
             ];
         }
 
-        // Recordatorios fallidos
-        $recordatoriosFallidos = 12;
+        $sinTelefono = Beneficiario::where(function ($query) {
+            $query->whereNull('telefono_principal')
+                ->orWhere('telefono_principal', '');
+        })->count();
 
-        if ($recordatoriosFallidos > 0) {
-            $this->alerts[] = [
-                'type' => 'error',
-                'icon' => 'ri-error-warning-line',
-                'title' => 'Recordatorios fallidos',
-                'message' => "$recordatoriosFallidos recordatorios no enviados hoy",
-                'color' => '#ef4444',
-            ];
-        }
-
-        // Pagos pendientes
-        $pagosPendientes = 15;
-
-        if ($pagosPendientes > 0) {
-            $this->alerts[] = [
+        if ($sinTelefono > 0) {
+            $alerts[] = [
                 'type' => 'info',
-                'icon' => 'ri-money-dollar-circle-line',
-                'title' => 'Pagos pendientes',
-                'message' => "$pagosPendientes pagos por aprobar hoy",
+                'icon' => 'ri-phone-missed-line',
+                'title' => 'Falta información de contacto',
+                'message' => "$sinTelefono beneficiarios sin teléfono principal",
                 'color' => '#3b82f6',
             ];
         }
 
-        // Citas canceladas hoy
-        $citasCanceladas = 0;
+        $sinCedula = Beneficiario::where(function ($query) {
+            $query->whereNull('cedula')
+                ->orWhere('cedula', '');
+        })->count();
 
-        if ($citasCanceladas > 0) {
-            $this->alerts[] = [
+        if ($sinCedula > 0) {
+            $alerts[] = [
                 'type' => 'danger',
-                'icon' => 'ri-close-circle-line',
-                'title' => 'Citas canceladas',
-                'message' => "$citasCanceladas citas canceladas hoy",
-                'color' => '#dc2626',
+                'icon' => 'ri-id-card-line',
+                'title' => 'Datos incompletos',
+                'message' => "$sinCedula beneficiarios sin cédula registrada",
+                'color' => '#ef4444',
             ];
         }
+
+        $this->alerts = $alerts;
     }
 
-    public function loadRecentPayments()
+    protected function loadRecentBeneficiarios()
     {
-        $this->recentPayments = 8;
+        $this->recentBeneficiarios = Beneficiario::with('responsable')
+            ->orderByDesc('created_at')
+            ->limit(6)
+            ->get()
+            ->map(function (Beneficiario $beneficiario) {
+                return [
+                    'id' => $beneficiario->id,
+                    'nombre' => trim($beneficiario->nombres . ' ' . $beneficiario->apellidos),
+                    'edad' => $beneficiario->edad,
+                    'telefono' => $beneficiario->telefono_principal,
+                    'responsable' => $beneficiario->responsable?->nombre_completo ?? 'Sin responsable',
+                    'created_at' => $beneficiario->created_at?->format('d/m/Y') ?? '',
+                ];
+            })
+            ->toArray();
     }
 
-    public function loadTopMedicos()
+    protected function loadTopResponsables()
     {
-        $this->topMedicos = [
-            ['nombre' => 'Dr. Juan Pérez', 'citas' => 30],
-            ['nombre' => 'Dra. María Gómez', 'citas' => 25],
-            ['nombre' => 'Dr. Carlos Sánchez', 'citas' => 20],
-        ];
+        $topResponsables = Beneficiario::selectRaw('responsable_id, count(*) as total')
+            ->whereNotNull('responsable_id')
+            ->groupBy('responsable_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $responsables = Responsable::whereIn('id', $topResponsables->pluck('responsable_id'))
+            ->get()
+            ->keyBy('id');
+
+        $this->topResponsables = $topResponsables->map(function ($row) use ($responsables) {
+            $responsable = $responsables->get($row->responsable_id);
+
+            return [
+                'nombre' => $responsable?->nombre_completo ?? 'Responsable desconocido',
+                'candidatos' => $row->total,
+                'telefono' => $responsable?->telefono,
+            ];
+        })->toArray();
     }
 
     public function render()
     {
         return view('livewire.admin.dashboard', [
             'stats' => $this->stats,
-            'recentCitas' => $this->recentCitas,
-            'citasChartData' => $this->citasChartData,
+            'chartData' => $this->chartData,
             'alerts' => $this->alerts,
-            'recentPayments' => $this->recentPayments,
-            'topMedicos' => $this->topMedicos
+            'recentBeneficiarios' => $this->recentBeneficiarios,
+            'topResponsables' => $this->topResponsables,
         ])->layout($this->getLayout());
     }
 }

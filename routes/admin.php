@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Route;
 | - contabilidad.php: Módulo contable completo
 | - seniat.php: Libro de ventas/compras SENIAT
 | - template.php: Personalización de plantillas
+| - responsables.php: Gestión de responsables
+| - beneficiarios.php: Gestión de beneficiarios
 |
 */
 
@@ -48,3 +50,5 @@ require_once __DIR__ . '/admin/whatsapp.php';
 require_once __DIR__ . '/admin/contabilidad.php';
 require_once __DIR__ . '/admin/seniat.php';
 require_once __DIR__ . '/admin/template.php';
+require_once __DIR__ . '/admin/responsables.php';
+require_once __DIR__ . '/admin/beneficiarios.php';

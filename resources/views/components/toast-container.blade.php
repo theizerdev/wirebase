@@ -145,14 +145,43 @@ window.showToast = function(type, message, duration = 5000) {
   }
 };
 
+// Helper function to extract toast data properly regardless of format
+function extractToastData(data) {
+  // Si es un array con un objeto, extraer el primer elemento
+  if (Array.isArray(data) && data.length > 0) {
+    return data[0];
+  }
+  // Si es un objeto directo, devolverlo tal cual
+  if (typeof data === 'object' && data !== null) {
+    return data;
+  }
+  // Si no es ninguno de los anteriores, retornar un objeto por defecto
+  return {
+    type: 'info',
+    message: 'Notificación',
+    duration: 5000
+  };
+}
+
 // Listener para eventos de Livewire
 if (typeof Livewire !== 'undefined') {
+  // Escuchar el evento 'showToast' original
   Livewire.on('showToast', function(data) {
-    // Si data es un array con un objeto, extraer el primer elemento
-    const toastData = Array.isArray(data) && data.length > 0 ? data[0] : data;
+    const toastData = extractToastData(data);
     if (toastData && toastData.type && toastData.message) {
       window.showToast(toastData.type, toastData.message, toastData.duration || 5000);
     }
+  });
+  
+  // Escuchar el evento 'notify' para compatibilidad con el formato anterior
+  Livewire.on('notify', function(data) {
+    const toastData = extractToastData(data);
+    const processedData = {
+      type: toastData.type || 'info',
+      message: toastData.message || 'Notificación',
+      duration: toastData.duration || 5000
+    };
+    window.showToast(processedData.type, processedData.message, processedData.duration);
   });
 }
 

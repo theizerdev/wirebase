@@ -18,130 +18,10 @@ class SectorRolesAndPermissionsSeeder extends Seeder
 
         // Definir sectores y sus permisos organizados por categorías
         $sectors = [
-            // 🏥 SECTOR MÉDICO
-            'medico' => [
-                'tipo_consultas' => [
-                    'name' => 'Tipo de Consultas',
-                    'permissions' => [
-                        'access tipo-consultas',
-                        'create tipo-consultas',
-                        'edit tipo-consultas',
-                        'delete tipo-consultas',
-                        'assign tipo-consultas',
-                    ]
-                ],
-                'pacientes' => [
-                    'name' => 'Pacientes',
-                    'permissions' => [
-                        'access pacientes',
-                        'create pacientes',
-                        'edit pacientes',
-                        'delete pacientes',
-                        'view pacientes',
-                        'export pacientes',
-                    ]
-                ],
-                'medicos' => [
-                    'name' => 'Médicos',
-                    'permissions' => [
-                        'access medicos',
-                        'create medicos',
-                        'edit medicos',
-                        'delete medicos',
-                        'view medicos',
-                        'activate medicos',
-                        'deactivate medicos',
-                        'assign especialidades',
-                        'assign subespecialidades',
-                        'assign tipo-consultas',
-                        'view medicos schedule',
-                        'edit medicos schedule',
-                    ]
-                ],
-                'enfermeros' => [
-                    'name' => 'Enfermería',
-                    'permissions' => [
-                        'access enfermeros',
-                        'create enfermeros',
-                        'edit enfermeros',
-                        'delete enfermeros',
-                        'view enfermeros',
-                        'activate enfermeros',
-                        'deactivate enfermeros',
-                        'view enfermeros schedule',
-                        'edit enfermeros schedule',
-                    ]
-                ],
-                'citas' => [
-                    'name' => 'Citas',
-                    'permissions' => [
-                        'access citas',
-                        'create citas',
-                        'edit citas',
-                        'delete citas',
-                        'confirm citas',
-                        'cancel citas',
-                        'complete citas',
-                        'reschedule citas',
-                        'view citas analytics',
-                        'access citas recordatorios',
-                        'send citas recordatorios',
-                    ]
-                ],
-                'especialidades' => [
-                    'name' => 'Especialidades',
-                    'permissions' => [
-                        'access especialidades',
-                        'create especialidades',
-                        'edit especialidades',
-                        'delete especialidades',
-                        'assign especialidades',
-                    ]
-                ],
-                'subespecialidades' => [
-                    'name' => 'Subespecialidades',
-                    'permissions' => [
-                        'access subespecialidades',
-                        'create subespecialidades',
-                        'edit subespecialidades',
-                        'delete subespecialidades',
-                        'assign subespecialidades',
-                    ]
-                ],
-                 'consultas' => [
-                    'name' => 'Consultas',
-                    'permissions' => [
-                        'access consultas',
-                        //'access consultas calendario',
-                        'access consultas en espera',
-                        'access consultas en enfermeria',
-                        'access consultas en consultorio',
-                        'access consultas en gotas',
-                        'access consultas en optica',
-                        'access consultas en estudio',
-                        'access consultas finalizadas',
-                        'registrar signos vitales',
-                    ]
-                ],
-            ],
-
             // 💰 SECTOR ADMINISTRACIÓN
 
             'administracion' => [
-                'cajas' => [
-                    'name' => 'Cajas',
-                    'permissions' => [
-                        'access cajas',
-                        'create cajas',
-                        'edit cajas',
-                        'delete cajas',
-                        'view cajas',
-                        'open cajas',
-                        'close cajas',
-                        'manage cajas',
-                        'export cajas',
-                    ]
-                ],
+                
                  'tasas_cambio' => [
                     'name' => 'Tasas de Cambio (BCV)',
                     'permissions' => [
@@ -153,125 +33,8 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'export exchange-rates',
                     ]
                 ],
-
-                'pagos' => [
-                    'name' => 'Pagos',
-                    'permissions' => [
-                        'access pagos',
-                        'create pagos',
-                        'view pagos',
-                        'process pagos',
-                        'cancel pagos',
-                        'refund pagos',
-                        'export pagos',
-                        'access pagos comprobantes',
-                        'generate pagos comprobantes',
-                    ]
-                ],
-                  /*
-                'conceptos_pago' => [
-                    'name' => 'Conceptos de Pago',
-                    'permissions' => [
-                        'access conceptos pago',
-                        'create conceptos pago',
-                        'edit conceptos pago',
-                        'delete conceptos pago',
-                        'view conceptos pago',
-                        'activate conceptos pago',
-                        'deactivate conceptos pago',
-                    ]
-                ],*/
-
-                'series' => [
-                    'name' => 'Series de Documentos',
-                    'permissions' => [
-                        'access series',
-                        'create series',
-                        'edit series',
-                        'delete series',
-                        'assign series',
-                        'manage series',
-                    ]
-                ],/*
-                'reglas_mora' => [
-                    'name' => 'Reglas de Mora',
-                    'permissions' => [
-                        'access reglas mora',
-                        'create reglas mora',
-                        'edit reglas mora',
-                        'delete reglas mora',
-                        'apply reglas mora',
-                    ]
-                ],*/
-
-                 'categorias' => [
-                    'name' => 'Categorías',
-                    'permissions' => [
-                        'access categorias',
-                        'create categorias',
-                        'edit categorias',
-                        'delete categorias',
-                        'view categorias',
-                        'manage categorias',
-                    ]
-                ],
-                'baremos' => [
-                    'name' => 'Baremos',
-                    'permissions' => [
-                        'access baremos',
-                        'create baremos',
-                        'edit baremos',
-                        'delete baremos',
-                        'view baremos',
-                        'manage baremos',
-                    ]
-                ],
-                /*
-                'clientes_fiscales' => [
-                    'name' => 'Clientes Fiscales',
-                    'permissions' => [
-                        'access clientes-fiscales',
-                        'create clientes-fiscales',
-                        'edit clientes-fiscales',
-                        'delete clientes-fiscales',
-                        'view clientes-fiscales',
-                    ]
-                ],*/
-                'notas_credito' => [
-                    'name' => 'Notas de Crédito',
-                    'permissions' => [
-                        'access notas-credito',
-                        'create notas-credito',
-                        'view notas-credito',
-                    ]
-                ],
-                'notas_debito' => [
-                    'name' => 'Notas de Débito',
-                    'permissions' => [
-                        'access notas-debito',
-                        'create notas-debito',
-                        'view notas-debito',
-                    ]
-                ],
-                'contabilidad' => [
-                    'name' => 'Contabilidad',
-                    'permissions' => [
-                        'access contabilidad',
-                        'view contabilidad',
-                        'manage contabilidad',
-                    ]
-                ],
-                'anulacion_talonarios' => [
-                    'name' => 'Anulación de Talonarios',
-                    'permissions' => [
-                        'access anulacion-talonarios',
-                        'create anulacion-talonarios',
-                        'edit anulacion-talonarios',
-                        'delete anulacion-talonarios',
-                        'view anulacion-talonarios',
-                    ]
-                ],
             ],
+
 
 
             // ⚙️ SECTOR CONFIGURACIÓN
@@ -291,16 +54,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'export empresas',
                     ]
                 ],
-                'consultorios' => [
-                    'name' => 'Consultorios',
-                    'permissions' => [
-                        'access consultorios',
-                        'create consultorios',
-                        'edit consultorios',
-                        'delete consultorios',
-                        'view consultorios',
-                    ]
-                ],
+            
                 'sucursales' => [
                     'name' => 'Sucursales',
                     'permissions' => [
@@ -526,6 +280,20 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                 ],
             ],
 
+            // 👥 SECTOR BENEFICIARIOS
+            'institucional' => [
+                'beneficiarios' => [
+                    'name' => 'Beneficiarios',
+                    'permissions' => [
+                        'view beneficiarios',
+                        'create beneficiarios',
+                        'edit beneficiarios',
+                        'delete beneficiarios',
+                        'access beneficiarios',
+                    ]
+                ],
+            ],
+
             // 📱 SECTOR COMUNICACIONES (Adicional)
             'comunicaciones' => [
                 'whatsapp' => [
@@ -547,25 +315,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                 ],
             ],
 
-            // 🛎️ SECTOR RECEPCIÓN
-            'recepcion' => [
-                'dashboard' => [
-                    'name' => 'Dashboard Recepción',
-                    'permissions' => [
-                        'access recepcion dashboard',
-                        'manage consultorios', // Asignar consultorios
-                    ]
-                ],
-                'consulta_apertura' => [
-                    'name' => 'Apertura de Consultas',
-                    'permissions' => [
-                        'access consulta apertura',
-                        'iniciar consulta',
-                        'enviar cuestionario whatsapp',
-                        'ver respuestas preconsulta',
-                    ]
-                ],
-            ],
+           
         ];
 
         // Crear permisos organizados por sectores y módulos
@@ -596,6 +346,10 @@ class SectorRolesAndPermissionsSeeder extends Seeder
         $superAdmin = Role::firstOrCreate(['name' => 'Super Administrador']);
         $superAdmin->syncPermissions(Permission::all());
 
+        // Rol Super Administrador - Acceso total
+        $responsable = Role::firstOrCreate(['name' => 'Responsable']);
+        //$responsable->syncPermissions(Permission::all());
+
         // Rol Administrador - Todos los sectores excepto asignación de roles/permisos
         $admin = Role::firstOrCreate(['name' => 'Administrador']);
         $adminPermissions = Permission::whereNotIn('name', [
@@ -605,57 +359,6 @@ class SectorRolesAndPermissionsSeeder extends Seeder
         ])->get();
         $admin->syncPermissions($adminPermissions);
 
-        // Rol Médico - Solo sector médico
-        $medico = Role::firstOrCreate(['name' => 'Médico']);
-        $medicoPermissions = Permission::where('sector', 'medico')
-            ->whereNotIn('name', [
-                'delete medicos',
-                'delete tipo-consultas',
-                'delete especialidades',
-                'delete subespecialidades',
-            ])->get();
-        $chatPermission = Permission::where('name', 'access chat interno')->get();
-        $medico->syncPermissions($medicoPermissions->merge($chatPermission));
-
-
-
-        // Rol Recepción - Sector médico + administración limitada
-        $recepcion = Role::firstOrCreate(['name' => 'Recepción']);
-        $recepcionPermissions = Permission::whereIn('sector', ['medico', 'administracion', 'recepcion'])
-            ->whereIn('name', [
-                // Recepción
-                'access recepcion dashboard',
-                //'manage consultorios',
-                // Apertura de Consultas (nuevo módulo)
-                'access consulta apertura',
-                'iniciar consulta',
-                'enviar cuestionario whatsapp',
-                'ver respuestas preconsulta',
-                // Médico limitado
-                'access tipo-consultas',
-                'create tipo-consultas',
-                'edit tipo-consultas',
-                'access pacientes',
-                'create pacientes',
-                'edit pacientes',
-                'access medicos',
-                'view medicos',
-                'access citas',
-                'create citas',
-                'edit citas',
-                'confirm citas',
-                'cancel citas',
-                // Administración limitada
-               // 'access conceptos pago',
-               // 'view conceptos pago',
-                //'access series',
-                //'access cajas',
-               // 'view cajas',
-                //'access pagos',
-               // 'create pagos',
-               // 'view pagos',
-            ])->get();
-        $recepcion->syncPermissions($recepcionPermissions->merge($chatPermission));
 
          $this->command->info('✅ Roles y permisos procesados exitosamente');
         $this->command->info('📊 Total de permisos procesados: ' . count(Permission::all()));

@@ -220,7 +220,7 @@ class Create extends Component
 
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => "Usuario '{$user->name}' creado exitosamente! Se ha enviado un mensaje de  r WhatsApp.",
+            'message' => "Usuario '{$user->name}' creado exitosamente! Se ha enviado un mensaje de  WhatsApp.",
             'duration' => 5000
         ]);
 

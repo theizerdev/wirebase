@@ -21,7 +21,7 @@
                                 <select class="form-select @error('empresa_id') is-invalid @enderror" wire:model="empresa_id">
                                     <option value="">Seleccione una empresa</option>
                                     @foreach($empresas as $empresa)
-                                        <option value="{{ $empresa->id }}">{{ $empresa->razon_social }}</option>
+                                        <option value="{{ $empresa->id }}" @if($empresa->id == $empresa_id) selected @endif>{{ $empresa->razon_social }}</option>
                                     @endforeach
                                 </select>
                                 @error('empresa_id')
@@ -38,7 +38,7 @@
                                 @enderror
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label">Teléfono</label>
                                 <input type="text" class="form-control @error('telefono') is-invalid @enderror"
                                        wire:model="telefono" placeholder="Ingrese el teléfono">
@@ -47,11 +47,50 @@
                                 @enderror
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Estado</label>
+                                <select class="form-select @error('estado_id') is-invalid @enderror" wire:model.change="estado_id">
+                                    <option value="">Seleccione un estado</option>
+                                    @foreach($estados as $estado)
+                                        <option value="{{ $estado->id }}" @if($estado->id == $estado_id) selected @endif>{{ $estado->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('estado_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Municipio</label>
+                                <select class="form-select @error('municipio_id') is-invalid @enderror" wire:model.change="municipio_id" :disabled="!estado_id">
+                                    <option value="">Seleccione un municipio</option>
+                                    @foreach($municipios as $municipio)
+                                        <option value="{{ $municipio->id }}" @if($municipio->id == $municipio_id) selected @endif>{{ $municipio->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('municipio_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Parroquia</label>
+                                <select class="form-select @error('parroquia_id') is-invalid @enderror" wire:model.change="parroquia_id" :disabled="!municipio_id">
+                                    <option value="">Seleccione una parroquia</option>
+                                    @foreach($parroquias as $parroquia)
+                                        <option value="{{ $parroquia->id }}" @if($parroquia->id == $parroquia_id) selected @endif>{{ $parroquia->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('parroquia_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Estado de la sucursal</label>
                                 <select class="form-select @error('status') is-invalid @enderror" wire:model="status">
-                                    <option value="1">Activa</option>
-                                    <option value="0">Inactiva</option>
+                                    <option value="1" @if($status) selected @endif>Activa</option>
+                                    <option value="0" @if(!$status) selected @endif>Inactiva</option>
                                 </select>
                                 @error('status')
                                     <div class="invalid-feedback">{{ $message }}</div>

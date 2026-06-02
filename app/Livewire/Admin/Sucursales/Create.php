@@ -7,6 +7,9 @@ use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Sucursal;
 use App\Models\Empresa;
+use App\Models\Estado;
+use App\Models\Municipio;
+use App\Models\Parroquia;
 
 class Create extends Component
 {
@@ -19,8 +22,14 @@ class Create extends Component
     public $latitud = '';
     public $longitud = '';
     public $status = true;
+    public $estado_id = '';
+    public $municipio_id = '';
+    public $parroquia_id = '';
 
     public $empresas;
+    public $estados;
+    public $municipios = [];
+    public $parroquias = [];
 
     protected $rules = [
         'empresa_id' => 'required|exists:empresas,id',
@@ -29,12 +38,41 @@ class Create extends Component
         'direccion' => 'nullable|string',
         'latitud' => 'nullable|numeric|between:-90,90',
         'longitud' => 'nullable|numeric|between:-180,180',
+        'estado_id' => 'nullable|exists:estados,id',
+        'municipio_id' => 'nullable|exists:municipios,id',
+        'parroquia_id' => 'nullable|exists:parroquias,id',
         'status' => 'boolean',
     ];
 
     public function mount()
     {
         $this->empresas = Empresa::forUser()->where('status', true)->get();
+        $this->estados = Estado::all();
+    }
+
+    public function updatedEstadoId($value)
+    {
+        $this->municipio_id = '';
+        $this->parroquia_id = '';
+        
+        if ($value) {
+            $this->municipios = Municipio::where('estado_id', $value)->get();
+        } else {
+            $this->municipios = [];
+        }
+        
+        $this->parroquias = [];
+    }
+
+    public function updatedMunicipioId($value)
+    {
+        $this->parroquia_id = '';
+        
+        if ($value) {
+            $this->parroquias = Parroquia::where('municipio_id', $value)->get();
+        } else {
+            $this->parroquias = [];
+        }
     }
 
     public function save()
@@ -49,6 +87,9 @@ class Create extends Component
                 'direccion' => $this->direccion,
                 'latitud' => $this->latitud ?: null,
                 'longitud' => $this->longitud ?: null,
+                'estado_id' => $this->estado_id ?: null,
+                'municipio_id' => $this->municipio_id ?: null,
+                'parroquia_id' => $this->parroquia_id ?: null,
                 'status' => $this->status,
             ]);
 

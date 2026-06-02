@@ -47,6 +47,46 @@
                                 @enderror
                             </div>
 
+                            {{-- Campos de ubicación geográfica --}}
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select @error('estado_id') is-invalid @enderror" wire:model.live="estado_id">
+                                    <option value="">Seleccione un estado</option>
+                                    @foreach($estados as $estado)
+                                        <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('estado_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Municipio</label>
+                                <select class="form-select @error('municipio_id') is-invalid @enderror" wire:model.live="municipio_id" :disabled="!estado_id">
+                                    <option value="">Seleccione un municipio</option>
+                                    @foreach($municipios as $municipio)
+                                        <option value="{{ $municipio->id }}">{{ $municipio->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('municipio_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Parroquia</label>
+                                <select class="form-select @error('parroquia_id') is-invalid @enderror" wire:model.live="parroquia_id" :disabled="!municipio_id">
+                                    <option value="">Seleccione una parroquia</option>
+                                    @foreach($parroquias as $parroquia)
+                                        <option value="{{ $parroquia->id }}">{{ $parroquia->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('parroquia_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             {{-- Configuración Regional --}}
                             @if($pais_id)
                             <div class="col-12 mb-3">

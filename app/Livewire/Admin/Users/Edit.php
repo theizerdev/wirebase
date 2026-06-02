@@ -85,7 +85,8 @@ class Edit extends Component
     {
         $this->validate();
 
-        $data = [
+       try {
+         $data = [
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
@@ -119,6 +120,14 @@ class Edit extends Component
         ]);
 
         return redirect()->route('admin.users.index');
+       } catch (\Throwable $th) {
+        //throw $th;
+         $this->dispatch('notify', [
+            'type' => 'error',
+            'message' => "Error al actualizar el usuario '{$user->name}'.",
+            'duration' => 4000
+        ]);
+       }
     }
 
     public function render()

@@ -8,6 +8,9 @@ use Livewire\Component;
 use Livewire\Attributes\On;
 use App\Models\Empresa;
 use App\Models\Pais;
+use App\Models\Estado;
+use App\Models\Municipio;
+use App\Models\Parroquia;
 use App\Services\RegionalConfigurationService;
 
 class Create extends Component
@@ -25,7 +28,14 @@ class Create extends Component
     public $telefono = '';
     public $email = '';
     public $pais_id = '';
+    public $estado_id = '';
+    public $municipio_id = '';
+    public $parroquia_id = '';
     public $paisSeleccionado = null;
+
+    public $estados = [];
+    public $municipios = [];
+    public $parroquias = [];
 
     public function mount()
     {
@@ -49,6 +59,9 @@ class Create extends Component
         'telefono' => 'nullable|string|max:50',
         'email' => 'nullable|email|max:255',
         'pais_id' => 'required|exists:pais,id',
+        'estado_id' => 'nullable|exists:estados,id',
+        'municipio_id' => 'nullable|exists:municipios,id',
+        'parroquia_id' => 'nullable|exists:parroquias,id',
     ];
 
     #[On('location-updated')]
@@ -80,6 +93,9 @@ class Create extends Component
                     $this->dispatch('map-center-changed', latitud: $pais->latitud, longitud: $pais->longitud);
                 }
 
+                // Cargar estados del país
+                $this->estados = Estado::all();
+                
                 // Disparar evento de configuración regional actualizada
                 $this->dispatch('regional-configuration-updated', [
                     'currency' => $this->moneda,
@@ -98,6 +114,39 @@ class Create extends Component
             $this->formato_moneda = '#,##0.00';
             $this->simbolo_moneda = '$';
             $this->idioma = 'es';
+            
+            // Limpiar estados y dependencias
+            $this->estados = [];
+            $this->municipios = [];
+            $this->parroquias = [];
+            $this->estado_id = '';
+            $this->municipio_id = '';
+            $this->parroquia_id = '';
+        }
+    }
+    
+    public function updatedEstadoId($value)
+    {
+        $this->municipio_id = '';
+        $this->parroquia_id = '';
+        
+        if ($value) {
+            $this->municipios = Municipio::where('estado_id', $value)->get();
+        } else {
+            $this->municipios = [];
+        }
+        
+        $this->parroquias = [];
+    }
+
+    public function updatedMunicipioId($value)
+    {
+        $this->parroquia_id = '';
+        
+        if ($value) {
+            $this->parroquias = Parroquia::where('municipio_id', $value)->get();
+        } else {
+            $this->parroquias = [];
         }
     }
 
@@ -119,6 +168,9 @@ class Create extends Component
             'telefono' => $this->telefono,
             'email' => $this->email,
             'pais_id' => $this->pais_id,
+            'estado_id' => $this->estado_id ?: null,
+            'municipio_id' => $this->municipio_id ?: null,
+            'parroquia_id' => $this->parroquia_id ?: null,
             'whatsapp_api_key' => $whatsappApiKey,
             'whatsapp_active' => false, // Inicialmente inactivo hasta que se conecte
         ]);

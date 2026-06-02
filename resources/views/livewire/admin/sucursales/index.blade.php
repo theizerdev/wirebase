@@ -123,21 +123,14 @@
 
         {{-- Tabla --}}
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent border-0 pb-0">
-                <h6 class="mb-0"><i class="ri ri-building-2-line me-2 text-primary"></i>Listado de sucursales</h6>
-            </div>
+           
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-primary text-white">
                             <tr>
-                                <th wire:click="sortBy('nombre')" style="cursor: pointer;">
-                                    Nombre
-                                    @if($sortBy === 'nombre')
-                                        <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i>
-                                    @endif
-                                </th>
-                                <th>Empresa</th>
+                            
+                                <th>Razón social</th>
                                 <th wire:click="sortBy('telefono')" style="cursor: pointer;">
                                     Teléfono
                                     @if($sortBy === 'telefono')

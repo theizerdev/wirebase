@@ -39,10 +39,50 @@
                                 <select class="form-select @error('pais_id') is-invalid @enderror" wire:model.live="pais_id">
                                     <option value="">Seleccione un país</option>
                                     @foreach($paises as $pais)
-                                        <option value="{{ $pais->id }}">{{ $pais->nombre }}</option>
+                                        <option value="{{ $pais->id }}" @if($pais->id == $pais_id) selected @endif>{{ $pais->nombre }}</option>
                                     @endforeach
                                 </select>
                                 @error('pais_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Campos de ubicación geográfica --}}
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select @error('estado_id') is-invalid @enderror" wire:model.live="estado_id">
+                                    <option value="">Seleccione un estado</option>
+                                    @foreach($estados as $estado)
+                                        <option value="{{ $estado->id }}" @if($estado->id == $estado_id) selected @endif>{{ $estado->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('estado_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Municipio</label>
+                                <select class="form-select @error('municipio_id') is-invalid @enderror" wire:model.live="municipio_id" :disabled="!estado_id">
+                                    <option value="">Seleccione un municipio</option>
+                                    @foreach($municipios as $municipio)
+                                        <option value="{{ $municipio->id }}" @if($municipio->id == $municipio_id) selected @endif>{{ $municipio->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('municipio_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Parroquia</label>
+                                <select class="form-select @error('parroquia_id') is-invalid @enderror" wire:model.live="parroquia_id" :disabled="!municipio_id">
+                                    <option value="">Seleccione una parroquia</option>
+                                    @foreach($parroquias as $parroquia)
+                                        <option value="{{ $parroquia->id }}" @if($parroquia->id == $parroquia_id) selected @endif>{{ $parroquia->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('parroquia_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -91,8 +131,8 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Estado</label>
                                 <select class="form-select @error('status') is-invalid @enderror" wire:model="status">
-                                    <option value="1">Activa</option>
-                                    <option value="0">Inactiva</option>
+                                    <option value="1" @if($status) selected @endif>Activa</option>
+                                    <option value="0" @if(!$status) selected @endif>Inactiva</option>
                                 </select>
                                 @error('status')
                                     <div class="invalid-feedback">{{ $message }}</div>

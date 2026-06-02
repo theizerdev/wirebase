@@ -23,6 +23,9 @@ class Empresa extends Model
         'telefono',
         'email',
         'pais_id',
+        'estado_id',
+        'municipio_id',
+        'parroquia_id',
         'api_key',
         // Campos para integración WhatsApp multi-empresa
         'whatsapp_api_key',
@@ -46,6 +49,9 @@ class Empresa extends Model
         'longitud' => 'decimal:8',
         'whatsapp_active' => 'boolean',
         'whatsapp_last_connected' => 'datetime',
+        'estado_id' => 'integer',
+        'municipio_id' => 'integer',
+        'parroquia_id' => 'integer',
     ];
 
     public function sucursales()
@@ -61,6 +67,21 @@ class Empresa extends Model
     public function pais()
     {
         return $this->belongsTo(Pais::class);
+    }
+
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class);
+    }
+
+    public function municipio()
+    {
+        return $this->belongsTo(Municipio::class);
+    }
+
+    public function parroquia()
+    {
+        return $this->belongsTo(Parroquia::class);
     }
 
     public function scopeForUser($query)
@@ -99,7 +120,7 @@ class Empresa extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['razon_social', 'documento', 'direccion', 'representante_legal', 'status'])
+            ->logOnly(['razon_social', 'documento', 'direccion', 'representante_legal', 'status', 'estado_id', 'municipio_id', 'parroquia_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => static::getSpanishDescription($eventName));

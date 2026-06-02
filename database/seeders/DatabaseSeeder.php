@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
             EmpresaSeeder::class,
             SucursalSeeder::class,
             UsersTableSeeder::class,
+            EstadosSeeder::class,
+            MunicipiosSeeder::class,
+            ParroquiasSeeder::class,
+            ResponsablesPermissionsSeeder::class,
+            BeneficiariosPermissionsSeeder::class,
         ]);
     }
 }

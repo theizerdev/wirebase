@@ -1,425 +1,333 @@
 <div>
     @push('styles')
     <style>
-        /* Hero Section */
         .dashboard-hero {
             background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: #fff;
             border-radius: 0.75rem;
             padding: 1.4rem 1.6rem;
         }
-        .dashboard-hero h2 {
-            color: #fff;
-            margin: 0;
-        }
+
+        .dashboard-hero h2,
         .dashboard-hero p {
-            opacity: 0.9;
             margin: 0;
         }
 
-        /* Stat Cards - Compact Style */
         .stat-card {
-            border: 1px solid rgba(0,0,0,.06);
-            border-radius: .65rem;
-            padding: .9rem 1rem;
-            transition: all .2s;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            background: #fff;
+            height: 100%;
             display: flex;
             align-items: center;
-            gap: .85rem;
-            height: 100%;
-            background: #fff;
+            gap: 0.95rem;
         }
+
         .stat-card:hover {
-            box-shadow: 0 6px 18px rgba(0,0,0,.07);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
         }
+
         .stat-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: .5rem;
+            width: 52px;
+            height: 52px;
+            border-radius: 0.85rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             flex-shrink: 0;
         }
+
         .stat-label {
-            font-size: .72rem;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            color: #64748b;
-            font-weight: 600;
-            margin-bottom: .15rem;
-        }
-        .stat-value {
-            font-size: 1.35rem;
+            font-size: 0.72rem;
             font-weight: 700;
-            line-height: 1.2;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.2rem;
         }
 
-        /* Dashboard Cards */
+        .stat-value {
+            font-size: 1.55rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
         .dashboard-card {
-            border: 1px solid rgba(0,0,0,.06);
-            border-radius: .75rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,.04);
-            transition: all 0.2s;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 1rem;
             background: #fff;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
+
         .dashboard-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,.08);
+            transform: translateY(-2px);
         }
+
         .dashboard-card .card-header {
-            background: #f8f9fa;
-            border-bottom: 1px solid rgba(0,0,0,.06);
+            background: #f8fafc;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
             padding: 1rem 1.25rem;
         }
+
         .dashboard-card .card-header h5 {
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             margin: 0;
-            color: #2d3748;
         }
+
         .dashboard-card .card-body {
             padding: 1.25rem;
         }
 
-        /* Alert Items */
-        .alert-item {
-            padding: .85rem;
-            border-left: 3px solid;
-            border-radius: .5rem;
-            margin-bottom: .75rem;
+        .alert-item,
+        .beneficiario-item,
+        .responsable-item {
+            padding: 0.95rem 1rem;
+            border-radius: 0.75rem;
             background: #fff;
-            transition: all .2s;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            margin-bottom: 0.75rem;
+            transition: background-color 0.15s ease, transform 0.15s ease;
         }
-        .alert-item:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,.06);
-            transform: translateX(2px);
+
+        .alert-item:hover,
+        .beneficiario-item:hover,
+        .responsable-item:hover {
+            background-color: #f8fafc;
+            transform: translateY(-1px);
         }
-        .alert-item:last-child {
+
+        .alert-item:last-child,
+        .beneficiario-item:last-child,
+        .responsable-item:last-child {
             margin-bottom: 0;
         }
 
-        /* Payment Item */
-        .payment-item {
-            padding: .85rem 0;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background-color .15s;
-        }
-        .payment-item:last-child {
-            border-bottom: none;
-        }
-        .payment-item:hover {
-            background-color: #f8fafc;
-            margin: 0 -1.25rem;
-            padding-left: 1.25rem;
-            padding-right: 1.25rem;
+        .item-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: #64748b;
+            margin-bottom: 0.2rem;
         }
 
-        /* Cita List Item */
-        .cita-item {
-            padding: .85rem 0;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background-color .15s;
-        }
-        .cita-item:last-child {
-            border-bottom: none;
-        }
-        .cita-item:hover {
-            background-color: #f8fafc;
-            margin: 0 -1.25rem;
-            padding-left: 1.25rem;
-            padding-right: 1.25rem;
+        .item-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
         }
 
-        /* Quick Actions */
-        .quick-action-btn {
-            border: 2px dashed rgba(0,0,0,.1);
-            border-radius: .75rem;
-            padding: 1.25rem;
-            text-align: center;
-            transition: all .2s;
-            background: #fff;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-        .quick-action-btn:hover {
-            border-color: #6366f1;
-            background: #f8f9ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(99,102,241,.15);
-            color: inherit;
-        }
-        .quick-action-btn i {
-            font-size: 1.75rem;
-            margin-bottom: .5rem;
-            display: block;
-        }
-        .quick-action-btn span {
-            font-size: .85rem;
-            font-weight: 600;
-        }
-
-        /* Medico Row */
-        .medico-row {
-            padding: .75rem 0;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .medico-row:last-child {
-            border-bottom: none;
-        }
-        .medico-row:hover {
-            background-color: #f8fafc;
-            margin: 0 -1.25rem;
-            padding-left: 1.25rem;
-            padding-right: 1.25rem;
+        .item-meta {
+            font-size: 0.85rem;
+            color: #475569;
         }
     </style>
     @endpush
 
-    <!-- Hero Section -->
     <div class="dashboard-hero mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
-            <h2 class="fw-semibold"><i class="ri ri-dashboard-line me-2"></i>Dashboard</h2>
-            <p class="mt-1">Resumen general del sistema médico</p>
+            <h2 class="fw-semibold"><i class="ri ri-dashboard-line me-2"></i>Dashboard administrativo</h2>
+            <p class="mt-1">Resumen en tiempo real del rendimiento del programa de beneficiarios.</p>
         </div>
         <button class="btn btn-light btn-sm" wire:click="loadDashboardData">
-            <i class="ri ri-refresh-line me-1"></i>Actualizar
+            <i class="ri ri-refresh-line me-1"></i>Actualizar datos
         </button>
     </div>
 
-    <!-- Stat Cards -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="ri ri-calendar-check-line"></i></div>
+                <div class="stat-icon" style="background: #e0e7ff; color: #4338ca;"><i class="ri ri-group-line"></i></div>
                 <div>
-                    <div class="stat-label">Citas hoy</div>
-                    <div class="stat-value">{{ $stats['citas_hoy'] }}</div>
+                    <div class="stat-label">Beneficiarios</div>
+                    <div class="stat-value">{{ $stats['total_beneficiarios'] }}</div>
                 </div>
             </div>
         </div>
-
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="ri ri-user-heart-line"></i></div>
+                <div class="stat-icon" style="background: #dcfce7; color: #16a34a;"><i class="ri ri-user-shared-line"></i></div>
                 <div>
-                    <div class="stat-label">Total pacientes</div>
-                    <div class="stat-value text-success">{{ $stats['pacientes_total'] }}</div>
+                    <div class="stat-label">Con responsable</div>
+                    <div class="stat-value">{{ $stats['con_responsable'] }}</div>
                 </div>
             </div>
         </div>
-
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-icon" style="background:#e0e7ff;color:#4f46e5;"><i class="ri ri-user-star-line"></i></div>
+                <div class="stat-icon" style="background: #fee2e2; color: #b91c1c;"><i class="ri ri-wheelchair-line"></i></div>
                 <div>
-                    <div class="stat-label">Total médicos</div>
-                    <div class="stat-value text-primary">{{ $stats['medicos_total'] }}</div>
+                    <div class="stat-label">Con discapacidad</div>
+                    <div class="stat-value">{{ $stats['con_discapacidad'] }}</div>
                 </div>
             </div>
         </div>
-
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-icon" style="background:#fef3c7;color:#d97706;"><i class="ri ri-money-dollar-circle-line"></i></div>
+                <div class="stat-icon" style="background: #fef9c3; color: #ca8a04;"><i class="ri ri-pregnant-line"></i></div>
                 <div>
-                    <div class="stat-label">Ingresos mes</div>
-                    <div class="stat-value text-warning">{{ format_money($stats['ingresos_mes'], 0) }}</div>
+                    <div class="stat-label">Embarazadas</div>
+                    <div class="stat-value">{{ $stats['embarazadas'] }}</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Alerts Panel and Today's Income -->
     <div class="row g-4 mb-4">
-        <!-- Alertas -->
         <div class="col-lg-8">
             <div class="dashboard-card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="ri ri-notification-badge-line me-2" style="color: #ef4444;"></i>
-                        Panel de Alertas
-                    </h5>
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="ri ri-bar-chart-box-line me-2 text-primary"></i>Distribución por edad</h5>
+                    <small class="text-muted">Últimos datos registrados</small>
+                </div>
+
+                <div class="card-body" wire:ignore>
+                    <div id="dashboardChart" style="min-height: 320px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="dashboard-card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="ri ri-notification-badge-line me-2 text-warning"></i>Alertas clave</h5>
+                    <small class="text-muted">Acciones prioritarias</small>
                 </div>
                 <div class="card-body">
                     @if(count($alerts) > 0)
                         @foreach($alerts as $alert)
-                        <div class="alert-item" style="border-left-color: {{ $alert['color'] }};">
-                            <div class="d-flex align-items-start gap-3">
-                                <div style="width: 40px; height: 40px; border-radius: .5rem; background: {{ $alert['color'] }}15; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <i class="{{ $alert['icon'] }}" style="font-size: 1.25rem; color: {{ $alert['color'] }};"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 fw-semibold" style="font-size: .9rem;">{{ $alert['title'] }}</h6>
-                                    <p class="mb-0 text-muted" style="font-size: .85rem;">{{ $alert['message'] }}</p>
+                            <div class="alert-item" style="border-left-color: {{ $alert['color'] }};">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div style="width: 42px; height: 42px; border-radius: 0.75rem; background: {{ $alert['color'] }}15; display: flex; align-items: center; justify-content: center;">
+                                        <i class="{{ $alert['icon'] }}" style="font-size: 1.25rem; color: {{ $alert['color'] }};"></i>
+                                    </div>
+                                    <div>
+                                        <div class="item-title">{{ $alert['title'] }}</div>
+                                        <div class="item-meta">{{ $alert['message'] }}</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         @endforeach
                     @else
-                        <div class="text-center py-4">
-                            <i class="ri ri-checkbox-circle-line" style="font-size: 3rem; color: #10b981; opacity: 0.5;"></i>
-                            <p class="text-muted mt-2 mb-0">No hay alertas pendientes</p>
+                        <div class="text-center py-5">
+                            <i class="ri ri-checkbox-circle-line" style="font-size: 3rem; color: #10b981; opacity: 0.45;"></i>
+                            <p class="text-muted mt-3 mb-0">No hay alertas pendientes.</p>
                         </div>
                     @endif
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Ingresos del Día y Tasa de Asistencia -->
-        <div class="col-lg-4">
-            <div class="row g-3">
-                <!-- Ingresos Hoy -->
-                <div class="col-12">
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="ri ri-wallet-line me-2" style="color: #10b981;"></i>
-                                Ingresos Hoy
-                            </h5>
-                        </div>
-                        <div class="card-body text-center py-4">
-                            <div class="stat-value text-success mb-2" style="font-size: 2rem;">{{ format_money($stats['ingresos_hoy'], 0) }}</div>
-                            <small class="text-muted">Pagos aprobados hoy</small>
-                        </div>
-                    </div>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="dashboard-card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="ri ri-list-check-2-line me-2 text-primary"></i>Beneficiarios recientes</h5>
+                    <a href="{{ route('admin.beneficiarios.index') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
                 </div>
-
-                <!-- Tasa de Asistencia -->
-                <div class="col-12">
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="ri ri-percent-line me-2" style="color: #8b5cf6;"></i>
-                                Tasa de Asistencia
-                            </h5>
-                        </div>
-                        <div class="card-body text-center py-4">
-                            <div class="stat-value mb-2" style="font-size: 2rem; color: {{ $stats['tasa_asistencia'] >= 80 ? '#10b981' : ($stats['tasa_asistencia'] >= 60 ? '#f59e0b' : '#ef4444') }};">
-                                {{ $stats['tasa_asistencia'] }}%
+                <div class="card-body">
+                    @if(count($recentBeneficiarios) > 0)
+                        @foreach($recentBeneficiarios as $beneficiario)
+                            <div class="beneficiario-item">
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                    <div>
+                                        <div class="item-title">{{ $beneficiario['nombre'] }}</div>
+                                        <div class="item-meta">Responsable: {{ $beneficiario['responsable'] }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="item-label">Edad</div>
+                                        <div class="fw-semibold">{{ $beneficiario['edad'] ?? '—' }}</div>
+                                        <div class="text-muted" style="font-size: .82rem;">{{ $beneficiario['created_at'] }}</div>
+                                    </div>
+                                </div>
                             </div>
-                            <small class="text-muted">Citas completadas vs total</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Chart and Recent Appointments -->
-    <div class="row g-4 mb-4">
-        <!-- Chart -->
-        <div class="col-lg-8">
-            <div class="dashboard-card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="ri ri-bar-chart-box-line me-2 text-primary"></i>
-                        Citas de los Últimos 7 Días
-                    </h5>
-                </div>
-                <div class="card-body" wire:ignore>
-                    <div id="citasChart"></div>
+                        @endforeach
+                    @else
+                        <div class="text-center py-4 text-muted">No hay beneficiarios recientes registrados.</div>
+                    @endif
                 </div>
             </div>
         </div>
 
-        <!-- Upcoming Appointments -->
-        <div class="col-lg-4">
-            <div class="dashboard-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="ri ri-calendar-event-line me-2 text-primary"></i>
-                        Próximas Citas
-                    </h5>
-                    <a href="{{ url('admin/calendario') }}" class="btn btn-outline-primary btn-sm" style="border-radius: .5rem;">
-                        Ver todas
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                   
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Payments and Top Doctors -->
-    <div class="row g-4 mb-4">
-        <!-- Últimos Pagos -->
         <div class="col-lg-6">
             <div class="dashboard-card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="ri ri-bank-card-line me-2" style="color: #10b981;"></i>
-                        Últimos Pagos
-                    </h5>
-
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="ri ri-user-follow-line me-2 text-success"></i>Top responsables</h5>
+                    <a href="{{ route('admin.responsables.index') }}" class="btn btn-sm btn-outline-success">Ver responsables</a>
                 </div>
-                <div class="card-body p-0">
-                    
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Médicos -->
-        <div class="col-lg-6">
-            <div class="dashboard-card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="ri ri-user-star-line me-2" style="color: #8b5cf6;"></i>
-                        Top Médicos Hoy
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                   
+                <div class="card-body">
+                    @if(count($topResponsables) > 0)
+                        @foreach($topResponsables as $responsable)
+                            <div class="responsable-item d-flex align-items-center justify-content-between gap-3">
+                                <div>
+                                    <div class="item-title">{{ $responsable['nombre'] }}</div>
+                                    <div class="item-meta">{{ $responsable['telefono'] ?? 'Teléfono no disponible' }}</div>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">{{ $responsable['candidatos'] }}</span>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="text-center py-4 text-muted">No hay responsables con beneficiarios asignados.</div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
-
-
 
     @push('scripts')
     <script>
-        function initCitasChart(labels, data) {
+        function initDashboardChart(labels, data) {
             labels = Array.isArray(labels) ? labels : [];
-            var arr = Array.isArray(data) ? data.map(function(v){ return Number(v) || 0; }) : [];
-            var el = document.querySelector('#citasChart');
-            if (!el) return;
+            var series = Array.isArray(data) ? data.map(function (value) { return Number(value) || 0; }) : [];
+            var el = document.querySelector('#dashboardChart');
+            if (!el) {
+                return;
+            }
 
             var config = {
-                chart: { height: 300, type: 'bar', toolbar: { show: false } },
-                plotOptions: { bar: { borderRadius: 6, columnWidth: '40%' } },
+                chart: {
+                    height: 340,
+                    type: 'bar',
+                    toolbar: { show: false }
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 10,
+                        columnWidth: '45%'
+                    }
+                },
                 dataLabels: { enabled: false },
-                colors: ['#6366f1'],
-                series: [{ name: 'Citas', data: arr }],
+                colors: ['#4338ca'],
+                series: [{ name: 'Beneficiarios', data: series }],
                 xaxis: { categories: labels },
-                yaxis: { min: 0 }
+                yaxis: { min: 0, tickAmount: 4 },
+                tooltip: {
+                    theme: 'light',
+                    y: { formatter: function (val) { return val + ' personas'; } }
+                }
             };
 
-            if (window.citasChart && typeof window.citasChart.updateOptions === 'function') {
-                window.citasChart.updateOptions({ xaxis: { categories: labels } });
-                window.citasChart.updateSeries([{ name: 'Citas', data: arr }]);
+            if (window.dashboardChart && typeof window.dashboardChart.updateOptions === 'function') {
+                window.dashboardChart.updateOptions({ xaxis: { categories: labels } });
+                window.dashboardChart.updateSeries([{ data: series }]);
             } else {
-                window.citasChart = new ApexCharts(el, config);
-                window.citasChart.render();
+                window.dashboardChart = new ApexCharts(el, config);
+                window.dashboardChart.render();
             }
         }
 
-        initCitasChart(@json($citasChartData['labels']), @json($citasChartData['data']));
+        initDashboardChart(@json($chartData['labels']), @json($chartData['data']));
 
         document.addEventListener('livewire:init', function () {
-            Livewire.on('chartDataUpdated', function () {
-                var args = Array.prototype.slice.call(arguments);
-                var payload = args[0] || {};
-                var chartData = payload.citasChartData || (Array.isArray(payload) ? payload[0]?.citasChartData : null);
-                if (chartData && chartData.labels) {
-                    initCitasChart(chartData.labels, chartData.data || []);
+            Livewire.on('chartDataUpdated', function (payload) {
+                if (payload && payload.chartData) {
+                    initDashboardChart(payload.chartData.labels, payload.chartData.data || []);
                 }
             });
         });

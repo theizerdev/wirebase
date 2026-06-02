@@ -10,7 +10,7 @@ if (!function_exists('getPermissionSectors')) {
                 'description' => 'Configuración del sistema, empresas, usuarios y roles',
                 'color' => 'purple',
                 'icon' => 'ri-settings-3-line',
-                'modules' => ['empresas', 'consultorios', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion']
+                'modules' => ['empresas', 'consultorios', 'sucursales', 'paises', 'users', 'roles', 'permissions', 'personalizacion', 'responsables', 'beneficiarios']
             ],
             'monitoreo' => [
                 'name' => '📊 Monitoreo',
@@ -127,34 +127,33 @@ if (!function_exists('getSectorMenuItems')) {
     {
         return [
                'administracion' => [
-                'label' => 'Administración',
-                'icon' => 'ri-money-dollar-circle-line',
+                'label' => 'Registros',
+                'icon' => 'ri-folder-line',
+                
                 'items' => [
                   
+                   
                     [
-                        'label' => 'Tasa de cambio',
-                        'icon' => 'ri-exchange-dollar-line',
-                        'permission' => 'view exchange-rates',
-                        'route' => 'admin.exchange-rates',
-                        'active' => 'admin.exchange-rates',
-                    ],
-                    [
-                        'label' => 'Contabilidad',
-                        'icon' => 'ri-calculator-line',
-                        'permissions' => ['access contabilidad', 'view contabilidad'],
-                        'active' => 'admin.contabilidad.*|admin.seniat.*',
+                        'label' => 'Responsables',
+                        'icon' => 'ri-group-line',
+                        'permissions' => ['access responsables'],
+                        'active' => 'admin.responsables.*',
                         'children' => [
-                            ['label' => 'Plan de Cuentas', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.plan-cuentas', 'active' => 'admin.contabilidad.plan-cuentas'],
-                            ['label' => 'Asientos Contables', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.asientos', 'active' => 'admin.contabilidad.asientos'],
-                            ['label' => 'Libro Diario', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.libro-diario', 'active' => 'admin.contabilidad.libro-diario'],
-                            ['label' => 'Libro Mayor', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.libro-mayor', 'active' => 'admin.contabilidad.libro-mayor'],
-                            ['label' => 'Balance Comprobación', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.balance-comprobacion', 'active' => 'admin.contabilidad.balance-comprobacion'],
-                            ['label' => 'Balance General', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.balance-general', 'active' => 'admin.contabilidad.balance-general'],
-                            ['label' => 'Estado de Resultados', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.estado-resultados', 'active' => 'admin.contabilidad.estado-resultados'],
-                            ['label' => 'Cierre Contable', 'permission' => 'access contabilidad', 'route' => 'admin.contabilidad.cierre-contable', 'active' => 'admin.contabilidad.cierre-contable'],
-                            //['label' => 'Libro de Ventas', 'permission' => 'access contabilidad', 'route' => 'admin.seniat.libro-ventas', 'active' => 'admin.seniat.libro-ventas'],
+                            ['label' => 'Listado general', 'permission' => 'access responsables', 'route' => 'admin.responsables.index', 'active' => 'admin.responsables.index'],
+                            ['label' => 'Nuevo registro', 'permission' => 'access responsables', 'route' => 'admin.responsables.create', 'active' => 'admin.responsables.create'],
                         ]
-                    ],                ]
+                    ],       
+                    [
+                        'label' => 'Beneficiarios',
+                        'icon' => 'ri-user-line',
+                        'permissions' => ['access beneficiarios'],
+                        'active' => 'admin.beneficiarios.*',
+                        'children' => [
+                            ['label' => 'Listado general', 'permission' => 'access beneficiarios', 'route' => 'admin.beneficiarios.index', 'active' => 'admin.beneficiarios.index'],
+                            ['label' => 'Nuevo registro', 'permission' => 'access beneficiarios', 'route' => 'admin.beneficiarios.create', 'active' => 'admin.beneficiarios.create'],
+                        ]
+                    ],  
+               ]
             ],
 
             'configuracion' => [
@@ -164,12 +163,11 @@ if (!function_exists('getSectorMenuItems')) {
                     [
                         'label' => 'Institucional',
                         'icon' => 'ri-building-4-line',
-                        'permissions' => ['access empresas', 'access sucursales', 'access paises', 'access consultorios'],
+                        'permissions' => ['access empresas', 'access sucursales', 'access paises', 'access consultorios', 'access responsables', 'access beneficiarios'],
                         'active' => 'admin.empresas.*|admin.sucursales.*|admin.paises.*|admin.consultorios.*',
                         'children' => [
                             ['label' => 'Empresas', 'permission' => 'access empresas', 'route' => 'admin.empresas.index', 'active' => 'admin.empresas.index'],
                             ['label' => 'Sucursales', 'permission' => 'access sucursales', 'route' => 'admin.sucursales.index', 'active' => 'admin.sucursales.index'],
-                            //['label' => 'Consultorios', 'permission' => 'access consultorios', 'route' => 'admin.consultorios.index', 'active' => 'admin.consultorios.index'],
                             ['label' => 'Países', 'permission' => 'access paises', 'route' => 'admin.paises.index', 'active' => 'admin.paises.index'],
                         ]
                     ],
@@ -194,20 +192,6 @@ if (!function_exists('getSectorMenuItems')) {
 
                 ]
             ],
-            'comunicaciones' => [
-                'label' => 'Comunicaciones',
-                'icon' => 'ri-whatsapp-line',
-                'items' => [
-                    [
-                        'label' => 'WhatsApp',
-                        'icon' => 'ri-whatsapp-line',
-                        'permission' => 'access whatsapp',
-                        'route' => 'admin.whatsapp.index',
-                        'route_horizontal' => 'admin.whatsapp.index',
-                        'active' => 'admin.whatsapp.*',
-                    ],
-                ]
-            ],
             'monitoreo' => [
                 'label' => 'Monitoreo',
                 'icon' => 'ri-line-chart-line',
@@ -224,7 +208,7 @@ if (!function_exists('getSectorMenuItems')) {
                         'icon' => 'ri-history-line',
                         'permission' => 'access activity log',
                         'route' => 'admin.activity-log',
-                        'active_path' => 'admin/activity-log*',
+                        'active' => 'admin.activity-log*',
                     ],
                     [
                         'label' => 'Exportar Base de Datos',
@@ -316,6 +300,7 @@ if (!function_exists('getEstadosConsultaMenuItems')) {
                     $items[] = [
                         'label'  => $label,
                         'route'  => $rutasFijas[$estado],
+                        'params' => ['estado' => $estado],
                         'active' => $rutasFijas[$estado],
                     ];
                 } else {

@@ -21,18 +21,39 @@ class Sucursal extends Model
         'direccion',
         'latitud',
         'longitud',
-        'status'
+        'status',
+        'estado_id',
+        'municipio_id',
+        'parroquia_id'
     ];
 
     protected $casts = [
         'status' => 'boolean',
         'latitud' => 'decimal:8',
         'longitud' => 'decimal:8',
+        'estado_id' => 'integer',
+        'municipio_id' => 'integer',
+        'parroquia_id' => 'integer',
     ];
 
     public function empresa()
     {
         return $this->belongsTo(Empresa::class);
+    }
+
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class);
+    }
+
+    public function municipio()
+    {
+        return $this->belongsTo(Municipio::class);
+    }
+
+    public function parroquia()
+    {
+        return $this->belongsTo(Parroquia::class);
     }
 
     public function scopeForUser($query)
@@ -52,7 +73,7 @@ class Sucursal extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['nombre', 'telefono', 'direccion', 'status'])
+            ->logOnly(['nombre', 'telefono', 'direccion', 'status', 'estado_id', 'municipio_id', 'parroquia_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(fn(string $eventName) => static::getSpanishDescription($eventName));

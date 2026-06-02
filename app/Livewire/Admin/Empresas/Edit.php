@@ -8,6 +8,9 @@ use Livewire\Component;
 use Livewire\Attributes\On;
 use App\Models\Empresa;
 use App\Models\Pais;
+use App\Models\Estado;
+use App\Models\Municipio;
+use App\Models\Parroquia;
 use App\Services\RegionalConfigurationService;
 
 class Edit extends Component
@@ -26,6 +29,13 @@ class Edit extends Component
     public $telefono = '';
     public $email = '';
     public $pais_id = '';
+    public $estado_id = '';
+    public $municipio_id = '';
+    public $parroquia_id = '';
+
+    public $estados = [];
+    public $municipios = [];
+    public $parroquias = [];
 
     protected $rules = [
         'razon_social' => 'required|string|max:255',
@@ -39,6 +49,9 @@ class Edit extends Component
         'telefono' => 'nullable|string|max:20',
         'email' => 'nullable|email|max:255',
         'pais_id' => 'required|exists:pais,id',
+        'estado_id' => 'nullable|exists:estados,id',
+        'municipio_id' => 'nullable|exists:municipios,id',
+        'parroquia_id' => 'nullable|exists:parroquias,id',
     ];
 
     #[On('location-updated')]
@@ -70,6 +83,9 @@ class Edit extends Component
                     $this->dispatch('map-center-changed', latitud: $pais->latitud, longitud: $pais->longitud);
                 }
 
+                // Cargar estados del país
+                $this->estados = Estado::all();
+                
                 // Disparar evento de configuración regional actualizada
                 $this->dispatch('regional-configuration-updated', [
                     'currency' => $this->moneda,
@@ -88,6 +104,39 @@ class Edit extends Component
             $this->formato_moneda = '#,##0.00';
             $this->simbolo_moneda = '$';
             $this->idioma = 'es';
+            
+            // Limpiar estados y dependencias
+            $this->estados = [];
+            $this->municipios = [];
+            $this->parroquias = [];
+            $this->estado_id = '';
+            $this->municipio_id = '';
+            $this->parroquia_id = '';
+        }
+    }
+    
+    public function updatedEstadoId($value)
+    {
+        $this->municipio_id = '';
+        $this->parroquia_id = '';
+        
+        if ($value) {
+            $this->municipios = Municipio::where('estado_id', $value)->get();
+        } else {
+            $this->municipios = [];
+        }
+        
+        $this->parroquias = [];
+    }
+
+    public function updatedMunicipioId($value)
+    {
+        $this->parroquia_id = '';
+        
+        if ($value) {
+            $this->parroquias = Parroquia::where('municipio_id', $value)->get();
+        } else {
+            $this->parroquias = [];
         }
     }
 
@@ -105,10 +154,26 @@ class Edit extends Component
         $this->telefono = $empresa->telefono;
         $this->email = $empresa->email;
         $this->pais_id = $empresa->pais_id;
+        $this->estado_id = $empresa->estado_id;
+        $this->municipio_id = $empresa->municipio_id;
+        $this->parroquia_id = $empresa->parroquia_id;
 
         // Inicializar configuración regional si hay país seleccionado
         if ($empresa->pais) {
             $this->initializeRegionalConfiguration($empresa->pais);
+            
+            // Cargar estados del país
+            $this->estados = Estado::all();
+            
+            // Cargar municipios si hay estado seleccionado
+            if ($this->estado_id) {
+                $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
+            }
+            
+            // Cargar parroquias si hay municipio seleccionado
+            if ($this->municipio_id) {
+                $this->parroquias = Parroquia::where('municipio_id', $this->municipio_id)->get();
+            }
         } else {
             // Inicializar con valores por defecto si no hay país
             $this->moneda = 'USD';
@@ -127,7 +192,9 @@ class Edit extends Component
     {
         $this->validate();
 
-        $this->empresa->update([
+       try {
+       
+          $this->empresa->update([
             'razon_social' => $this->razon_social,
             'documento' => $this->documento,
             'direccion' => $this->address ?: $this->direccion,
@@ -138,6 +205,9 @@ class Edit extends Component
             'telefono' => $this->telefono,
             'email' => $this->email,
             'pais_id' => $this->pais_id,
+            'estado_id' => $this->estado_id ?: null,
+            'municipio_id' => $this->municipio_id ?: null,
+            'parroquia_id' => $this->parroquia_id ?: null,
         ]);
 
         // Recargar la empresa con el país para aplicar configuración regional
@@ -153,6 +223,15 @@ class Edit extends Component
         ]);
 
         return redirect()->route('admin.empresas.index');
+       
+       } catch (\Throwable $th) {
+        //throw $th;
+         $this->dispatch('notify', [
+            'type' => 'error',
+            'message' => "Error al actualizar la empresa '{$this->razon_social}'.",
+            'duration' => 4000
+        ]);
+       }
     }
 
 
