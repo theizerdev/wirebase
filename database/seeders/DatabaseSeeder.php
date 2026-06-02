@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
             MunicipiosSeeder::class,
             ParroquiasSeeder::class,
             ResponsablesPermissionsSeeder::class,
-            BeneficiariosPermissionsSeeder::class,
+           
         ]);
     }
 }

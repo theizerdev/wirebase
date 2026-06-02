@@ -31,7 +31,7 @@ class TemplateCustomization extends Model
     public static function getSettings()
     {
         return self::first() ?? self::create([
-            'primary_color' => '#96dbe7ff',
+            'primary_color' => '#0050fc',
             'skin' => 0,
             'theme' => 'light',
             'semi_dark' => true,
