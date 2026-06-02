@@ -5,11 +5,11 @@
     <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-6">
       <a href="{{ route('admin.dashboard') }}" class="app-brand-link gap-2">
         <span class="app-brand-logo demo">
-         <img src="/logo/logo.png" height="80px">
+         <img src="/logo/logo.png" height="40px">
         </span>
       </a>
 
-      <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-xl-none">
+      <a href="japublic/logo/auth.pngvascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-xl-none">
         <i class="icon-base ri ri-close-line icon-sm"></i>
       </a>
     </div>

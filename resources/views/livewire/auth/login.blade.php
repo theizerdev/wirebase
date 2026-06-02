@@ -95,9 +95,7 @@
               <input class="form-check-input" type="checkbox" id="remember-me" wire:model="remember" />
               <label class="form-check-label" for="remember-me"> {{ __('auth_ui.remember_me') }} </label>
             </div>
-            <a href="{{ route('password.request') }}" class="float-end mb-1 mt-2">
-              <span>{{ __('auth_ui.forgot_password') }}</span>
-            </a>
+           
           </div>
 
           <div class="mb-5">

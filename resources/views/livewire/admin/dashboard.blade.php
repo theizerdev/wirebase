@@ -169,7 +169,7 @@
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="stat-card">
-                <div class="stat-icon" style="background: #fef9c3; color: #ca8a04;"><i class="ri ri-pregnant-line"></i></div>
+                <div class="stat-icon" style="background: #fef9c3; color: #ca8a04;"><i class="ri ri-nurse-line"></i></div>
                 <div>
                     <div class="stat-label">Embarazadas</div>
                     <div class="stat-value">{{ $stats['embarazadas'] }}</div>
@@ -228,7 +228,7 @@
         <div class="col-lg-6">
             <div class="dashboard-card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="mb-0"><i class="ri ri-list-check-2-line me-2 text-primary"></i>Beneficiarios recientes</h5>
+                    <h5 class="mb-0"><i class="ri ri-file-line me-2 text-primary"></i>Beneficiarios recientes</h5>
                     <a href="{{ route('admin.beneficiarios.index') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
                 </div>
                 <div class="card-body">
@@ -267,7 +267,7 @@
                             <div class="responsable-item d-flex align-items-center justify-content-between gap-3">
                                 <div>
                                     <div class="item-title">{{ $responsable['nombre'] }}</div>
-                                    <div class="item-meta">{{ $responsable['telefono'] ?? 'Teléfono no disponible' }}</div>
+                                    <div class="item-meta">{{ $responsable['telefono'] ?? 'Teléfono no disponible' }} {{ $responsable['estado']['nombre'] ?? 'Estado no disponible' }}</div>
                                 </div>
                                 <span class="badge bg-primary rounded-pill">{{ $responsable['candidatos'] }}</span>
                             </div>
