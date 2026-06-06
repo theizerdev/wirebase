@@ -292,6 +292,16 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'access beneficiarios',
                     ]
                 ],
+                'casas_alimentacion' => [
+                    'name' => 'Casas de Alimentación',
+                    'permissions' => [
+                        'access casas_alimentacion',
+                        'create casas_alimentacion',
+                        'edit casas_alimentacion',
+                        'delete casas_alimentacion',
+                        'view casas_alimentacion',
+                    ]
+                ],
             ],
 
             // 📱 SECTOR COMUNICACIONES (Adicional)

@@ -52,3 +52,4 @@ require_once __DIR__ . '/admin/seniat.php';
 require_once __DIR__ . '/admin/template.php';
 require_once __DIR__ . '/admin/responsables.php';
 require_once __DIR__ . '/admin/beneficiarios.php';
+require_once __DIR__ . '/admin/casas_alimentacion.php';
