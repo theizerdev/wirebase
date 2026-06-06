@@ -155,13 +155,13 @@ class Edit extends Component
 
         $this->casa = $casa;
         $this->fillFromModel($casa);
-        
+
         $this->estados = Estado::orderBy('nombre')->get();
-        
+
         if ($casa->estado_id) {
             $this->municipios = Municipio::where('estado_id', $casa->estado_id)->orderBy('nombre')->get();
         }
-        
+
         if ($casa->municipio_id) {
             $this->parroquias = Parroquia::where('municipio_id', $casa->municipio_id)->orderBy('nombre')->get();
         }
@@ -188,7 +188,7 @@ class Edit extends Component
         $this->telefono_secundario = $casa->telefono_secundario;
         $this->estado_cda = $casa->estado_cda;
         $this->motivo_inoperatividad = $casa->motivo_inoperatividad;
-        
+
         // Campos de operatividad
         $this->posee_sello = $casa->posee_sello;
         $this->posee_listado_beneficiarios = $casa->posee_listado_beneficiarios;
@@ -222,7 +222,7 @@ class Edit extends Component
         $this->posee_tanque_agua = $casa->posee_tanque_agua;
         $this->posee_estante_almacenamiento = $casa->posee_estante_almacenamiento;
         $this->observaciones_operatividad = $casa->observaciones_operatividad;
-        
+
         if ($casa->punto_referencia) {
             $this->address = $casa->punto_referencia;
         }

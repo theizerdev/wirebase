@@ -20,49 +20,49 @@ return new class extends Migration
             $table->boolean('posee_identificacion_fundaproal')->default(false)->after('num_promedio_diario_beneficiarios');
             $table->boolean('identificacion_visible')->nullable()->default(false)->after('posee_identificacion_fundaproal');
             $table->boolean('posee_cartelera_informativa')->default(false)->after('identificacion_visible');
-            
+
             // Certificados y equipamiento personal
             $table->boolean('posee_certificado_manipulacion_alimentos')->default(false)->after('posee_cartelera_informativa');
             $table->boolean('posee_certificado_salud')->default(false)->after('posee_certificado_manipulacion_alimentos');
             $table->boolean('posee_gorros_delantales')->default(false)->after('posee_certificado_salud');
-            
+
             // Suministro de gas
             $table->boolean('recibe_suministro_gas')->default(false)->after('posee_gorros_delantales');
             $table->integer('cantidad_reguladores_kg')->nullable()->after('recibe_suministro_gas');
             $table->integer('bombonas_propias_cantidad')->nullable()->default(0)->after('cantidad_reguladores_kg');
             $table->integer('bombonas_prestadas_cantidad')->nullable()->default(0)->after('bombonas_propias_cantidad');
-            
+
             // Manipulación de alimentos
             $table->boolean('manipulacion_alimentos_adecuada')->default(false)->after('bombonas_prestadas_cantidad');
             $table->integer('dias_preparacion_semana')->nullable()->after('manipulacion_alimentos_adecuada');
-            
+
             // Personas itinerantes
             $table->integer('itinerantes_femeninos')->nullable()->default(0)->after('dias_preparacion_semana');
             $table->integer('itinerantes_masculinos')->nullable()->default(0)->after('itinerantes_femeninos');
             $table->integer('itinerantes_menores_masculinos')->nullable()->default(0)->after('itinerantes_masculinos');
             $table->integer('itinerantes_menores_femeninos')->nullable()->default(0)->after('itinerantes_menores_masculinos');
-            
+
             // Cocina
             $table->enum('condicion_cocina', ['Operativa', 'Inoperativa', 'No posee'])->nullable()->after('itinerantes_menores_femeninos');
             $table->enum('tipo_cocina', ['Industrial', 'Domestica', 'Fogon/Reverbero'])->nullable()->after('condicion_cocina');
             $table->enum('dominio_cocina', ['Propia', 'Fundaproal', 'Prestada'])->nullable()->after('tipo_cocina');
-            
+
             // Nevera
             $table->enum('condicion_nevera', ['Operativa', 'Inoperativa', 'No posee'])->nullable()->after('dominio_cocina');
-            
+
             // Congelador
             $table->enum('dominio_congelador', ['Propia', 'Fundaproal', 'Prestada'])->nullable()->after('condicion_nevera');
             $table->enum('condicion_congelador', ['Operativa', 'Inoperativa', 'No posee'])->nullable()->after('dominio_congelador');
-            
+
             // Utensilios
             $table->enum('estatus_utensilios', ['Buenos', 'Regular', 'Malos'])->nullable()->after('condicion_congelador');
-            
+
             // Mobiliario
             $table->boolean('posee_meson')->default(false)->after('estatus_utensilios');
             $table->boolean('posee_fregadero')->default(false)->after('posee_meson');
             $table->boolean('posee_tanque_agua')->default(false)->after('posee_fregadero');
             $table->boolean('posee_estante_almacenamiento')->default(false)->after('posee_tanque_agua');
-            
+
             $table->text('observaciones_operatividad')->nullable()->after('posee_estante_almacenamiento');
         });
     }
