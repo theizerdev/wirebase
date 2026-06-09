@@ -99,4 +99,9 @@ class Beneficiario extends Model
     {
         return $this->belongsTo(\App\Models\Parroquia::class);
     }
+
+    public function casaAlimentacion()
+    {
+        return $this->belongsTo(\App\Models\CasaAlimentacion::class, 'casa_alimentacion_id');
+    }
 }
