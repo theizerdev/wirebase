@@ -4,7 +4,13 @@ if (!function_exists('getPermissionSectors')) {
     function getPermissionSectors(): array
     {
         return [
-
+            'institucional' => [
+                'name' => '👥 Institucional',
+                'description' => 'Beneficiarios y Casas de Alimentación',
+                'color' => 'green',
+                'icon' => 'ri-community-line',
+                'modules' => ['beneficiarios', 'casas_alimentacion']
+            ],
             'configuracion' => [
                 'name' => '⚙️ Configuración',
                 'description' => 'Configuración del sistema, empresas, usuarios y roles',
@@ -33,7 +39,7 @@ if (!function_exists('getPermissionSectors')) {
                 'icon' => 'ri-tools-line',
                 'modules' => ['system', 'api', 'jwt']
             ],
-          
+
         ];
     }
 }
@@ -126,14 +132,11 @@ if (!function_exists('getSectorMenuItems')) {
     function getSectorMenuItems(): array
     {
         return [
-               'administracion' => [
-                'label' => 'Registros',
-                'icon' => 'ri-folder-line',
-                
+            'institucional' => [
+                'label' => 'Panel de registro',
+                'icon' => 'ri-community-line',
                 'items' => [
-                  
-                   
-                    [
+                  [
                         'label' => 'Responsables',
                         'icon' => 'ri-group-line',
                         'permissions' => ['access responsables'],
@@ -142,7 +145,7 @@ if (!function_exists('getSectorMenuItems')) {
                             ['label' => 'Listado general', 'permission' => 'access responsables', 'route' => 'admin.responsables.index', 'active' => 'admin.responsables.index'],
                             ['label' => 'Nuevo registro', 'permission' => 'access responsables', 'route' => 'admin.responsables.create', 'active' => 'admin.responsables.create'],
                         ]
-                    ],       
+                    ],
                     [
                         'label' => 'Beneficiarios',
                         'icon' => 'ri-user-line',
@@ -152,9 +155,20 @@ if (!function_exists('getSectorMenuItems')) {
                             ['label' => 'Listado general', 'permission' => 'access beneficiarios', 'route' => 'admin.beneficiarios.index', 'active' => 'admin.beneficiarios.index'],
                             ['label' => 'Nuevo registro', 'permission' => 'access beneficiarios', 'route' => 'admin.beneficiarios.create', 'active' => 'admin.beneficiarios.create'],
                         ]
-                    ],  
+                    ],
+                    [
+                        'label' => 'Casas de Alimentación',
+                        'icon' => 'ri-home-heart-line',
+                        'permissions' => ['access casas_alimentacion'],
+                        'active' => 'admin.casas_alimentacion.*',
+                        'children' => [
+                            ['label' => 'Listado general', 'permission' => 'access casas_alimentacion', 'route' => 'admin.casas_alimentacion.index', 'active' => 'admin.casas_alimentacion.index'],
+                            ['label' => 'Nueva Casa', 'permission' => 'create casas_alimentacion', 'route' => 'admin.casas_alimentacion.create', 'active' => 'admin.casas_alimentacion.create'],
+                        ]
+                    ],
                ]
             ],
+
 
             'configuracion' => [
                 'label' => 'Configuración',
@@ -219,7 +233,7 @@ if (!function_exists('getSectorMenuItems')) {
                     ],
                 ],
             ],
-           
+
         ];
     }
 }

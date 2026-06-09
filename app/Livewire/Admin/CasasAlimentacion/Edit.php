@@ -15,6 +15,10 @@ class Edit extends Component
 {
     use HasDynamicLayout;
 
+    // Wizard step tracking
+    public $currentStep = 1;
+    public $totalSteps = 5;
+
     public $casa;
     public $fecha;
     public $codigo;
@@ -69,6 +73,36 @@ class Edit extends Component
     public $posee_tanque_agua = false;
     public $posee_estante_almacenamiento = false;
     public $observaciones_operatividad;
+
+    // Step 3: Infraestructura del área de la Cocina
+    public $condicion_fachada;
+    public $condicion_area_cocina;
+    public $condicion_despensa;
+    public $condicion_cableado_electrico;
+    public $condicion_aguas_servidas;
+    public $condicion_agua_potable;
+    public $condicion_techo;
+    public $condicion_piso;
+    public $condicion_paredes;
+    public $observaciones_infraestructura_cocina;
+
+    // Step 4: Factibilidad de espacio / Proyecto socio productivo
+    public $espacio_casa_alimentacion;
+    public $ha_recibido_formacion_proyectos;
+    public $posee_proyecto_socio_productivo;
+    public $interesado_produccion_primaria;
+    public $cuenta_infraestructura_adecuada_proyecto;
+    public $metros_cuadrados_proyecto;
+    public $observaciones_factibilidad_proyecto;
+
+    // Step 5: Ficha técnica
+    public $encuestador_nombre;
+    public $encuestador_telefono;
+    public $tecnico_nombre;
+    public $tecnico_telefono;
+    public $transcriptor_nombre;
+    public $transcriptor_telefono;
+    public $observaciones_adicionales_ficha_tecnica;
 
     public $estados = [];
     public $municipios = [];
@@ -138,6 +172,48 @@ class Edit extends Component
         ];
     }
 
+    protected function getStep3Rules()
+    {
+        return [
+            'condicion_fachada' => 'nullable|in:Pintada,Frisada,Sin Frisar',
+            'condicion_area_cocina' => 'nullable|in:Buena,Regular,Mala',
+            'condicion_despensa' => 'nullable|in:Buena,Regular,Mala',
+            'condicion_cableado_electrico' => 'nullable|in:Buena,Regular,Mala',
+            'condicion_aguas_servidas' => 'nullable|in:Buena,Regular,Mala',
+            'condicion_agua_potable' => 'nullable|in:Buena,Regular,Mala',
+            'condicion_techo' => 'nullable|in:Buena,Regular,Mala',
+            'condicion_piso' => 'nullable|in:Buena,Regular,Mala',
+            'condicion_paredes' => 'nullable|in:Buena,Regular,Mala',
+            'observaciones_infraestructura_cocina' => 'nullable|string',
+        ];
+    }
+
+    protected function getStep4Rules()
+    {
+        return [
+            'espacio_casa_alimentacion' => 'nullable|in:Propio,De uso comunal',
+            'ha_recibido_formacion_proyectos' => 'nullable|in:si,no',
+            'posee_proyecto_socio_productivo' => 'nullable|in:si,no',
+            'interesado_produccion_primaria' => 'nullable|in:Si,No,si,no',
+            'cuenta_infraestructura_adecuada_proyecto' => 'nullable|in:SI,NO,si,no',
+            'metros_cuadrados_proyecto' => 'nullable|numeric|min:0',
+            'observaciones_factibilidad_proyecto' => 'nullable|string',
+        ];
+    }
+
+    protected function getStep5Rules()
+    {
+        return [
+            'encuestador_nombre' => 'nullable|string|max:191',
+            'encuestador_telefono' => 'nullable|string|max:50',
+            'tecnico_nombre' => 'nullable|string|max:191',
+            'tecnico_telefono' => 'nullable|string|max:50',
+            'transcriptor_nombre' => 'nullable|string|max:191',
+            'transcriptor_telefono' => 'nullable|string|max:50',
+            'observaciones_adicionales_ficha_tecnica' => 'nullable|string',
+        ];
+    }
+
     #[On('location-updated')]
     public function updateLocation($latitude, $longitude, $address)
     {
@@ -145,6 +221,31 @@ class Edit extends Component
         $this->longitud = $longitude;
         $this->address = $address;
         $this->punto_referencia = $address;
+    }
+
+    public function nextStep()
+    {
+        // Para EDIT: validar SOLO el paso actual al avanzar
+        if ($this->currentStep === 1) {
+            $this->validate($this->getStep1Rules());
+        } elseif ($this->currentStep === 2) {
+            $this->validate($this->getStep2Rules());
+        } elseif ($this->currentStep === 3) {
+            $this->validate($this->getStep3Rules());
+        } elseif ($this->currentStep === 4) {
+            $this->validate($this->getStep4Rules());
+        }
+
+        if ($this->currentStep < $this->totalSteps) {
+            $this->currentStep++;
+        }
+    }
+
+    public function previousStep()
+    {
+        if ($this->currentStep > 1) {
+            $this->currentStep--;
+        }
     }
 
     public function mount(CasaAlimentacion $casa)
@@ -169,7 +270,7 @@ class Edit extends Component
 
     private function fillFromModel(CasaAlimentacion $casa)
     {
-        $this->fecha = $casa->fecha;
+        $this->fecha = \Carbon\Carbon::parse($casa->fecha)->format('Y-m-d');
         $this->codigo = $casa->codigo;
         $this->estado_id = $casa->estado_id;
         $this->municipio_id = $casa->municipio_id;
@@ -223,6 +324,36 @@ class Edit extends Component
         $this->posee_estante_almacenamiento = $casa->posee_estante_almacenamiento;
         $this->observaciones_operatividad = $casa->observaciones_operatividad;
 
+        // Step 3: Infraestructura del área de la Cocina
+        $this->condicion_fachada = $casa->condicion_fachada;
+        $this->condicion_area_cocina = $casa->condicion_area_cocina;
+        $this->condicion_despensa = $casa->condicion_despensa;
+        $this->condicion_cableado_electrico = $casa->condicion_cableado_electrico;
+        $this->condicion_aguas_servidas = $casa->condicion_aguas_servidas;
+        $this->condicion_agua_potable = $casa->condicion_agua_potable;
+        $this->condicion_techo = $casa->condicion_techo;
+        $this->condicion_piso = $casa->condicion_piso;
+        $this->condicion_paredes = $casa->condicion_paredes;
+        $this->observaciones_infraestructura_cocina = $casa->observaciones_infraestructura_cocina;
+
+        // Step 4: Factibilidad de espacio / Proyecto socio productivo
+        $this->espacio_casa_alimentacion = $casa->espacio_casa_alimentacion;
+        $this->ha_recibido_formacion_proyectos = $casa->ha_recibido_formacion_proyectos;
+        $this->posee_proyecto_socio_productivo = $casa->posee_proyecto_socio_productivo;
+        $this->interesado_produccion_primaria = $casa->interesado_produccion_primaria;
+        $this->cuenta_infraestructura_adecuada_proyecto = $casa->cuenta_infraestructura_adecuada_proyecto;
+        $this->metros_cuadrados_proyecto = $casa->metros_cuadrados_proyecto;
+        $this->observaciones_factibilidad_proyecto = $casa->observaciones_factibilidad_proyecto;
+
+        // Step 5: Ficha técnica
+        $this->encuestador_nombre = $casa->encuestador_nombre;
+        $this->encuestador_telefono = $casa->encuestador_telefono;
+        $this->tecnico_nombre = $casa->tecnico_nombre;
+        $this->tecnico_telefono = $casa->tecnico_telefono;
+        $this->transcriptor_nombre = $casa->transcriptor_nombre;
+        $this->transcriptor_telefono = $casa->transcriptor_telefono;
+        $this->observaciones_adicionales_ficha_tecnica = $casa->observaciones_adicionales_ficha_tecnica;
+
         if ($casa->punto_referencia) {
             $this->address = $casa->punto_referencia;
         }
@@ -246,6 +377,9 @@ class Edit extends Component
     {
         $this->validate($this->getStep1Rules());
         $this->validate($this->getStep2Rules());
+        $this->validate($this->getStep3Rules());
+        $this->validate($this->getStep4Rules());
+        $this->validate($this->getStep5Rules());
 
         $this->casa->update([
             // Información General
@@ -301,6 +435,36 @@ class Edit extends Component
             'posee_tanque_agua' => $this->posee_tanque_agua,
             'posee_estante_almacenamiento' => $this->posee_estante_almacenamiento,
             'observaciones_operatividad' => $this->observaciones_operatividad,
+
+            // Step 3: Infraestructura del área de la Cocina
+            'condicion_fachada' => $this->condicion_fachada,
+            'condicion_area_cocina' => $this->condicion_area_cocina,
+            'condicion_despensa' => $this->condicion_despensa,
+            'condicion_cableado_electrico' => $this->condicion_cableado_electrico,
+            'condicion_aguas_servidas' => $this->condicion_aguas_servidas,
+            'condicion_agua_potable' => $this->condicion_agua_potable,
+            'condicion_techo' => $this->condicion_techo,
+            'condicion_piso' => $this->condicion_piso,
+            'condicion_paredes' => $this->condicion_paredes,
+            'observaciones_infraestructura_cocina' => $this->observaciones_infraestructura_cocina,
+
+            // Step 4: Factibilidad de espacio / Proyecto socio productivo
+            'espacio_casa_alimentacion' => $this->espacio_casa_alimentacion,
+            'ha_recibido_formacion_proyectos' => $this->ha_recibido_formacion_proyectos,
+            'posee_proyecto_socio_productivo' => $this->posee_proyecto_socio_productivo,
+            'interesado_produccion_primaria' => $this->interesado_produccion_primaria,
+            'cuenta_infraestructura_adecuada_proyecto' => $this->cuenta_infraestructura_adecuada_proyecto,
+            'metros_cuadrados_proyecto' => $this->metros_cuadrados_proyecto,
+            'observaciones_factibilidad_proyecto' => $this->observaciones_factibilidad_proyecto,
+
+            // Step 5: Ficha técnica
+            'encuestador_nombre' => $this->encuestador_nombre,
+            'encuestador_telefono' => $this->encuestador_telefono,
+            'tecnico_nombre' => $this->tecnico_nombre,
+            'tecnico_telefono' => $this->tecnico_telefono,
+            'transcriptor_nombre' => $this->transcriptor_nombre,
+            'transcriptor_telefono' => $this->transcriptor_telefono,
+            'observaciones_adicionales_ficha_tecnica' => $this->observaciones_adicionales_ficha_tecnica,
         ]);
 
         $this->dispatch('notify', [

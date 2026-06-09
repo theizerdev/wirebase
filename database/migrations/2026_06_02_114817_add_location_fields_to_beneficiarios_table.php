@@ -15,7 +15,7 @@ return new class extends Migration
             $table->unsignedBigInteger('estado_id')->nullable();
             $table->unsignedBigInteger('municipio_id')->nullable();
             $table->unsignedBigInteger('parroquia_id')->nullable();
-            
+
             // Agregar las claves foráneas
             $table->foreign('estado_id')->references('id')->on('estados')->onDelete('set null');
             $table->foreign('municipio_id')->references('id')->on('municipios')->onDelete('set null');
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->dropForeign(['estado_id']);
             $table->dropForeign(['municipio_id']);
             $table->dropForeign(['parroquia_id']);
-            
+
             $table->dropColumn([
                 'estado_id',
                 'municipio_id',

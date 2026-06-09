@@ -20,20 +20,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
         $sectors = [
             // 💰 SECTOR ADMINISTRACIÓN
 
-            'administracion' => [
-                
-                 'tasas_cambio' => [
-                    'name' => 'Tasas de Cambio (BCV)',
-                    'permissions' => [
-                        'view exchange-rates',
-                        'fetch exchange-rates',
-                        'edit exchange-rates',
-                        'manage exchange-rates',
-                        'update exchange-rates',
-                        'export exchange-rates',
-                    ]
-                ],
-            ],
+
 
 
 
@@ -54,7 +41,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'export empresas',
                     ]
                 ],
-            
+
                 'sucursales' => [
                     'name' => 'Sucursales',
                     'permissions' => [
@@ -129,17 +116,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'manage template customization',
                     ]
                 ],
-                'impuestos' => [
-                    'name' => 'Configuración de Impuestos',
-                    'permissions' => [
-                        'view impuestos',
-                        'create impuestos',
-                        'edit impuestos',
-                        'delete impuestos',
-                        'activate impuestos',
-                        'deactivate impuestos',
-                    ]
-                ],
+
 
             ],
 
@@ -203,85 +180,19 @@ class SectorRolesAndPermissionsSeeder extends Seeder
 
             ],
 
-            // 📦 SECTOR INVENTARIO
-            'inventario' => [
-                'categorias_producto' => [
-                    'name' => 'Categorías de Producto',
-                    'permissions' => [
-                        'access categorias-producto',
-                        'create categorias-producto',
-                        'edit categorias-producto',
-                        'delete categorias-producto',
-                        'view categorias-producto',
-                    ]
-                ],
-                'marcas' => [
-                    'name' => 'Marcas',
-                    'permissions' => [
-                        'access marcas',
-                        'create marcas',
-                        'edit marcas',
-                        'delete marcas',
-                        'view marcas',
-                    ]
-                ],
-                'almacenes' => [
-                    'name' => 'Almacenes',
-                    'permissions' => [
-                        'access almacenes',
-                        'create almacenes',
-                        'edit almacenes',
-                        'delete almacenes',
-                    ]
-                ],
-                'proveedores' => [
-                    'name' => 'Proveedores',
-                    'permissions' => [
-                        'access proveedores',
-                        'create proveedores',
-                        'edit proveedores',
-                        'delete proveedores',
-                        'view proveedores',
-                    ]
-                ],
-                'productos' => [
-                    'name' => 'Productos',
-                    'permissions' => [
-                        'access productos',
-                        'create productos',
-                        'edit productos',
-                        'delete productos',
-                        'view productos',
-                    ]
-                ],
-                'movimientos_inventario' => [
-                    'name' => 'Movimientos de Inventario',
-                    'permissions' => [
-                        'access movimientos-inventario',
-                        'create movimientos-inventario',
-                        'view movimientos-inventario',
-                    ]
-                ],
-                'ordenes_compra' => [
-                    'name' => 'Órdenes de Compra',
-                    'permissions' => [
-                        'access ordenes-compra',
-                        'create ordenes-compra',
-                        'edit ordenes-compra',
-                        'delete ordenes-compra',
-                        'view ordenes-compra',
-                    ]
-                ],
-                'alertas_inventario' => [
-                    'name' => 'Alertas de Inventario',
-                    'permissions' => [
-                        'access alertas-inventario',
-                    ]
-                ],
-            ],
 
             // 👥 SECTOR BENEFICIARIOS
             'institucional' => [
+                'responsables' => [
+                    'name' => 'Responsables',
+                    'permissions' => [
+                        'view responsables',
+                        'create responsables',
+                        'edit responsables',
+                        'delete responsables',
+                        'access responsables',
+                    ]
+                ],
                 'beneficiarios' => [
                     'name' => 'Beneficiarios',
                     'permissions' => [
@@ -304,16 +215,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                 ],
             ],
 
-            // 📱 SECTOR COMUNICACIONES (Adicional)
-            'comunicaciones' => [
-                'whatsapp' => [
-                    'name' => 'WhatsApp',
-                    'permissions' => [
-                        'access whatsapp'
 
-                    ]
-                ],
-            ],
 
             // 💬 SECTOR CHAT INTERNO
             'chat' => [
@@ -325,7 +227,7 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                 ],
             ],
 
-           
+
         ];
 
         // Crear permisos organizados por sectores y módulos

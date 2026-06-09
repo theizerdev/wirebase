@@ -9,6 +9,7 @@ use App\Models\Responsable;
 use App\Models\Estado;
 use App\Models\Municipio;
 use App\Models\Parroquia;
+use App\Models\CasaAlimentacion;
 
 class Create extends Component
 {
@@ -16,7 +17,7 @@ class Create extends Component
 
     // Wizard steps
     public $currentStep = 1;
-    
+
     // Personal data
     public $nombres = '';
     public $apellidos = '';
@@ -31,10 +32,14 @@ class Create extends Component
     public $nivel_instruccion = '';
     public $ultimo_titulo_obtenido = '';
     public $trabaja_actualmente = false;
+    public $posee_habilidad_productiva = false;
     public $lugar_trabajo = '';
     public $ocupacion = '';
-    public $ingreso_mensual = '';
+    public $ingreso_mensual = 0.00;
     public $responsable_id = '';
+    public $casa_alimentacion_id = '';
+
+     public $casas_alimentacion = [];
 
     // Location fields
     public $estado_id = '';
@@ -42,7 +47,7 @@ class Create extends Component
     public $parroquia_id = '';
 
     // New fields for step 3
-    public $posee_habilidad_productiva = false;
+    public $tiene_habilidad_productiva = false;
     public $habilidad_productiva = '';
     public $pertenece_organizacion_social = false;
     public $tipo_organizacion_social = '';
@@ -86,7 +91,7 @@ class Create extends Component
     public $estados = [];
     public $municipios = [];
     public $parroquias = [];
-    
+
     protected $rules = [
         // Step 1: Basic personal info
         'nombres' => 'required|string|max:255',
@@ -96,32 +101,32 @@ class Create extends Component
         'telefono_principal' => 'nullable|string|max:20',
         'telefono_alternativo' => 'nullable|string|max:20',
         'estado_civil' => 'required|in:Soltero(a),Casado(a),Viudo(a),Divorciado(a)',
-        
+
         // Location fields
         'estado_id' => 'nullable|exists:estados,id',
         'municipio_id' => 'nullable|exists:municipios,id',
         'parroquia_id' => 'nullable|exists:parroquias,id',
-        
+
         // Step 2: Education and study info
         'estudia_actualmente' => 'nullable|boolean',
         'estudio_actual' => 'nullable|string|max:255',
         'nivel_instruccion' => 'required|in:Analfabeto,Básica,Media Diversificada,TSU,Universitario,Maestría,Doctorado',
         'ultimo_titulo_obtenido' => 'nullable|string|max:255',
-        
+
         // Step 3: Work info
         'trabaja_actualmente' => 'nullable|boolean',
         'lugar_trabajo' => 'nullable|string|max:255',
         'ocupacion' => 'nullable|string|max:255',
         'ingreso_mensual' => 'nullable|numeric|min:0',
-        
+
         // Step 3: New fields
-        'posee_habilidad_productiva' => 'nullable|boolean',
+        'tiene_habilidad_productiva' => 'nullable|boolean',
         'habilidad_productiva' => 'nullable|string|max:255',
         'pertenece_organizacion_social' => 'nullable|boolean',
         'tipo_organizacion_social' => 'nullable|string|max:255',
         'otra_organizacion_social' => 'nullable|string|max:255',
         'asignaciones_economicas' => 'nullable|array',
-        
+
         // Step 4: Datos de Salud
         'tiene_evaluacion_antropometrica' => 'nullable|boolean',
         'evaluacion_realizada_por' => 'nullable|string|max:255',
@@ -130,7 +135,7 @@ class Create extends Component
         'padece_discapacidad_enfermedad' => 'nullable|boolean',
         'diagnostico' => 'nullable|string|max:1000',
         'recipe_ayuda_tecnica' => 'nullable|string|max:1000',
-        
+
         // Step 5: Datos Socio-Familiares
         'personas_nucleo_familiar' => 'nullable|integer|min:0',
         'ninos_niñas' => 'nullable|integer|min:0',
@@ -144,37 +149,33 @@ class Create extends Component
         'fecha_ultima_menstruacion' => 'nullable|date',
         'edad_gestacion' => 'nullable|integer|min:0|max:42',
         'observaciones' => 'nullable|string|max:2000',
-        
+
         // Relationship
         'responsable_id' => 'nullable|exists:responsables,id',
     ];
 
-    public function mount()
+     public function mount()
     {
-        $this->responsables = Responsable::all();
+        $this->casas_alimentacion = \App\Models\CasaAlimentacion::orderBy('codigo')->get();
+
         $this->estados = Estado::all();
+        $this->responsables = collect();
     }
 
-    public function updatedFechaNacimiento()
+    public function updatedCasaAlimentacionId()
     {
-        if ($this->fecha_nacimiento) {
-            $this->edad = \Carbon\Carbon::parse($this->fecha_nacimiento)->age;
-        } else {
-            $this->edad = null;
-        }
-    }
+        if ($this->casa_alimentacion_id) {
+            $casa = CasaAlimentacion::find($this->casa_alimentacion_id);
+            if ($casa) {
+                $this->responsables = Responsable::where('casa_alimentacion_id', $casa->id)->get();
 
-     public function updatedResponsableId()
-    {
-        if ($this->responsable_id) {
-            $responsable = Responsable::find($this->responsable_id);
-            if ($responsable) {
-                // Copiar los datos de ubicación del responsable
-                $this->estado_id = $responsable->estado_id;
-                $this->municipio_id = $responsable->municipio_id;
-                $this->parroquia_id = $responsable->parroquia_id;
-                
-                // Cargar municipios y parroquias para cuando se quita el responsable
+                $this->estado_id = $casa->estado_id;
+                $this->municipio_id = $casa->municipio_id;
+                $this->parroquia_id = $casa->parroquia_id;
+
+                $this->municipios = collect();
+                $this->parroquias = collect();
+
                 if ($this->estado_id) {
                     $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
                 }
@@ -183,10 +184,55 @@ class Create extends Component
                 }
             }
         } else {
-            // Si se quita el responsable, limpiar los campos de ubicación
+            $this->responsables = collect();
             $this->estado_id = '';
             $this->municipio_id = '';
             $this->parroquia_id = '';
+            $this->municipios = collect();
+            $this->parroquias = collect();
+        }
+
+        $this->reset('responsable_id');
+    }
+
+    public function updatedResponsableId()
+    {
+        if ($this->responsable_id) {
+            $responsable = Responsable::find($this->responsable_id);
+            if ($responsable) {
+                $this->estado_id = $responsable->estado_id;
+                $this->municipio_id = $responsable->municipio_id;
+                $this->parroquia_id = $responsable->parroquia_id;
+
+                if ($this->estado_id) {
+                    $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
+                }
+                if ($this->municipio_id) {
+                    $this->parroquias = Parroquia::where('municipio_id', $this->municipio_id)->get();
+                }
+            }
+        } else {
+            if (!$this->casa_alimentacion_id) {
+                $this->estado_id = '';
+                $this->municipio_id = '';
+                $this->parroquia_id = '';
+                $this->municipios = collect();
+                $this->parroquias = collect();
+            } else {
+                $casa = CasaAlimentacion::find($this->casa_alimentacion_id);
+                if ($casa) {
+                    $this->estado_id = $casa->estado_id;
+                    $this->municipio_id = $casa->municipio_id;
+                    $this->parroquia_id = $casa->parroquia_id;
+
+                    if ($this->estado_id) {
+                        $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
+                    }
+                    if ($this->municipio_id) {
+                        $this->parroquias = Parroquia::where('municipio_id', $this->municipio_id)->get();
+                    }
+                }
+            }
         }
     }
 
@@ -218,6 +264,19 @@ class Create extends Component
         }
     }
 
+    public function updatedFechaNacimiento()
+    {
+        if ($this->fecha_nacimiento) {
+            $this->edad = \Carbon\Carbon::parse($this->fecha_nacimiento)->age;
+        } else {
+            $this->edad = null;
+        }
+    }
+
+
+
+
+
     public function updatedEstudiaActualmente()
     {
         if (!$this->estudia_actualmente) {
@@ -237,7 +296,7 @@ class Create extends Component
     // New methods for the additional fields
     public function updatedPoseeHabilidadProductiva()
     {
-        if (!$this->posee_habilidad_productiva) {
+        if (!$this->tiene_habilidad_productiva) {
             $this->habilidad_productiva = '';
         }
     }
@@ -324,7 +383,7 @@ class Create extends Component
     private function validateTotalPersonas()
     {
         $total = $this->ninos_niñas + $this->adolescentes + $this->mujeres + $this->hombres + $this->adultos_mayores;
-        
+
         if ($this->personas_nucleo_familiar > 0 && $total > $this->personas_nucleo_familiar) {
             // Reset all counts
             $this->ninos_niñas = 0;
@@ -333,7 +392,7 @@ class Create extends Component
             $this->hombres = 0;
             $this->adultos_mayores = 0;
             $this->mujeres_embarazadas = 0;
-            
+
             $this->dispatch('notify', [
                 'type' => 'warning',
                 'message' => 'La suma de las personas no puede exceder el total del núcleo familiar',
@@ -376,7 +435,7 @@ class Create extends Component
     private function validateStep($step)
     {
         $rules = [];
-        
+
         switch ($step) {
             case 1:
                 $rules = [
@@ -408,7 +467,7 @@ class Create extends Component
                     'ocupacion' => 'nullable|string|max:255',
                     'ingreso_mensual' => 'nullable|numeric|min:0',
                     // New fields validation
-                    'posee_habilidad_productiva' => 'nullable|boolean',
+                    'tiene_habilidad_productiva' => 'nullable|boolean',
                     'habilidad_productiva' => 'nullable|string|max:255',
                     'pertenece_organizacion_social' => 'nullable|boolean',
                     'tipo_organizacion_social' => 'nullable|string|max:255',
@@ -444,14 +503,14 @@ class Create extends Component
                 ];
                 break;
         }
-        
+
         $this->validate($rules);
     }
 
     public function save()
     {
         $this->validate();
-            
+
 
         $responsable = Responsable::find($this->responsable_id);
         try {
@@ -471,14 +530,14 @@ class Create extends Component
                 'trabaja_actualmente' => $this->trabaja_actualmente ?: false,
                 'lugar_trabajo' => $this->lugar_trabajo,
                 'ocupacion' => $this->ocupacion,
-                'ingreso_mensual' => $this->ingreso_mensual,
+                'ingreso_mensual' => $this->ingreso_mensual ?: 0,
                 'responsable_id' => $this->responsable_id ?: null,
                 // Location fields
                 'estado_id' => $responsable->estado_id ?: null,
                 'municipio_id' => $responsable->municipio_id ?: null,
                 'parroquia_id' => $responsable->parroquia_id ?: null,
                 // New fields
-                'posee_habilidad_productiva' => $this->posee_habilidad_productiva ?: false,
+                'tiene_habilidad_productiva' => $this->tiene_habilidad_productiva ?: false,
                 'habilidad_productiva' => $this->habilidad_productiva,
                 'pertenece_organizacion_social' => $this->pertenece_organizacion_social ?: false,
                 'tipo_organizacion_social' => $this->tipo_organizacion_social,
@@ -526,7 +585,7 @@ class Create extends Component
     public function render()
     {
         // Filter available options based on search
-        $filteredOptions = empty($this->searchAsignacion) 
+        $filteredOptions = empty($this->searchAsignacion)
             ? $this->available_asignaciones
             : array_filter($this->available_asignaciones, function($option) {
                 return stripos($option, $this->searchAsignacion) !== false;

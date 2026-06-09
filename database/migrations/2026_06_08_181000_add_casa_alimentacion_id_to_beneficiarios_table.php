@@ -6,25 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('beneficiarios', function (Blueprint $table) {
-            if (!Schema::hasColumn('beneficiarios', 'asignaciones_economicas')) {
-                $table->json('asignaciones_economicas')->nullable(); // Para almacenar múltiples selecciones
-            }
+            $table->foreignId('casa_alimentacion_id')
+                ->nullable()
+                ->after('responsable_id')
+                ->constrained('casas_alimentacion')
+                ->nullOnDelete();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('beneficiarios', function (Blueprint $table) {
-            $table->dropColumn(['asignaciones_economicas']);
+            $table->dropForeign(['casa_alimentacion_id']);
+            $table->dropColumn('casa_alimentacion_id');
         });
     }
 };

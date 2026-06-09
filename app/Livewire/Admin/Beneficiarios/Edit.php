@@ -9,16 +9,15 @@ use App\Models\Responsable;
 use App\Models\Estado;
 use App\Models\Municipio;
 use App\Models\Parroquia;
+use App\Models\CasaAlimentacion;
 
 class Edit extends Component
 {
-    use HasDynamicLayout;
+     use HasDynamicLayout;
 
-    public $beneficiario;
-    
     // Wizard steps
     public $currentStep = 1;
-    
+
     // Personal data
     public $nombres = '';
     public $apellidos = '';
@@ -33,10 +32,14 @@ class Edit extends Component
     public $nivel_instruccion = '';
     public $ultimo_titulo_obtenido = '';
     public $trabaja_actualmente = false;
+    public $posee_habilidad_productiva = false;
     public $lugar_trabajo = '';
     public $ocupacion = '';
-    public $ingreso_mensual = '';
+    public $ingreso_mensual = 0.00;
     public $responsable_id = '';
+    public $casa_alimentacion_id = '';
+
+     public $casas_alimentacion = [];
 
     // Location fields
     public $estado_id = '';
@@ -44,7 +47,7 @@ class Edit extends Component
     public $parroquia_id = '';
 
     // New fields for step 3
-    public $posee_habilidad_productiva = false;
+    public $tiene_habilidad_productiva = false;
     public $habilidad_productiva = '';
     public $pertenece_organizacion_social = false;
     public $tipo_organizacion_social = '';
@@ -77,10 +80,11 @@ class Edit extends Component
     public $adultos_mayores = 0;
     public $mujeres_embarazadas = 0;
     public $recipe_socio_familiar = '';
-    public $es_mujer_embarazada = 0;
+    public $es_mujer_embarazada = false;
     public $fecha_ultima_menstruacion = '';
     public $edad_gestacion = '';
     public $observaciones = '';
+    public $beneficiario = '';
 
     public $searchAsignacion = ''; // For searching/filtering options
 
@@ -88,42 +92,42 @@ class Edit extends Component
     public $estados = [];
     public $municipios = [];
     public $parroquias = [];
-    
+
     protected $rules = [
         // Step 1: Basic personal info
         'nombres' => 'required|string|max:255',
         'apellidos' => 'required|string|max:255',
-        'cedula' => 'required|string|max:20|unique:beneficiarios,cedula,{beneficiario},id',
+        'cedula' => 'required|string|max:20|unique:beneficiarios,cedula',
         'fecha_nacimiento' => 'nullable|date',
         'telefono_principal' => 'nullable|string|max:20',
         'telefono_alternativo' => 'nullable|string|max:20',
         'estado_civil' => 'required|in:Soltero(a),Casado(a),Viudo(a),Divorciado(a)',
-        
+
         // Location fields
         'estado_id' => 'nullable|exists:estados,id',
         'municipio_id' => 'nullable|exists:municipios,id',
         'parroquia_id' => 'nullable|exists:parroquias,id',
-        
+
         // Step 2: Education and study info
         'estudia_actualmente' => 'nullable|boolean',
         'estudio_actual' => 'nullable|string|max:255',
         'nivel_instruccion' => 'required|in:Analfabeto,Básica,Media Diversificada,TSU,Universitario,Maestría,Doctorado',
         'ultimo_titulo_obtenido' => 'nullable|string|max:255',
-        
+
         // Step 3: Work info
         'trabaja_actualmente' => 'nullable|boolean',
         'lugar_trabajo' => 'nullable|string|max:255',
         'ocupacion' => 'nullable|string|max:255',
         'ingreso_mensual' => 'nullable|numeric|min:0',
-        
+
         // Step 3: New fields
-        'posee_habilidad_productiva' => 'nullable|boolean',
+        'tiene_habilidad_productiva' => 'nullable|boolean',
         'habilidad_productiva' => 'nullable|string|max:255',
         'pertenece_organizacion_social' => 'nullable|boolean',
         'tipo_organizacion_social' => 'nullable|string|max:255',
         'otra_organizacion_social' => 'nullable|string|max:255',
         'asignaciones_economicas' => 'nullable|array',
-        
+
         // Step 4: Datos de Salud
         'tiene_evaluacion_antropometrica' => 'nullable|boolean',
         'evaluacion_realizada_por' => 'nullable|string|max:255',
@@ -132,7 +136,7 @@ class Edit extends Component
         'padece_discapacidad_enfermedad' => 'nullable|boolean',
         'diagnostico' => 'nullable|string|max:1000',
         'recipe_ayuda_tecnica' => 'nullable|string|max:1000',
-        
+
         // Step 5: Datos Socio-Familiares
         'personas_nucleo_familiar' => 'nullable|integer|min:0',
         'ninos_niñas' => 'nullable|integer|min:0',
@@ -142,22 +146,22 @@ class Edit extends Component
         'adultos_mayores' => 'nullable|integer|min:0',
         'mujeres_embarazadas' => 'nullable|integer|min:0',
         'recipe_socio_familiar' => 'nullable|string|max:1000',
-        'es_mujer_embarazada' => 'boolean',
+        'es_mujer_embarazada' => 'nullable|boolean',
         'fecha_ultima_menstruacion' => 'nullable|date',
         'edad_gestacion' => 'nullable|integer|min:0|max:42',
         'observaciones' => 'nullable|string|max:2000',
-        
+
         // Relationship
         'responsable_id' => 'nullable|exists:responsables,id',
     ];
 
-    public function mount(Beneficiario $beneficiario)
+     public function mount(Beneficiario $beneficiario)
     {
         $this->beneficiario = $beneficiario;
         $this->fillFromModel();
         $this->responsables = Responsable::all();
         $this->estados = Estado::all();
-        
+
         // Cargar municipios y parroquias según los valores actuales del beneficiario
         if ($this->estado_id) {
             $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
@@ -165,83 +169,24 @@ class Edit extends Component
         if ($this->municipio_id) {
             $this->parroquias = Parroquia::where('municipio_id', $this->municipio_id)->get();
         }
+
+        $this->casas_alimentacion = \App\Models\CasaAlimentacion::orderBy('codigo')->get();
     }
 
-    private function fillFromModel()
+    public function updatedCasaAlimentacionId()
     {
-        $this->nombres = $this->beneficiario->nombres;
-        $this->apellidos = $this->beneficiario->apellidos;
-        $this->cedula = $this->beneficiario->cedula;
-        $this->fecha_nacimiento = $this->beneficiario->fecha_nacimiento ? $this->beneficiario->fecha_nacimiento->format('Y-m-d') : '';
-        $this->edad = $this->beneficiario->edad;
-        $this->telefono_principal = $this->beneficiario->telefono_principal;
-        $this->telefono_alternativo = $this->beneficiario->telefono_alternativo;
-        $this->estado_civil = $this->beneficiario->estado_civil;
-        $this->estudia_actualmente = $this->beneficiario->estudia_actualmente;
-        $this->estudio_actual = $this->beneficiario->estudio_actual;
-        $this->nivel_instruccion = $this->beneficiario->nivel_instruccion;
-        $this->ultimo_titulo_obtenido = $this->beneficiario->ultimo_titulo_obtenido;
-        $this->trabaja_actualmente = $this->beneficiario->trabaja_actualmente;
-        $this->lugar_trabajo = $this->beneficiario->lugar_trabajo;
-        $this->ocupacion = $this->beneficiario->ocupacion;
-        $this->ingreso_mensual = $this->beneficiario->ingreso_mensual;
-        $this->responsable_id = $this->beneficiario->responsable_id;
-        
-        // Location fields
-        $this->estado_id = $this->beneficiario->estado_id;
-        $this->municipio_id = $this->beneficiario->municipio_id;
-        $this->parroquia_id = $this->beneficiario->parroquia_id;
-        
-        // New fields
-        $this->posee_habilidad_productiva = $this->beneficiario->posee_habilidad_productiva;
-        $this->habilidad_productiva = $this->beneficiario->habilidad_productiva;
-        $this->pertenece_organizacion_social = $this->beneficiario->pertenece_organizacion_social;
-        $this->tipo_organizacion_social = $this->beneficiario->tipo_organizacion_social;
-        $this->otra_organizacion_social = $this->beneficiario->otra_organizacion_social;
-        $this->asignaciones_economicas = $this->beneficiario->asignaciones_economicas ?: [];
-        // Step 4: Datos de Salud
-        $this->tiene_evaluacion_antropometrica = $this->beneficiario->tiene_evaluacion_antropometrica;
-        $this->evaluacion_realizada_por = $this->beneficiario->evaluacion_realizada_por;
-        $this->condicion_ingreso = $this->beneficiario->condicion_ingreso;
-        $this->fecha_ingreso = $this->beneficiario->fecha_ingreso ? $this->beneficiario->fecha_ingreso->format('Y-m-d') : '';
-        $this->padece_discapacidad_enfermedad = $this->beneficiario->padece_discapacidad_enfermedad;
-        $this->diagnostico = $this->beneficiario->diagnostico;
-        $this->recipe_ayuda_tecnica = $this->beneficiario->recipe_ayuda_tecnica;
-        // Step 5: Datos Socio-Familiares
-        $this->personas_nucleo_familiar = $this->beneficiario->personas_nucleo_familiar;
-        $this->ninos_niñas = $this->beneficiario->ninos_niñas;
-        $this->adolescentes = $this->beneficiario->adolescentes;
-        $this->mujeres = $this->beneficiario->mujeres;
-        $this->hombres = $this->beneficiario->hombres;
-        $this->adultos_mayores = $this->beneficiario->adultos_mayores;
-        $this->mujeres_embarazadas = $this->beneficiario->mujeres_embarazadas;
-        $this->recipe_socio_familiar = $this->beneficiario->recipe_socio_familiar;
-        $this->es_mujer_embarazada = $this->beneficiario->es_mujer_embarazada;
-        $this->fecha_ultima_menstruacion = $this->beneficiario->fecha_ultima_menstruacion ? $this->beneficiario->fecha_ultima_menstruacion->format('Y-m-d') : '';
-        $this->edad_gestacion = $this->beneficiario->edad_gestacion;
-        $this->observaciones = $this->beneficiario->observaciones;
-    }
+        if ($this->casa_alimentacion_id) {
+            $casa = CasaAlimentacion::find($this->casa_alimentacion_id);
+            if ($casa) {
+                $this->responsables = Responsable::where('casa_alimentacion_id', $casa->id)->get();
 
-    public function updatedFechaNacimiento()
-    {
-        if ($this->fecha_nacimiento) {
-            $this->edad = \Carbon\Carbon::parse($this->fecha_nacimiento)->age;
-        } else {
-            $this->edad = null;
-        }
-    }
+                $this->estado_id = $casa->estado_id;
+                $this->municipio_id = $casa->municipio_id;
+                $this->parroquia_id = $casa->parroquia_id;
 
-    public function updatedResponsableId()
-    {
-        if ($this->responsable_id) {
-            $responsable = Responsable::find($this->responsable_id);
-            if ($responsable) {
-                // Copiar los datos de ubicación del responsable
-                $this->estado_id = $responsable->estado_id;
-                $this->municipio_id = $responsable->municipio_id;
-                $this->parroquia_id = $responsable->parroquia_id;
-                
-                // Cargar municipios y parroquias para cuando se quita el responsable
+                $this->municipios = collect();
+                $this->parroquias = collect();
+
                 if ($this->estado_id) {
                     $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
                 }
@@ -250,10 +195,55 @@ class Edit extends Component
                 }
             }
         } else {
-            // Si se quita el responsable, limpiar los campos de ubicación
+            $this->responsables = collect();
             $this->estado_id = '';
             $this->municipio_id = '';
             $this->parroquia_id = '';
+            $this->municipios = collect();
+            $this->parroquias = collect();
+        }
+
+        $this->reset('responsable_id');
+    }
+
+    public function updatedResponsableId()
+    {
+        if ($this->responsable_id) {
+            $responsable = Responsable::find($this->responsable_id);
+            if ($responsable) {
+                $this->estado_id = $responsable->estado_id;
+                $this->municipio_id = $responsable->municipio_id;
+                $this->parroquia_id = $responsable->parroquia_id;
+
+                if ($this->estado_id) {
+                    $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
+                }
+                if ($this->municipio_id) {
+                    $this->parroquias = Parroquia::where('municipio_id', $this->municipio_id)->get();
+                }
+            }
+        } else {
+            if (!$this->casa_alimentacion_id) {
+                $this->estado_id = '';
+                $this->municipio_id = '';
+                $this->parroquia_id = '';
+                $this->municipios = collect();
+                $this->parroquias = collect();
+            } else {
+                $casa = CasaAlimentacion::find($this->casa_alimentacion_id);
+                if ($casa) {
+                    $this->estado_id = $casa->estado_id;
+                    $this->municipio_id = $casa->municipio_id;
+                    $this->parroquia_id = $casa->parroquia_id;
+
+                    if ($this->estado_id) {
+                        $this->municipios = Municipio::where('estado_id', $this->estado_id)->get();
+                    }
+                    if ($this->municipio_id) {
+                        $this->parroquias = Parroquia::where('municipio_id', $this->municipio_id)->get();
+                    }
+                }
+            }
         }
     }
 
@@ -284,6 +274,81 @@ class Edit extends Component
             }
         }
     }
+
+
+
+
+
+    private function fillFromModel()
+    {
+        $this->nombres = $this->beneficiario->nombres;
+        $this->apellidos = $this->beneficiario->apellidos;
+        $this->cedula = $this->beneficiario->cedula;
+        $this->fecha_nacimiento = $this->beneficiario->fecha_nacimiento ? $this->beneficiario->fecha_nacimiento->format('Y-m-d') : '';
+        $this->edad = $this->beneficiario->edad;
+        $this->telefono_principal = $this->beneficiario->telefono_principal;
+        $this->telefono_alternativo = $this->beneficiario->telefono_alternativo;
+        $this->estado_civil = $this->beneficiario->estado_civil;
+        $this->estudia_actualmente = $this->beneficiario->estudia_actualmente;
+        $this->estudio_actual = $this->beneficiario->estudio_actual;
+        $this->nivel_instruccion = $this->beneficiario->nivel_instruccion;
+        $this->ultimo_titulo_obtenido = $this->beneficiario->ultimo_titulo_obtenido;
+        $this->trabaja_actualmente = $this->beneficiario->trabaja_actualmente;
+        $this->lugar_trabajo = $this->beneficiario->lugar_trabajo;
+        $this->ocupacion = $this->beneficiario->ocupacion;
+        $this->ingreso_mensual = $this->beneficiario->ingreso_mensual;
+        $this->responsable_id = $this->beneficiario->responsable_id;
+        $responsable = Responsable::find($this->responsable_id);
+        $this->casa_alimentacion_id = $responsable->casa_alimentacion_id;
+        $this->responsable_id = $this->beneficiario->responsable_id;
+
+
+
+        // Location fields
+        $this->estado_id = $this->beneficiario->estado_id;
+        $this->municipio_id = $this->beneficiario->municipio_id;
+        $this->parroquia_id = $this->beneficiario->parroquia_id;
+
+        // New fields
+        $this->posee_habilidad_productiva = $this->beneficiario->posee_habilidad_productiva;
+        $this->habilidad_productiva = $this->beneficiario->habilidad_productiva;
+        $this->pertenece_organizacion_social = $this->beneficiario->pertenece_organizacion_social;
+        $this->tipo_organizacion_social = $this->beneficiario->tipo_organizacion_social;
+        $this->otra_organizacion_social = $this->beneficiario->otra_organizacion_social;
+        $this->asignaciones_economicas = $this->beneficiario->asignaciones_economicas ?: [];
+        // Step 4: Datos de Salud
+        $this->tiene_evaluacion_antropometrica = $this->beneficiario->tiene_evaluacion_antropometrica;
+        $this->evaluacion_realizada_por = $this->beneficiario->evaluacion_realizada_por;
+        $this->condicion_ingreso = $this->beneficiario->condicion_ingreso;
+        $this->fecha_ingreso = \Carbon\Carbon::parse($this->beneficiario->fecha_ingreso)->format('Y-m-d');
+        $this->padece_discapacidad_enfermedad = $this->beneficiario->padece_discapacidad_enfermedad;
+        $this->diagnostico = $this->beneficiario->diagnostico;
+        $this->recipe_ayuda_tecnica = $this->beneficiario->recipe_ayuda_tecnica;
+        // Step 5: Datos Socio-Familiares
+        $this->personas_nucleo_familiar = $this->beneficiario->personas_nucleo_familiar;
+        $this->ninos_niñas = $this->beneficiario->ninos_niñas;
+        $this->adolescentes = $this->beneficiario->adolescentes;
+        $this->mujeres = $this->beneficiario->mujeres;
+        $this->hombres = $this->beneficiario->hombres;
+        $this->adultos_mayores = $this->beneficiario->adultos_mayores;
+        $this->mujeres_embarazadas = $this->beneficiario->mujeres_embarazadas;
+        $this->recipe_socio_familiar = $this->beneficiario->recipe_socio_familiar;
+        $this->es_mujer_embarazada = $this->beneficiario->es_mujer_embarazada;
+        $this->fecha_ultima_menstruacion = $this->beneficiario->fecha_ultima_menstruacion ? $this->beneficiario->fecha_ultima_menstruacion->format('Y-m-d') : '';
+        $this->edad_gestacion = $this->beneficiario->edad_gestacion;
+        $this->observaciones = $this->beneficiario->observaciones;
+    }
+
+    public function updatedFechaNacimiento()
+    {
+        if ($this->fecha_nacimiento) {
+            $this->edad = \Carbon\Carbon::parse($this->fecha_nacimiento)->age;
+        } else {
+            $this->edad = null;
+        }
+    }
+
+
 
     public function updatedEstudiaActualmente()
     {
@@ -391,7 +456,7 @@ class Edit extends Component
     private function validateTotalPersonas()
     {
         $total = $this->ninos_niñas + $this->adolescentes + $this->mujeres + $this->hombres + $this->adultos_mayores;
-        
+
         if ($this->personas_nucleo_familiar > 0 && $total > $this->personas_nucleo_familiar) {
             // Reset all counts
             $this->ninos_niñas = 0;
@@ -400,7 +465,7 @@ class Edit extends Component
             $this->hombres = 0;
             $this->adultos_mayores = 0;
             $this->mujeres_embarazadas = 0;
-            
+
             $this->dispatch('notify', [
                 'type' => 'warning',
                 'message' => 'La suma de las personas no puede exceder el total del núcleo familiar',
@@ -443,7 +508,7 @@ class Edit extends Component
     private function validateStep($step)
     {
         $rules = [];
-        
+
         switch ($step) {
             case 1:
                 $rules = [
@@ -468,20 +533,21 @@ class Edit extends Component
                     'ultimo_titulo_obtenido' => 'nullable|string|max:255',
                 ];
                 break;
-            case 3:
+           case 3:
                 $rules = [
-                    'trabaja_actualmente' => 'boolean',
+                    'trabaja_actualmente' => 'nullable|boolean',
                     'lugar_trabajo' => 'nullable|string|max:255',
                     'ocupacion' => 'nullable|string|max:255',
                     'ingreso_mensual' => 'nullable|numeric|min:0',
                     // New fields validation
-                    'posee_habilidad_productiva' => 'boolean',
+                    'tiene_habilidad_productiva' => 'nullable|boolean',
                     'habilidad_productiva' => 'nullable|string|max:255',
-                    'pertenece_organizacion_social' => 'boolean',
+                    'pertenece_organizacion_social' => 'nullable|boolean',
                     'tipo_organizacion_social' => 'nullable|string|max:255',
                     'otra_organizacion_social' => 'nullable|string|max:255',
                     'asignaciones_economicas' => 'nullable|array',
                 ];
+
                 break;
             case 4:
                 $rules = [
@@ -511,18 +577,19 @@ class Edit extends Component
                 ];
                 break;
         }
-        
+
         $this->validate($rules);
     }
 
-    public function update()
+    public function save()
     {
-        //$this->validate();
-        
+
+
         try {
 
         $responsable = Responsable::find($this->responsable_id);
- 
+
+
             $this->beneficiario->update([
                 'nombres' => $this->nombres,
                 'apellidos' => $this->apellidos,
@@ -545,9 +612,10 @@ class Edit extends Component
                 'estado_id' => $responsable->estado_id ?: null,
                 'municipio_id' => $responsable->municipio_id ?: null,
                 'parroquia_id' => $responsable->parroquia_id ?: null,
+                'casa_alimentacion_id' => $responsable->casa_alimentacion_id ?: null,
 
                 // New fields
-                'posee_habilidad_productiva' => $this->posee_habilidad_productiva ?: false,
+                'tiene_habilidad_productiva' => $this->posee_habilidad_productiva ?: false,
                 'habilidad_productiva' => $this->habilidad_productiva,
                 'pertenece_organizacion_social' => $this->pertenece_organizacion_social ?: false,
                 'tipo_organizacion_social' => $this->tipo_organizacion_social,
@@ -595,7 +663,7 @@ class Edit extends Component
     public function render()
     {
         // Filter available options based on search
-        $filteredOptions = empty($this->searchAsignacion) 
+        $filteredOptions = empty($this->searchAsignacion)
             ? $this->available_asignaciones
             : array_filter($this->available_asignaciones, function($option) {
                 return stripos($option, $this->searchAsignacion) !== false;

@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Responsables;
 use App\Traits\HasDynamicLayout;
 use Livewire\Component;
 use App\Models\Responsable;
+use App\Models\CasaAlimentacion;
 use App\Models\Estado;
 use App\Models\Municipio;
 use App\Models\Parroquia;
@@ -34,10 +35,11 @@ class Edit extends Component
     public $parroquias = [];
     public $empresas = [];
     public $sucursales = [];
+    public $casas = [];
 
     protected $rules = [
         'nombre_completo' => 'required|string|max:255',
-        'cedula' => 'required|string|max:20|unique:responsables,cedula,{{responsable.id}}',
+        'cedula' => 'required|string|max:20',
         'estado_id' => 'nullable|exists:estados,id',
         'municipio_id' => 'nullable|exists:municipios,id',
         'parroquia_id' => 'nullable|exists:parroquias,id',
@@ -50,8 +52,32 @@ class Edit extends Component
         'sucursal_id' => 'nullable|exists:sucursales,id',
     ];
 
+     private function cargarCasas(): void
+    {
+        $query = CasaAlimentacion::query();
+
+        if (!empty($this->estado_id)) {
+            $query->where('estado_id', $this->estado_id);
+        }
+
+        if (!empty($this->municipio_id)) {
+            $query->where('municipio_id', $this->municipio_id);
+        }
+
+        if (!empty($this->parroquia_id)) {
+            $query->where('parroquia_id', $this->parroquia_id);
+        }
+
+        $this->casas = $query
+            ->orderBy('codigo')
+            ->get(['id', 'codigo']);
+    }
+
+
     public function mount(Responsable $responsable)
     {
+        $this->cargarCasas();
+
         $this->responsable = $responsable;
         $this->nombre_completo = $responsable->nombre_completo;
         $this->cedula = $responsable->cedula;
@@ -65,6 +91,9 @@ class Edit extends Component
         $this->codigo_casa_alimentacion = $responsable->codigo_casa_alimentacion;
         $this->empresa_id = $responsable->empresa_id;
         $this->sucursal_id = $responsable->sucursal_id;
+        $this->codigo_casa_alimentacion = $responsable->codigo_casa_alimentacion;
+
+
 
         $this->estados = Estado::all();
 
@@ -96,13 +125,13 @@ class Edit extends Component
         $this->parroquia_id = '';
         $this->empresa_id = '';
         $this->sucursal_id = '';
-        
+
         if ($value) {
             $this->municipios = Municipio::where('estado_id', $value)->get();
         } else {
             $this->municipios = [];
         }
-        
+
         $this->parroquias = [];
         $this->empresas = [];
         $this->sucursales = [];
@@ -113,13 +142,13 @@ class Edit extends Component
         $this->parroquia_id = '';
         $this->empresa_id = '';
         $this->sucursal_id = '';
-        
+
         if ($value) {
             $this->parroquias = Parroquia::where('municipio_id', $value)->get();
         } else {
             $this->parroquias = [];
         }
-        
+
         $this->empresas = [];
         $this->sucursales = [];
     }
@@ -128,7 +157,7 @@ class Edit extends Component
     {
         $this->empresa_id = '';
         $this->sucursal_id = '';
-        
+
         if ($value) {
             // Cargar empresas que tienen sucursales en la parroquia seleccionada
             $this->empresas = Empresa::whereHas('sucursales', function($query) use ($value) {
@@ -137,14 +166,14 @@ class Edit extends Component
         } else {
             $this->empresas = [];
         }
-        
+
         $this->sucursales = [];
     }
 
     public function updatedEmpresaId($value)
     {
         $this->sucursal_id = '';
-        
+
         if ($value && $this->parroquia_id) {
             // Filtrar sucursales según la parroquia y la empresa seleccionada
             $this->sucursales = Sucursal::where('empresa_id', $value)
@@ -160,20 +189,28 @@ class Edit extends Component
         $this->validate();
 
         try {
+            $casaAlimentacionId = null;
+
+            if (!empty($this->codigo_casa_alimentacion)) {
+                $casa = CasaAlimentacion::where('codigo', $this->codigo_casa_alimentacion)->first();
+                $casaAlimentacionId = $casa?->id;
+            }
+
             $this->responsable->update([
-            'nombre_completo' => $this->nombre_completo,
-            'cedula' => $this->cedula,
-            'estado_id' => $this->estado_id ?: null,
-            'municipio_id' => $this->municipio_id ?: null,
-            'parroquia_id' => $this->parroquia_id ?: null,
-            'telefono' => $this->telefono,
-            'direccion' => $this->direccion,
-            'punto_referencia' => $this->punto_referencia,
-            'fecha_levantamiento' => $this->fecha_levantamiento,
-            'codigo_casa_alimentacion' => $this->codigo_casa_alimentacion,
-            'empresa_id' => $this->empresa_id ?: null,
-            'sucursal_id' => $this->sucursal_id ?: null,
-        ]);
+                'nombre_completo' => $this->nombre_completo,
+                'cedula' => $this->cedula,
+                'estado_id' => $this->estado_id ?: null,
+                'municipio_id' => $this->municipio_id ?: null,
+                'parroquia_id' => $this->parroquia_id ?: null,
+                'telefono' => $this->telefono,
+                'direccion' => $this->direccion,
+                'punto_referencia' => $this->punto_referencia,
+                'fecha_levantamiento' => $this->fecha_levantamiento,
+                'codigo_casa_alimentacion' => $this->codigo_casa_alimentacion,
+                'casa_alimentacion_id' => $casaAlimentacionId,
+                'empresa_id' => auth()->user()->empresa_id ?: null,
+                'sucursal_id' => auth()->user()->sucursal_id ?: null,
+            ]);
 
         $this->dispatch('notify', [
             'type' => 'success',
@@ -184,7 +221,7 @@ class Edit extends Component
         return redirect()->route('admin.responsables.index');
         } catch (\Throwable $th) {
             //throw $th;
-            
+
         $this->dispatch('notify', [
             'type' => 'error',
             'message' => "Error al actualizar el responsable '{$this->nombre_completo}'.",
@@ -201,6 +238,7 @@ class Edit extends Component
             'parroquias' => $this->parroquias,
             'empresas' => $this->empresas,
             'sucursales' => $this->sucursales,
+            'casas' => $this->casas,
         ], [
             'title' => 'Editar Responsable',
             'description' => 'Modificar responsable'

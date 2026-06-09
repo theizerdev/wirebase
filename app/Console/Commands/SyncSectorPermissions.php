@@ -13,7 +13,7 @@ class SyncSectorPermissions extends Command
      *
      * @var string
      */
-    protected $signature = 'permissions:sync-sectors 
+    protected $signature = 'permissions:sync-sectors
                             {--show : Mostrar permisos organizados por sectores}
                             {--migrate : Migrar permisos existentes a sectores}
                             {--reset : Resetear todos los sectores}';
@@ -30,24 +30,27 @@ class SyncSectorPermissions extends Command
      */
     protected $sectorMapping = [
         'medico' => [
-            'tipo-consultas', 'pacientes', 'medicos', 'citas', 
+            'tipo-consultas', 'pacientes', 'medicos', 'citas',
             'especialidades', 'subespecialidades', 'medico-horarios'
         ],
         'administracion' => [
-            'cajas', 'pagos', 'conceptos_pago', 'exchange-rates', 
+            'cajas', 'pagos', 'conceptos_pago', 'exchange-rates',
             'series', 'reglas mora', 'late-payment-rules'
         ],
         'configuracion' => [
-            'empresas', 'sucursales', 'paises', 'users', 
+            'empresas', 'sucursales', 'paises', 'users',
             'roles', 'permissions', 'regional-configuration', 'template-customization'
         ],
         'monitoreo' => [
-            'active sessions', 'activity log', 'database export', 
+            'active sessions', 'activity log', 'database export',
             'monitoreo', 'notifications', 'dashboard'
         ],
         'whatsapp' => [
-            'whatsapp', 'whatsapp templates', 'whatsapp messages', 
+            'whatsapp', 'whatsapp templates', 'whatsapp messages',
             'whatsapp statistics', 'whatsapp retry'
+        ],
+        'institucional' => [
+            'beneficiarios', 'casas_alimentacion'
         ],
         'sistema' => [
             'system', 'api', 'jwt'
@@ -115,7 +118,7 @@ class SyncSectorPermissions extends Command
         foreach ($sectors as $sector) {
             $this->newLine();
             $this->info("📋 {$sector->sector_name} ({$sector->sector}):");
-            
+
             $permissions = Permission::where('sector', $sector->sector)
                 ->select('name', 'module')
                 ->orderBy('module')
@@ -138,13 +141,13 @@ class SyncSectorPermissions extends Command
     protected function migrateExistingPermissions(): void
     {
         $this->info('🔄 Migrando permisos existentes a sectores...');
-        
+
         $permissions = Permission::whereNull('sector')->get();
         $migrated = 0;
 
         foreach ($permissions as $permission) {
             $sector = $this->determineSector($permission->name);
-            
+
             if ($sector) {
                 $permission->update([
                     'sector' => $sector,
@@ -212,6 +215,7 @@ class SyncSectorPermissions extends Command
             'monitoreo' => '📊 Monitoreo',
             'whatsapp' => '📱 WhatsApp',
             'comunicaciones' => '📢 Comunicaciones',
+            'institucional' => '👥 Institucional',
             'sistema' => '🔧 Sistema'
         ];
 
@@ -230,6 +234,7 @@ class SyncSectorPermissions extends Command
             'monitoreo' => '📊',
             'whatsapp' => '📱',
             'comunicaciones' => '📢',
+            'institucional' => '👥',
             'sistema' => '🔧'
         ];
 

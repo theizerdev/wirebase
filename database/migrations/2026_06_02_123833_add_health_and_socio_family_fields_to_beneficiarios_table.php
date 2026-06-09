@@ -29,7 +29,7 @@ return new class extends Migration
             $table->boolean('padece_discapacidad_enfermedad')->default(false);
             $table->text('diagnostico')->nullable();
             $table->text('recipe_ayuda_tecnica')->nullable();
-            
+
             // Step 5: Datos Socio-Familiares
             $table->integer('personas_nucleo_familiar')->default(0);
             $table->integer('ninos_niñas')->default(0);
@@ -60,7 +60,7 @@ return new class extends Migration
             $table->dropColumn('padece_discapacidad_enfermedad');
             $table->dropColumn('diagnostico');
             $table->dropColumn('recipe_ayuda_tecnica');
-            
+
             // Step 5: Datos Socio-Familiares
             $table->dropColumn('personas_nucleo_familiar');
             $table->dropColumn('ninos_niñas');

@@ -22,6 +22,7 @@ class Responsable extends Model
         'punto_referencia',
         'fecha_levantamiento',
         'codigo_casa_alimentacion',
+        'casa_alimentacion_id',
         'empresa_id',
         'sucursal_id',
     ];
@@ -31,6 +32,7 @@ class Responsable extends Model
         'estado_id' => 'integer',
         'municipio_id' => 'integer',
         'parroquia_id' => 'integer',
+        'casa_alimentacion_id' => 'integer',
         'empresa_id' => 'integer',
         'sucursal_id' => 'integer',
     ];
@@ -60,10 +62,15 @@ class Responsable extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
+    public function casaAlimentacion()
+    {
+        return $this->belongsTo(CasaAlimentacion::class, 'casa_alimentacion_id');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['nombre_completo', 'cedula', 'estado_id', 'municipio_id', 'parroquia_id', 'telefono', 'direccion', 'punto_referencia', 'fecha_levantamiento', 'codigo_casa_alimentacion', 'empresa_id', 'sucursal_id'])
+            ->logOnly(['nombre_completo', 'cedula', 'estado_id', 'municipio_id', 'parroquia_id', 'telefono', 'direccion', 'punto_referencia', 'fecha_levantamiento', 'codigo_casa_alimentacion', 'casa_alimentacion_id', 'empresa_id', 'sucursal_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

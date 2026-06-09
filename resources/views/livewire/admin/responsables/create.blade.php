@@ -110,38 +110,19 @@
                             </div>
 
                             <div class="col-md-12 mb-3">
-                                <label class="form-label">Código de Casa de Alimentación</label>
-                                <input type="text" class="form-control @error('codigo_casa_alimentacion') is-invalid @enderror"
-                                       wire:model="codigo_casa_alimentacion" placeholder="Ingrese el código">
+                                <label class="form-label">Casa de Alimentación</label>
+                                <select class="form-select @error('codigo_casa_alimentacion') is-invalid @enderror"
+                                        wire:model.live="codigo_casa_alimentacion"
+                                        :disabled="count($casas) === 0">
+                                    <option value="">Seleccione una casa</option>
+                                    @foreach($casas as $casa)
+                                        <option value="{{ $casa->codigo }}">{{ $casa->codigo }}</option>
+                                    @endforeach
+                                </select>
                                 @error('codigo_casa_alimentacion')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Empresa</label>
-                                <select class="form-select @error('empresa_id') is-invalid @enderror" wire:model.live="empresa_id" :disabled="!parroquia_id">
-                                    <option value="">Seleccione una empresa</option>
-                                    @foreach($empresas as $empresa)
-                                        <option value="{{ $empresa->id }}">{{ $empresa->razon_social }}</option>
-                                    @endforeach
-                                </select>
-                                @error('empresa_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Sucursal</label>
-                                <select class="form-select @error('sucursal_id') is-invalid @enderror" wire:model="sucursal_id" :disabled="!empresa_id">
-                                    <option value="">Seleccione una sucursal</option>
-                                    @foreach($sucursales as $sucursal)
-                                        <option value="{{ $sucursal->id }}">{{ $sucursal->nombre }}</option>
-                                    @endforeach
-                                </select>
-                                @error('sucursal_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <small class="text-muted d-block mt-1">Se filtra por Estado/Municipio/Parroquia.</small>
                             </div>
 
                             <!-- Opción para crear usuario automáticamente -->
@@ -155,59 +136,7 @@
                             </div>
 
                             <!-- Campos para la creación de usuario (solo visibles si create_user es true) -->
-                            @if($create_user)
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Nombre de Usuario</label>
-                                <input type="text" class="form-control @error('username') is-invalid @enderror"
-                                       wire:model="username" placeholder="Nombre de usuario generado">
-                                @error('username')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Correo Electrónico</label>
-                                <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                       wire:model="email" placeholder="correo@proal.gob.ve">
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Contraseña</label>
-                                <input type="text" class="form-control @error('user_password') is-invalid @enderror"
-                                       wire:model="user_password" value="12345678" readonly>
-                                <div class="form-text">La contraseña por defecto es 12345678</div>
-                                @error('user_password')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Rol</label>
-                                <select class="form-select @error('user_role') is-invalid @enderror" wire:model="user_role">
-                                    <option value="">Seleccione un rol</option>
-                                    @foreach($roles as $role)
-                                        <option value="{{ $role->name }}">{{ $role->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('user_role')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Estado del Usuario</label>
-                                <select class="form-select @error('user_status') is-invalid @enderror" wire:model="user_status">
-                                    <option value="1">Activo</option>
-                                    <option value="0">Inactivo</option>
-                                </select>
-                                @error('user_status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            @endif
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">

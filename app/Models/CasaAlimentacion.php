@@ -67,6 +67,35 @@ class CasaAlimentacion extends Model
         'posee_tanque_agua',
         'posee_estante_almacenamiento',
         'observaciones_operatividad',
+        // Infraestructura del área de la cocina (Paso 3)
+        'condicion_fachada',
+        'condicion_area_cocina',
+        'condicion_despensa',
+        'condicion_cableado_electrico',
+        'condicion_aguas_servidas',
+        'condicion_agua_potable',
+        'condicion_techo',
+        'condicion_piso',
+        'condicion_paredes',
+        'observaciones_infraestructura_cocina',
+
+        // Paso 4: Factibilidad de espacio / Proyecto socio productivo
+        'espacio_casa_alimentacion',
+        'ha_recibido_formacion_proyectos',
+        'posee_proyecto_socio_productivo',
+        'interesado_produccion_primaria',
+        'cuenta_infraestructura_adecuada_proyecto',
+        'metros_cuadrados_proyecto',
+        'observaciones_factibilidad_proyecto',
+
+        // Paso 5: Ficha técnica
+        'encuestador_nombre',
+        'encuestador_telefono',
+        'tecnico_nombre',
+        'tecnico_telefono',
+        'transcriptor_nombre',
+        'transcriptor_telefono',
+        'observaciones_adicionales_ficha_tecnica',
     ];
 
     protected $casts = [
@@ -90,6 +119,9 @@ class CasaAlimentacion extends Model
         'posee_fregadero' => 'boolean',
         'posee_tanque_agua' => 'boolean',
         'posee_estante_almacenamiento' => 'boolean',
+
+        // Paso 4 (se guardan como string si/no/propio/etc)
+        'metros_cuadrados_proyecto' => 'decimal:2',
     ];
 
     public function estado()

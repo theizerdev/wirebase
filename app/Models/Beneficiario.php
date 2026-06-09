@@ -27,6 +27,7 @@ class Beneficiario extends Model
         'ocupacion',
         'ingreso_mensual',
         'responsable_id',
+        'casa_alimentacion_id',
         'posee_habilidad_productiva',
         'habilidad_productiva',
         'pertenece_organizacion_social',

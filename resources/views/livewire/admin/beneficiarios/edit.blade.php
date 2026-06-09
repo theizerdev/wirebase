@@ -3,8 +3,8 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header border-bottom">
-                    <h5 class="card-title mb-1">Editar Beneficiario</h5>
-                    <p class="mb-0">Modifica la información del beneficiario</p>
+                    <h5 class="card-title mb-1">Modificar Beneficiario</h5>
+                    <p class="mb-0">Completa la información para modificar un beneficiario</p>
                 </div>
                 <div class="card-body">
                     @if (session()->has('message'))
@@ -14,7 +14,7 @@
                         </div>
                     @endif
 
-                    <form wire:submit.prevent="update">
+                    <form wire:submit.prevent="save">
                         <!-- Wizard Progress Bar -->
                         <div class="mb-4">
                             <div class="progress" style="height: 8px;">
@@ -135,18 +135,29 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Casa de Alimentación</label>
+                                <select class="form-select" wire:model.live="casa_alimentacion_id">
+                                    <option value="">Seleccione una casa de alimentación...</option>
+                                    @foreach($casas_alimentacion as $casa)
+                                        <option value="{{ $casa->id }}">{{ $casa->codigo }} - {{ $casa->sector ?? 'Sin sector' }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label">Responsable Asociado</label>
                                 <select class="form-select" wire:model.live="responsable_id">
                                     <option value="">Sin responsable</option>
                                     @foreach($responsables as $responsable)
-                                        <option value="{{ $responsable->id }}" {{ $responsable->id == $responsable_id ? 'selected' : '' }}>
-                                            {{ $responsable->nombre_completo }}
-                                        </option>
+                                        <option value="{{ $responsable->id }}">{{ $responsable->nombre_completo }}</option>
                                     @endforeach
                                 </select>
                             </div>
 
                             <!-- Campos de ubicación geográfica -->
+                            @php
+                                $casaSeleccionada = $casa_alimentacion_id ? collect($casas_alimentacion)->firstWhere('id', $casa_alimentacion_id) : null;
+                            @endphp
                             @if($responsable_id)
                                 <!-- Mostrar ubicación del responsable como texto de solo lectura -->
                                 @php
@@ -160,7 +171,7 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="col-md-4 mb-3">
                                         <label class="form-label">Estado</label>
                                         <input type="text" class="form-control" value="{{ $responsableSeleccionado->estado->nombre ?? 'No especificado' }}" readonly>
@@ -176,8 +187,31 @@
                                         <input type="text" class="form-control" value="{{ $responsableSeleccionado->parroquia->nombre ?? 'No especificado' }}" readonly>
                                     </div>
                                 @endif
+                            @elseif($casaSeleccionada)
+                                <div class="col-12 mb-2">
+                                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                        <i class="ri ri-information-line me-2"></i>
+                                        La ubicación ha sido copiada automáticamente de la casa de alimentación seleccionada.
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Estado</label>
+                                    <input type="text" class="form-control" value="{{ $casaSeleccionada->estado->nombre ?? 'No especificado' }}" readonly>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Municipio</label>
+                                    <input type="text" class="form-control" value="{{ $casaSeleccionada->municipio->nombre ?? 'No especificado' }}" readonly>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Parroquia</label>
+                                    <input type="text" class="form-control" value="{{ $casaSeleccionada->parroquia->nombre ?? 'No especificado' }}" readonly>
+                                </div>
                             @else
-                                <!-- Mostrar selectores normales cuando no hay responsable -->
+                                <!-- Mostrar selectores normales cuando no hay responsable ni casa -->
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Estado</label>
                                     <select class="form-select @error('estado_id') is-invalid @enderror" wire:model.live="estado_id">
@@ -329,7 +363,7 @@
                                 </div>
                             </div>
 
-                            @if($posee_habilidad_productiva)
+                            @if($this->posee_habilidad_productiva)
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">¿Cuál es la habilidad productiva?</label>
                                 <input type="text" class="form-control @error('habilidad_productiva') is-invalid @enderror"
@@ -379,7 +413,7 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">¿Percibe alguna asignación económica del sistema patria?</label>
-                                
+
                                 <!-- Cart-like interface -->
                                 <div class="row mt-3">
                                     <div class="col-md-6">
@@ -402,7 +436,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="col-md-6">
                                         <div class="card border">
                                             <div class="card-header bg-light">
@@ -453,7 +487,7 @@
                             </div>
                             @endif
 
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Condición de Ingreso</label>
                                 <select class="form-select @error('condicion_ingreso') is-invalid @enderror" wire:model="condicion_ingreso">
                                     <option value="">Seleccione...</option>
@@ -490,9 +524,9 @@
                             @if($padece_discapacidad_enfermedad)
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Diagnóstico</label>
-                                <textarea class="form-control @error('diagnostico') is-invalid @enderror" 
-                                          wire:model="diagnostico" 
-                                          rows="3" 
+                                <textarea class="form-control @error('diagnostico') is-invalid @enderror"
+                                          wire:model="diagnostico"
+                                          rows="3"
                                           placeholder="Ingrese el diagnóstico médico"></textarea>
                                 @error('diagnostico')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -502,9 +536,9 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Recipe o ayuda técnica que requiere</label>
-                                <textarea class="form-control @error('recipe_ayuda_tecnica') is-invalid @enderror" 
-                                          wire:model="recipe_ayuda_tecnica" 
-                                          rows="3" 
+                                <textarea class="form-control @error('recipe_ayuda_tecnica') is-invalid @enderror"
+                                          wire:model="recipe_ayuda_tecnica"
+                                          rows="3"
                                           placeholder="Ingrese el recipe o ayuda técnica requerida"></textarea>
                                 @error('recipe_ayuda_tecnica')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -524,8 +558,8 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">¿Cuántas personas conforman su núcleo familiar?</label>
                                 <input type="number" class="form-control @error('personas_nucleo_familiar') is-invalid @enderror"
-                                       wire:model.live="personas_nucleo_familiar" 
-                                       min="0" 
+                                       wire:model.live="personas_nucleo_familiar"
+                                       min="0"
                                        placeholder="Ingrese el número total de personas">
                                 @error('personas_nucleo_familiar')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -535,13 +569,13 @@
                             @if($personas_nucleo_familiar > 0)
                             <div class="col-md-12 mb-3">
                                 <h6 class="mb-3">Distribución del núcleo familiar:</h6>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Niños y/o niñas (0-12 años)</label>
                                         <input type="number" class="form-control @error('ninos_niñas') is-invalid @enderror"
-                                               wire:model.live="ninos_niñas" 
-                                               min="0" 
+                                               wire:model.live="ninos_niñas"
+                                               min="0"
                                                placeholder="Cantidad">
                                         @error('ninos_niñas')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -551,8 +585,8 @@
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Adolescentes (13-17 años)</label>
                                         <input type="number" class="form-control @error('adolescentes') is-invalid @enderror"
-                                               wire:model.live="adolescentes" 
-                                               min="0" 
+                                               wire:model.live="adolescentes"
+                                               min="0"
                                                placeholder="Cantidad">
                                         @error('adolescentes')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -562,8 +596,8 @@
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Mujeres (18+ años)</label>
                                         <input type="number" class="form-control @error('mujeres') is-invalid @enderror"
-                                               wire:model.live="mujeres" 
-                                               min="0" 
+                                               wire:model.live="mujeres"
+                                               min="0"
                                                placeholder="Cantidad">
                                         @error('mujeres')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -573,8 +607,8 @@
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Hombres (18+ años)</label>
                                         <input type="number" class="form-control @error('hombres') is-invalid @enderror"
-                                               wire:model.live="hombres" 
-                                               min="0" 
+                                               wire:model.live="hombres"
+                                               min="0"
                                                placeholder="Cantidad">
                                         @error('hombres')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -584,8 +618,8 @@
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Adultos mayores (65+ años)</label>
                                         <input type="number" class="form-control @error('adultos_mayores') is-invalid @enderror"
-                                               wire:model.live="adultos_mayores" 
-                                               min="0" 
+                                               wire:model.live="adultos_mayores"
+                                               min="0"
                                                placeholder="Cantidad">
                                         @error('adultos_mayores')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -595,8 +629,8 @@
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Mujeres embarazadas</label>
                                         <input type="number" class="form-control @error('mujeres_embarazadas') is-invalid @enderror"
-                                               wire:model.live="mujeres_embarazadas" 
-                                               min="0" 
+                                               wire:model.live="mujeres_embarazadas"
+                                               min="0"
                                                placeholder="Cantidad">
                                         @error('mujeres_embarazadas')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -608,9 +642,9 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Recipe o ayuda técnica que requiere (socio-familiar)</label>
-                                <textarea class="form-control @error('recipe_socio_familiar') is-invalid @enderror" 
-                                          wire:model="recipe_socio_familiar" 
-                                          rows="3" 
+                                <textarea class="form-control @error('recipe_socio_familiar') is-invalid @enderror"
+                                          wire:model="recipe_socio_familiar"
+                                          rows="3"
                                           placeholder="Ingrese el recipe o ayuda técnica requerida a nivel socio-familiar"></textarea>
                                 @error('recipe_socio_familiar')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -637,9 +671,9 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Edad de gestación (semanas)</label>
                                 <input type="number" class="form-control @error('edad_gestacion') is-invalid @enderror"
-                                       wire:model="edad_gestacion" 
-                                       min="0" 
-                                       max="42" 
+                                       wire:model="edad_gestacion"
+                                       min="0"
+                                       max="42"
                                        placeholder="Ingrese las semanas de gestación">
                                 @error('edad_gestacion')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -649,9 +683,9 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Observaciones</label>
-                                <textarea class="form-control @error('observaciones') is-invalid @enderror" 
-                                          wire:model="observaciones" 
-                                          rows="4" 
+                                <textarea class="form-control @error('observaciones') is-invalid @enderror"
+                                          wire:model="observaciones"
+                                          rows="4"
                                           placeholder="Ingrese observaciones adicionales"></textarea>
                                 @error('observaciones')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -671,14 +705,14 @@
                                     @else
                                         <div></div> <!-- Empty div to align buttons right when no previous button -->
                                     @endif
-                                    
+
                                     @if($currentStep < 5)
                                         <button type="button" class="btn btn-primary" wire:click="nextStep">
                                             Siguiente<i class="ri ri-arrow-right-line ms-1"></i>
                                         </button>
                                     @else
                                         <button type="submit" class="btn btn-success">
-                                            <i class="ri ri-save-line me-1"></i>Actualizar Beneficiario
+                                            <i class="ri ri-save-line me-1"></i>Guardar Beneficiario
                                         </button>
                                     @endif
                                 </div>

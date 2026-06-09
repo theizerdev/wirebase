@@ -162,7 +162,7 @@
                                                     <i class="ri ri-eye-line me-1"></i> Ver
                                                 </a>
                                                 @endcan
-                                                @can('update responsables')
+                                                @can('edit responsables')
                                                 <a class="dropdown-item" href="{{ route('admin.responsables.edit', $responsable) }}">
                                                     <i class="ri ri-pencil-line me-1"></i> Editar
                                                 </a>
