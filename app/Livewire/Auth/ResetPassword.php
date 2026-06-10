@@ -22,6 +22,7 @@ class ResetPassword extends Component
             'token'    => 'required|string|size:6',
             'email'    => 'required|email',
             'password' => ['required', 'confirmed', PasswordRule::defaults()],
+            'password_confirmation' => 'required|same:password',
         ];
     }
 

@@ -31,6 +31,7 @@
         @endif
 
         <form wire:submit.prevent="verifyCode" id="twoFactorForm">
+          @csrf
           <input type="hidden" wire:model="latitude" id="latitude">
           <input type="hidden" wire:model="longitude" id="longitude">
 

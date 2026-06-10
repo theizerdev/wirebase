@@ -12,35 +12,41 @@ class Logout extends Component
 {
     public function logout()
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        // Registrar evento de seguridad antes de cerrar sesión
-        if ($user) {
-            $this->registrarEventoSeguridad('Cierre de sesión', [
-                'identificador' => $user->email ?? $user->username,
-                'user_id' => $user->id,
-                'usuario_nombre' => $user->name,
-            ], 'logout');
+            // Registrar evento de seguridad antes de cerrar sesión
+            if ($user) {
+                $this->registrarEventoSeguridad('Cierre de sesión', [
+                    'identificador' => $user->email ?? $user->username,
+                    'user_id' => $user->id,
+                    'usuario_nombre' => $user->name,
+                ], 'logout');
 
-            // Desactivar sesión activa
-            ActiveSession::where('user_id', $user->id)
-                ->where('is_current', true)
-                ->update([
-                    'is_current' => false,
-                    'is_active' => false,
-                    'logout_at' => now(),
-                ]);
+                // Desactivar sesión activa
+                ActiveSession::where('user_id', $user->id)
+                    ->where('is_current', true)
+                    ->update([
+                        'is_current' => false,
+                        'is_active' => false,
+                        'logout_at' => now(),
+                    ]);
+            }
+
+            // Cerrar sesión
+            Auth::logout();
+
+            // Invalidar la sesión y regenerar token
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            // Redirigir al login con mensaje
+            return redirect()->route('login')->with('status', 'Sesión cerrada exitosamente.');
+        } catch (\Exception $e) {
+            \Log::error('Error during logout: ' . $e->getMessage());
+            // Si hay error, igual intentar redirigir al login
+            return redirect()->route('login');
         }
-
-        // Cerrar sesión
-        Auth::logout();
-
-        // Invalidar la sesión
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-
-        // Redirigir al login
-        return redirect('/');
     }
 
     private function registrarEventoSeguridad(string $descripcion, array $datos = [], string $tipo = 'seguridad'): void

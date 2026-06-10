@@ -23,11 +23,27 @@ Route::middleware('auth')->group(function () {
 
 // Logout route
 Route::post('logout', function () {
-    auth()->logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
-
-    return redirect('/');
+    try {
+        $user = auth()->user();
+        
+        // Log logout event if user exists
+        if ($user) {
+            \Log::info('User logging out', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => request()->ip()
+            ]);
+        }
+        
+        auth()->logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+        
+        return redirect()->route('login')->with('status', 'Sesión cerrada exitosamente.');
+    } catch (\Exception $e) {
+        \Log::error('Logout error: ' . $e->getMessage());
+        return redirect()->route('login');
+    }
 })->name('logout');
 
 // Two-factor authentication route

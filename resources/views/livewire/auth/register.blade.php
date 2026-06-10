@@ -12,6 +12,7 @@
           <p class="mb-5">{{ __('auth_ui.register_subtitle') }}</p>
 
           <form wire:submit="register">
+            @csrf
             <div class="form-floating form-floating-outline mb-5 form-control-validation">
               <input
                 type="text"

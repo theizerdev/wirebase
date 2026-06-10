@@ -46,6 +46,7 @@
         <p class="mb-5">{{ __('auth_ui.login_subtitle') }}</p>
 
         <form wire:submit.prevent="authenticate" id="loginForm" class="mb-5">
+          @csrf
           <input type="hidden" wire:model="latitude" id="latitude">
           <input type="hidden" wire:model="longitude" id="longitude">
 

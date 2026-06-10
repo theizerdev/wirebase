@@ -35,6 +35,7 @@
           <p class="mb-5">{{ __('auth_ui.forgot_password_subtitle') }}</p>
 
           <form wire:submit="sendResetLink">
+            @csrf
             <div class="form-floating form-floating-outline mb-3 form-control-validation">
               <input
                 type="text"
