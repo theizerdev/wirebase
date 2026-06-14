@@ -13,15 +13,6 @@ use Illuminate\Support\Facades\Session;
 Route::get('/', function () {
          return redirect()->route('public.pastores.busqueda');
 });
-
-// PWA - Servir Service Worker con headers correctos
-Route::get('/sw.js', function () {
-    return response()->file(public_path('sw.js'), [
-        'Content-Type' => 'application/javascript',
-        'Cache-Control' => 'no-cache',
-    ]);
-});
-
 // Include auth routes
 require __DIR__.'/auth.php';
 require __DIR__.'/public/pastores.php';
