@@ -20,12 +20,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#284ffdff">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="PUPILAINC">
-    <link rel="apple-touch-icon" href="/pwa-icons/icon-192x192.png">
-    <link rel="manifest" href="/manifest.json">
+    
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/logo/1719430882.png" />
