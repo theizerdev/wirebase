@@ -255,6 +255,14 @@
                                                     <i class="ri ri-pencil-line me-1 text-primary"></i> Editar
                                                 </a>
                                                 @endcan
+                                                @can('edit users')
+                                                <button type="button" class="dropdown-item"
+                                                        wire:click="resendCredentials({{ $user->id }})"
+                                                        wire:confirm="¿Deseas reenviar credenciales por WhatsApp a este usuario?">
+                                                    <i class="ri ri-send-plane-line me-1 text-primary"></i> Reenviar credenciales
+                                                </button>
+                                                @endcan
+
                                                 @can('delete users')
                                                 <button type="button" class="dropdown-item text-danger"
                                                         wire:click="delete({{ $user->id }})"

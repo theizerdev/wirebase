@@ -11,7 +11,12 @@ use Illuminate\Support\Facades\Session;
 
 
 Route::get('/', function () {
-         return redirect()->route('public.pastores.busqueda');
+        if (auth()->check()) {
+           return redirect()->route('admin.dashboard'); // Changed from redirect()->to('admin/dashboard') to redirect()->route('admin.dashboard')
+        } else {
+            return redirect()->route('public.pastores.busqueda');
+        }
+        
 });
 // Include auth routes
 require __DIR__.'/auth.php';

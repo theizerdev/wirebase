@@ -356,6 +356,9 @@ class Create extends Component
         $empresa = $user->empresa;
         $sucursal = $user->sucursal;
         $passwordToShow = $plainPassword ?: 'La contraseña que registraste';
+
+        $roles = method_exists($user, 'getRoleNames') ? $user->getRoleNames()->toArray() : [];
+        $rolTexto = !empty($roles) ? implode(', ', $roles) : 'Sin rol';
  
         $mensaje = "🎉 *¡Bienvenido(a) a {$empresa->razon_social}!* 🎉\n\n";
         $mensaje .= "Hola *{$user->name}*,\n\n";
