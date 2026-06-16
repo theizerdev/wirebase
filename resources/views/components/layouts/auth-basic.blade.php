@@ -120,6 +120,7 @@
 
     <!-- Livewire -->
     @livewireScripts
+     @include('components.toast-container')
 
   </body>
 </html>

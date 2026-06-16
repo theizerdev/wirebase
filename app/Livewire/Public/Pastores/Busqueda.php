@@ -249,7 +249,13 @@ class Busqueda extends Component
                 'trace' => $e->getTraceAsString(),
             ]);
             
-            session()->flash('error', 'Error al crear la solicitud: ' . $e->getMessage());
+            $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => 'Error al crear solicitud automática.',
+                'duration' => 5000
+            ]);
+            
+            
         }
     }
 
@@ -310,7 +316,11 @@ class Busqueda extends Component
                 $this->verificationError = 'Error al enviar el código. Intente nuevamente.';
             }
         } catch (\Exception $e) {
-            Log::error('Error sending OTP via WhatsApp: ' . $e->getMessage());
+           $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => '¡Error al enviar el código.',
+                'duration' => 5000
+            ]);
             $this->verificationError = 'Error al enviar el código: ' . $e->getMessage();
         }
     }
@@ -392,7 +402,11 @@ class Busqueda extends Component
             $this->otpCode = '';
             $this->verificationError = '';
             
-            session()->flash('success', '¡Respuesta correcta! Ahora ingrese su código de verificación.');
+             $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => '¡Respuesta correcta! Ahora ingrese su código de verificación.',
+                'duration' => 5000
+            ]);
         } else {
             // Respuesta incorrecta - incrementar contador y aplicar cooldown
             $this->failedAttemptsCount++;
@@ -414,12 +428,10 @@ class Busqueda extends Component
                 'pregunta_mostrada' => $this->securityQuestion,
             ]);
             
-            Log::warning('Intento fallido de respuesta de seguridad', [
-                'pastor_id' => $pastor->id,
-                'intentos_consecutivos' => $this->failedAttemptsCount,
-                'pregunta' => $this->securityQuestion,
-                'ip' => $ip,
-                'ip_total_fallos' => $ipFailures
+             $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => 'Intento fallido de respuesta de seguridad',
+                'duration' => 5000
             ]);
             
             // BLOQUEO POR IP después de 5 intentos fallidos (acumulados entre todos los pastores)
@@ -598,12 +610,14 @@ class Busqueda extends Component
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('Error al enviar notificación de seguridad al pastor', [
-                'pastor_id' => $pastor->id,
-                'error' => $e->getMessage()
+            // Mostrar notificación de que se generó la contraseña
+            $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => 'Error al enviar notificación de seguridad al pastor',
+                'duration' => 5000
             ]);
         }
-    }
+    } 
 
     private function formatPhoneNumber($number)
     {

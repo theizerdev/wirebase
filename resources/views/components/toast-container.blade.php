@@ -24,7 +24,6 @@
 }
 </style>
 
-@push('scripts')
 <script>
 // Verificar mensajes flash de sesión al cargar
 document.addEventListener('DOMContentLoaded', function() {
@@ -52,7 +51,6 @@ window.showToast = function(type, message, duration = 5000) {
     return;
   }
 
-  // Esperar a que el DOM esté listo y Bootstrap disponible
   function initToast() {
     const toastContainer = document.getElementById('global-toast-container');
     if (!toastContainer) {
@@ -60,10 +58,8 @@ window.showToast = function(type, message, duration = 5000) {
       return;
     }
 
-    // Verificar que Bootstrap Toast esté disponible
     if (typeof bootstrap === 'undefined' || !bootstrap.Toast) {
       console.warn('Bootstrap Toast no está disponible');
-      // Fallback: mostrar alerta temporal
       const alertDiv = document.createElement('div');
       alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
       alertDiv.style.zIndex = '9999';
@@ -72,7 +68,7 @@ window.showToast = function(type, message, duration = 5000) {
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       `;
       document.body.appendChild(alertDiv);
-      
+
       setTimeout(() => {
         if (alertDiv.parentNode) {
           alertDiv.parentNode.removeChild(alertDiv);
@@ -82,8 +78,7 @@ window.showToast = function(type, message, duration = 5000) {
     }
 
     const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-    
-    // Determinar el color y el icono según el tipo
+
     let toastClass, iconClass;
     switch(type) {
       case 'success':
@@ -121,14 +116,12 @@ window.showToast = function(type, message, duration = 5000) {
     `;
 
     toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-    
-    // Inicializar y mostrar el toast de Bootstrap
+
     try {
       const toastElement = document.getElementById(toastId);
       const toast = new bootstrap.Toast(toastElement);
       toast.show();
 
-      // Eliminar el toast del DOM después de que se oculte
       toastElement.addEventListener('hidden.bs.toast', function() {
         toastElement.remove();
       });
@@ -137,7 +130,6 @@ window.showToast = function(type, message, duration = 5000) {
     }
   }
 
-  // Ejecutar inmediatamente o esperar al DOM
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initToast);
   } else {
@@ -145,18 +137,51 @@ window.showToast = function(type, message, duration = 5000) {
   }
 };
 
-// Listener para eventos de Livewire
-if (typeof Livewire !== 'undefined') {
-  const handleToastEvent = function(data) {
-    const toastData = Array.isArray(data) && data.length > 0 ? data[0] : data;
-    if (toastData && toastData.type && toastData.message) {
-      window.showToast(toastData.type, toastData.message, toastData.duration || 5000);
-    }
-  };
-
-  Livewire.on('showToast', handleToastEvent);
-  Livewire.on('notify', handleToastEvent);
+function handleToastPayload(payload) {
+  const toastData = payload && payload.type && payload.message ? payload : (Array.isArray(payload) && payload[0] ? payload[0] : payload);
+  if (toastData && toastData.type && toastData.message) {
+    window.showToast(toastData.type, toastData.message, toastData.duration || 5000);
+  }
 }
+
+// Livewire v2/v3 compatible listeners
+(function initLivewireToastListeners() {
+  // Evitar duplicados: algunos setups pueden disparar el evento 2 veces
+  const seen = new Set();
+  const TTL = 1500; // ms
+
+  function handleOnce(payload) {
+    try {
+      const t = payload && payload.type ? payload.type : (Array.isArray(payload) && payload[0] ? payload[0].type : undefined);
+      const m = payload && payload.message ? payload.message : (Array.isArray(payload) && payload[0] ? payload[0].message : undefined);
+      const d = payload && payload.duration ? payload.duration : (Array.isArray(payload) && payload[0] ? payload[0].duration : undefined);
+      const key = `${t}|${m}|${d || ''}`;
+
+      if (seen.has(key)) return;
+      seen.add(key);
+      setTimeout(() => seen.delete(key), TTL);
+
+      handleToastPayload(payload);
+    } catch (e) {
+      // fallback: no duplicar lógica
+      handleToastPayload(payload);
+    }
+  }
+
+  // 1) Listener clásico (v2)
+  if (typeof Livewire !== 'undefined' && Livewire.on) {
+    Livewire.on('showToast', handleOnce);
+    Livewire.on('notify', handleOnce);
+  }
+
+  // 2) Listener DOM/customEvent (v3 suele dispatchar como CustomEvent en algunos setups)
+  window.addEventListener('notify', function(e) {
+    handleOnce(e.detail);
+  });
+  window.addEventListener('showToast', function(e) {
+    handleOnce(e.detail);
+  });
+})();
 
 // Listener para eventos de Alpine.js (si se usa)
 if (typeof Alpine !== 'undefined') {
@@ -166,31 +191,20 @@ if (typeof Alpine !== 'undefined') {
   });
 }
 
-// Script adicional para asegurar que los toasts funcionen después de cargar todo
 window.addEventListener('load', function() {
-  console.log('Sistema de Toast cargado correctamente');
-  
-  // Verificar que el contenedor existe y es visible
   const container = document.getElementById('global-toast-container');
   if (container) {
-    console.log('Toast container encontrado y listo');
-    
-    // Forzar que el contenedor esté visible
     container.style.display = 'block';
     container.style.visibility = 'visible';
     container.style.opacity = '1';
-  } else {
-    console.warn('Toast container no encontrado después de cargar');
   }
 });
 
-// Fallback para mostrar notificaciones incluso si hay errores
 window.showToastSafe = function(type, message, duration = 5000) {
   try {
     if (typeof window.showToast === 'function') {
       window.showToast(type, message, duration);
     } else {
-      // Fallback ultra-simple
       const notification = document.createElement('div');
       notification.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
       notification.style.cssText = 'top: 20px; right: 20px; z-index: 99999; min-width: 300px; max-width: 400px;';
@@ -201,7 +215,7 @@ window.showToastSafe = function(type, message, duration = 5000) {
         </div>
       `;
       document.body.appendChild(notification);
-      
+
       setTimeout(() => {
         if (notification.parentNode) {
           notification.remove();
@@ -213,4 +227,3 @@ window.showToastSafe = function(type, message, duration = 5000) {
   }
 };
 </script>
-@endpush
