@@ -172,9 +172,7 @@
                                     <th wire:click="sortBy('nombres')" style="cursor: pointer;">
                                         Nombres @if($sortBy === 'nombres') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                     </th>
-                                    <th wire:click="sortBy('apellidos')" style="cursor: pointer;">
-                                        Apellidos @if($sortBy === 'apellidos') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
-                                    </th>
+                                    
                                     <th wire:click="sortBy('documento')" style="cursor: pointer;">
                                         Documento @if($sortBy === 'documento') <i class="ri ri-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}-line"></i> @endif
                                     </th>

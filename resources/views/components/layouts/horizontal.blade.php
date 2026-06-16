@@ -6,21 +6,15 @@
   data-skin="{{ isset($templateSettings) ? ($templateSettings->skin == 1 ? 'bordered' : 'default') : 'default' }}"
   data-bs-theme="{{ isset($templateSettings) ? $templateSettings->theme : 'light' }}"
   data-assets-path="{{ asset('materialize/assets/') }}/"
-  data-template="horizontal-menu-template">
+  data-template="-menu-template">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-    <title>{{ 'PUPILA INC' }}</title>
+    <title>{{ 'MMM VENEZUELA' }}</title>
     <meta name="description" content="{{ config('app.name') }} - {{ config('app.description') }}" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-
-    
-  <!-- PWA Meta Tags -->
-    
-
 
     <!-- Favicon -->
       <link rel="icon" type="image/x-icon" href="/logo/1719430882.png" />
@@ -133,7 +127,7 @@
     </div>
     <!-- /Layout wrapper -->
      @livewireScripts
-    @livewire('chat-notifications')
+   
     <!-- Core JS -->
     <script src="/materialize/assets/vendor/libs/jquery/jquery.js"></script>
     <script src="/materialize/assets/vendor/libs/popper/popper.js"></script>
@@ -164,8 +158,26 @@
 
     @include('components.toast-container')
 
+ 
+
+  
+
+    <!-- Script global para manejar eventos de notificaciones -->
+
+     <!-- Configuración de Livewire para manejar CSRF automáticamente -->
+    <script>
+        // Configurar Livewire para auto-refresh cuando el token CSRF expira
+        // en lugar de mostrar el modal de "Page Expired"
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof Livewire !== 'undefined') {
+                Livewire.on('csrf-token-mismatch', function() {
+                    // Auto-refresh silencioso sin mostrar modal
+                    window.location.reload();
+                });
+            }
+        });
+    </script>
 
     @stack('scripts')
-
   </body>
 </html>

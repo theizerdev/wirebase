@@ -51,6 +51,7 @@ class FloatingChatWidget extends Component
 
     public function openWidget()
     {
+        dd('gil');
         $this->isOpen = true;
         $this->updateTotalUnread();
     }

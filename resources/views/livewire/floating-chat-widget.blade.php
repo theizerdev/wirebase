@@ -1,4 +1,5 @@
-<div wire:cloak>
+<div>
+
 <!-- Botón Flotante Principal -->
 <button type="button"
         class="floating-chat-button {{ $isOpen ? 'hidden' : '' }}"
@@ -8,7 +9,6 @@
         <span class="floating-chat-button-badge">{{ $totalUnread > 99 ? '99+' : $totalUnread }}</span>
     @endif
 </button>
-
 <!-- Widget de Chat Flotante -->
 <div class="floating-chat-widget {{ $isOpen ? '' : 'closed' }} {{ $isMinimized ? 'minimized' : '' }}" 
      id="floatingChatWidget"
@@ -21,7 +21,7 @@
         </div>
         <div class="d-flex align-items-center gap-1">
             <button type="button" class="btn btn-sm btn-icon" wire:click="toggleMinimize" title="Minimizar">
-                <i class="{{ $isMinimized ? 'ri-arrow-up-s-line' : 'ri-subtract-line' }} text-white"></i>
+                <i class="ri {{ $isMinimized ? 'ri-arrow-up-s-line' : 'ri-subtract-line' }} text-white"></i>
             </button>
             <button type="button" class="btn btn-sm btn-icon" wire:click="closeWidget" title="Cerrar">
                 <i class="ri ri-close-line text-white"></i>
