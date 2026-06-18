@@ -243,4 +243,17 @@ class Pastor extends Model
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
+
+    /**
+     * Generar código único del pastor con formato: {ID 3 dígitos}-{últimos 4 dígitos de cédula}
+     * Ejemplo: 001-2293
+     */
+    public static function generarCodigoPastor(int $id, string $documento): string
+    {
+        $idPart = str_pad($id, 5, '0', STR_PAD_LEFT);
+        $cedulaPart = substr(preg_replace('/[^0-9]/', '', $documento), -5);
+        $cedulaPart = $cedulaPart ?: '0000';
+
+        return $idPart . '-' . $cedulaPart;
+    }
 }

@@ -21,11 +21,11 @@ class DatabaseSeeder extends Seeder
             SucursalSeeder::class,
             UsersTableSeeder::class,
             UbicacionPermissionsSeeder::class,
-            PlanDeCuentasIglesiaSeeder::class,
             EstadosSeeder::class,
             CiudadesSeeder::class,
             MunicipiosSeeder::class,
             ParroquiasSeeder::class,
+            PlanDeCuentasIglesiaSeeder::class,
         ]);
     }
 }

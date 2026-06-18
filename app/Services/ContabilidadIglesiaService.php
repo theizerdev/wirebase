@@ -265,13 +265,20 @@ class ContabilidadIglesiaService
             return null;
         }
 
-        return CuentaContable::where('codigo', $codigoCuenta)
+        $cuenta = CuentaContable::where('codigo', $codigoCuenta)
             ->where(function($query) use ($iglesiaId) {
                 $query->where('iglesia_id', $iglesiaId)
                       ->orWhereNull('iglesia_id');
             })
             ->where('activo', true)
             ->first();
+
+        // Auto-crear cuenta de gasto si no existe
+        if (!$cuenta) {
+            $cuenta = $this->crearCuentaSiNoExiste($codigoCuenta, $tipo, $iglesiaId);
+        }
+
+        return $cuenta;
     }
 
     /**
@@ -285,13 +292,20 @@ class ContabilidadIglesiaService
             $codigoCuenta = config('contabilidad.metodos_pago.efectivo');
         }
 
-        return CuentaContable::where('codigo', $codigoCuenta)
+        $cuenta = CuentaContable::where('codigo', $codigoCuenta)
             ->where(function($query) use ($iglesiaId) {
                 $query->where('iglesia_id', $iglesiaId)
                       ->orWhereNull('iglesia_id');
             })
             ->where('activo', true)
             ->first();
+
+        // Auto-crear cuenta de caja/banco si no existe
+        if (!$cuenta) {
+            $cuenta = $this->crearCuentaCajaBancoSiNoExiste($codigoCuenta, $metodoPago, $iglesiaId);
+        }
+
+        return $cuenta;
     }
 
     /**
@@ -318,7 +332,9 @@ class ContabilidadIglesiaService
      */
     private function generarNumeroAsiento(int $iglesiaId): string
     {
-        return AsientoContable::generarNumero($iglesiaId);
+        $iglesia = Iglesia::find($iglesiaId);
+        $empresaId = $iglesia?->empresa_id ?? $iglesiaId;
+        return AsientoContable::generarNumero($empresaId);
     }
 
     /**
@@ -546,6 +562,53 @@ class ContabilidadIglesiaService
             \Log::error('Error al crear cuenta contable automática', [
                 'codigo' => $codigo,
                 'tipo' => $tipo,
+                'iglesia_id' => $iglesiaId,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Crear cuenta de caja/banco si no existe
+     */
+    private function crearCuentaCajaBancoSiNoExiste(string $codigo, string $metodoPago, int $iglesiaId): ?CuentaContable
+    {
+        try {
+            $nombre = match($codigo) {
+                '1.1.01' => 'Caja General',
+                '1.1.02' => 'Caja Chica',
+                '1.1.03' => 'Banco - Cuenta Corriente',
+                '1.1.04' => 'Banco - Cuenta de Ahorros',
+                default => "Caja/Banco ({$metodoPago})",
+            };
+
+            $iglesia = Iglesia::find($iglesiaId);
+
+            $cuenta = CuentaContable::create([
+                'codigo' => $codigo,
+                'nombre' => $nombre,
+                'tipo' => 'activo',
+                'naturaleza' => 'deudora',
+                'nivel' => 2,
+                'activo' => true,
+                'iglesia_id' => $iglesiaId,
+                'empresa_id' => $iglesia?->empresa_id,
+                'sucursal_id' => $iglesia?->sucursal_id,
+            ]);
+
+            \Log::info('Cuenta de caja/banco creada automáticamente', [
+                'codigo' => $codigo,
+                'nombre' => $nombre,
+                'metodo_pago' => $metodoPago,
+                'iglesia_id' => $iglesiaId,
+            ]);
+
+            return $cuenta;
+        } catch (\Exception $e) {
+            \Log::error('Error al crear cuenta de caja/banco automática', [
+                'codigo' => $codigo,
+                'metodo_pago' => $metodoPago,
                 'iglesia_id' => $iglesiaId,
                 'error' => $e->getMessage(),
             ]);

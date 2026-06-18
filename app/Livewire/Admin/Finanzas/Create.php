@@ -192,8 +192,6 @@ class Create extends Component
                 'descripcion' => $this->descripcion,
                 'referencia_bancaria' => $this->referencia,
                 'user_id' => Auth::id(),
-                'empresa_id' => Auth::user()->empresa_id,
-                'sucursal_id' => Auth::user()->sucursal_id
             ];
 
             // Agregar campos opcionales

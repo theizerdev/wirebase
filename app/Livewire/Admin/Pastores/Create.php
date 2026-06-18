@@ -100,7 +100,6 @@ class Create extends Component
 
     protected $rules = [
         // Paso 1: Datos personales
-        'codigo' => 'required|string|max:50|unique:pastores,codigo',
         'nombres' => 'required|string|max:255',
         'apellidos' => 'required|string|max:255',
         'documento' => 'required|string|max:50|unique:pastores,documento',
@@ -161,8 +160,8 @@ class Create extends Component
 
     public function mount()
     {
-        // Generar código automático de 8 dígitos
-        $this->codigo = $this->generateUniqueCode();
+        // El código se generará automáticamente al guardar con formato: ID-Últimos4Cédula
+        $this->codigo = 'Se generará al guardar';
 
         // Cargar listas desplegables
         $this->estados = Estado::orderBy('nombre')->get();
@@ -176,16 +175,6 @@ class Create extends Component
         // Cargar empresas y sucursales
         $this->empresas = Empresa::where('status', true)->orderBy('razon_social')->get();
         $this->sucursales = collect();
-    }
-
-    // Generar un código único de 8 dígitos
-    private function generateUniqueCode()
-    {
-        do {
-            $code = str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
-        } while (Pastor::where('codigo', $code)->exists());
-
-        return $code;
     }
 
     public function updatedEstadoId($value)
@@ -388,7 +377,6 @@ class Create extends Component
         switch ($step) {
             case 1:
                 $this->validate([
-                    'codigo' => 'required|string|max:50|unique:pastores,codigo',
                     'nombres' => 'required|string|max:255',
                     'apellidos' => 'required|string|max:255',
                     'documento' => 'required|string|max:50|unique:pastores,documento',
@@ -466,20 +454,21 @@ class Create extends Component
             'conyuge_genero' => 'nullable|string|max:50',
         ]);
 
-        // Generar un código único para el cónyuge
-        $codigo = 'CONY-' . strtoupper(substr(md5(time() . $this->conyuge_documento), 0, 8));
-
-        // Crear el registro del cónyuge como pastor
+        // Crear el cónyuge con código temporal
         $conyuge = Pastor::create([
-            'codigo' => $codigo,
+            'codigo' => 'TEMP',
             'nombres' => $this->conyuge_nombres,
             'apellidos' => $this->conyuge_apellidos,
             'documento' => $this->conyuge_documento,
             'genero' => $this->conyuge_genero,
             'estado_civil' => 'Casado',
-            'status' => true, // El cónyuge debe estar activo para que pueda buscar su perfil
+            'status' => true,
             'pertenece_ministerio' => false,
         ]);
+
+        // Generar código con formato: ID-Últimos4Cédula (ej: 005-4421)
+        $codigo = Pastor::generarCodigoPastor($conyuge->id, $conyuge->documento);
+        $conyuge->update(['codigo' => $codigo]);
 
         // Actualizar la lista de pastores y seleccionar el nuevo cónyuge
         $this->pastores = Pastor::whereNull('conyuge_id')
@@ -556,7 +545,7 @@ class Create extends Component
 
         $pastor = Pastor::create([
             // Paso 1: Datos personales
-            'codigo' => $this->codigo,
+            'codigo' => 'TEMP',
             'nombres' => $this->nombres,
             'apellidos' => $this->apellidos,
             'documento' => $this->documento,
@@ -608,6 +597,10 @@ class Create extends Component
             'empresa_id' => auth()->user()->empresa_id,
             'sucursal_id' => auth()->user()->sucursal_id,
         ]);
+
+        // Generar código con formato: ID-Últimos4Cédula (ej: 001-2293)
+        $codigo = Pastor::generarCodigoPastor($pastor->id, $pastor->documento);
+        $pastor->update(['codigo' => $codigo]);
 
         // Si se ha seleccionado un cónyuge, actualizar también esa relación (asegurar mutualidad)
         if ($this->estado_civil === 'Casado' && $this->conyuge_id) {

@@ -37,7 +37,7 @@
                                     <label class="form-label">Código <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('codigo') is-invalid @enderror"
                                            wire:model="codigo" placeholder="Ingrese el código" readonly>
-                                    <div class="form-text">El código se genera automáticamente con 8 dígitos</div>
+                                    <div class="form-text">El código se genera automáticamente al guardar con formato: ID-Últimos4Cédula (ej: 001-2293)</div>
                                     @error('codigo')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

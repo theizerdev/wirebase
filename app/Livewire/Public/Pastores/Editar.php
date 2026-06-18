@@ -814,20 +814,21 @@ class Editar extends Component
             'conyuge_genero' => 'nullable|string|max:50',
         ]);
 
-        // Generar un código único para el cónyuge
-        $codigo = 'CONY-' . strtoupper(substr(md5(time() . $this->conyuge_documento), 0, 8));
-
-        // Crear el registro del cónyuge como pastor
+        // Crear el cónyuge con código temporal
         $conyuge = Pastor::create([
-            'codigo' => $codigo,
+            'codigo' => 'TEMP',
             'nombres' => $this->conyuge_nombres,
             'apellidos' => $this->conyuge_apellidos,
             'documento' => $this->conyuge_documento,
             'genero' => $this->conyuge_genero,
             'estado_civil' => 'Casado',
-            'status' => true, // El cónyuge debe estar activo para que pueda buscar su perfil
+            'status' => true,
             'pertenece_ministerio' => false,
         ]);
+
+        // Generar código con formato: ID-Últimos4Cédula (ej: 005-4421)
+        $codigo = Pastor::generarCodigoPastor($conyuge->id, $conyuge->documento);
+        $conyuge->update(['codigo' => $codigo]);
 
         // Actualizar la lista de pastores y seleccionar el nuevo cónyuge
         $conyugeActualId = $this->pastor->conyuge_id;
