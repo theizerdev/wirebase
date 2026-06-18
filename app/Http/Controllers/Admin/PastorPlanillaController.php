@@ -19,7 +19,7 @@ class PastorPlanillaController extends Controller
 
     public function planilla($id)
     {
-        $pastor = Pastor::with(['iglesias', 'ciudad', 'estado', 'municipio', 'parroquia', 'conyuge'])->findOrFail($id);
+        $pastor = Pastor::with(['iglesias.tipoLocal', 'iglesias.estado', 'iglesias.ciudad', 'iglesias.municipio', 'iglesias.parroquia', 'iglesias.usuarioRegistro', 'ciudad', 'estado', 'municipio', 'parroquia', 'conyuge', 'user'])->findOrFail($id);
 
         $fpdf = new \Codedge\Fpdf\Fpdf\Fpdf();
         $this->planillaService->generarPdfParaPastor($pastor, $fpdf);

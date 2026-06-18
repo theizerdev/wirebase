@@ -3,633 +3,538 @@
 namespace App\Services;
 
 use App\Models\Pastor;
-use Codedge\Fpdf\Facades\Fpdf;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\ErrorCorrectionLevel;
 
 class PlanillaService
 {
-    public function construirDireccionCompleta($pastor)
+    private $tempFiles = [];
+
+    // SAIME-style color palette
+    private $sectionBg   = [41, 128, 185];   // Blue section headers
+    private $sectionTx   = [255, 255, 255];   // White text on headers
+    private $labelBg     = [236, 240, 241];   // Light gray for labels
+    private $valueBg     = [255, 255, 255];   // White for values
+    private $textColor   = [0, 0, 0];         // Black
+    private $subHeaderBg = [52, 73, 94];      // Dark blue for sub-headers
+
+    // ---------------------------------------------------------------
+    //  HELPER: Section header (full-width colored bar)
+    // ---------------------------------------------------------------
+    private function sectionHeader($fpdf, string $title, float $h = 8): void
     {
-        $direccion = '';
-
-        if ($pastor->edificio_casa_quinta) {
-            $direccion .= $pastor->edificio_casa_quinta;
-        }
-
-        if ($pastor->piso) {
-            $direccion .= ($direccion ? ', ' : '') . 'Piso ' . $pastor->piso;
-        }
-
-        if ($pastor->apartamento) {
-            $direccion .= ($direccion ? ', ' : '') . 'Apto ' . $pastor->apartamento;
-        }
-
-        if ($pastor->calle_avenida) {
-            $direccion .= ($direccion ? ', ' : '') . $pastor->calle_avenida;
-        }
-
-        if ($pastor->urbanizacion) {
-            $direccion .= ($direccion ? ', ' : '') . $pastor->urbanizacion;
-        }
-
-        return $direccion ?: 'No especificada';
+        $fpdf->SetFillColor($this->sectionBg[0], $this->sectionBg[1], $this->sectionBg[2]);
+        $fpdf->SetTextColor($this->sectionTx[0], $this->sectionTx[1], $this->sectionTx[2]);
+        $fpdf->SetFont('Arial', 'B', 11);
+        $fpdf->Cell(0, $h, utf8_decode($title), 1, 1, 'C', true);
+        $fpdf->SetTextColor($this->textColor[0], $this->textColor[1], $this->textColor[2]);
+        $fpdf->SetFont('Arial', '', 9);
     }
 
-    public function generarPdfParaPastor(Pastor $pastor, $fpdf = null) { if (!$fpdf) { $fpdf = app('fpdf'); }
-        // Si el pastor es cónyuge, también cargar las iglesias del pastor principal
+    // ---------------------------------------------------------------
+    //  HELPER: Sub-section header (for church blocks)
+    // ---------------------------------------------------------------
+    private function subHeader($fpdf, string $title, float $h = 6): void
+    {
+        $fpdf->SetFillColor($this->subHeaderBg[0], $this->subHeaderBg[1], $this->subHeaderBg[2]);
+        $fpdf->SetTextColor($this->sectionTx[0], $this->sectionTx[1], $this->sectionTx[2]);
+        $fpdf->SetFont('Arial', 'B', 9);
+        $fpdf->Cell(0, $h, utf8_decode($title), 1, 1, 'C', true);
+        $fpdf->SetTextColor($this->textColor[0], $this->textColor[1], $this->textColor[2]);
+        $fpdf->SetFont('Arial', '', 9);
+    }
+
+    // ---------------------------------------------------------------
+    //  HELPER: Data row with label-value pairs
+    //  $fields = [
+    //    ['label'=>'X', 'value'=>'Y', 'lw'=>35, 'vw'=>60],
+    //    ['label'=>'A', 'value'=>'B', 'lw'=>35, 'vw'=>60],
+    //  ]
+    // ---------------------------------------------------------------
+    private function dataRow($fpdf, array $fields, float $h = 7): void
+    {
+        foreach ($fields as $f) {
+            $lw = $f['lw'] ?? 35;
+            $vw = $f['vw'] ?? 60;
+            $fpdf->SetFillColor($this->labelBg[0], $this->labelBg[1], $this->labelBg[2]);
+            $fpdf->Cell($lw, $h, utf8_decode($f['label']), 1, 0, 'L', true);
+            $fpdf->SetFillColor($this->valueBg[0], $this->valueBg[1], $this->valueBg[2]);
+            $fpdf->Cell($vw, $h, utf8_decode($f['value'] ?? 'No especificado'), 1, 0, 'L', true);
+        }
+        $fpdf->Ln($h);
+    }
+
+    // ---------------------------------------------------------------
+    //  HELPER: Full-width data row (label on top, value below)
+    // ---------------------------------------------------------------
+    private function dataRowFull($fpdf, string $label, string $value, float $h = 7): void
+    {
+        $fpdf->SetFillColor($this->labelBg[0], $this->labelBg[1], $this->labelBg[2]);
+        $fpdf->Cell(0, $h, utf8_decode($label), 1, 1, 'L', true);
+        $fpdf->SetFillColor($this->valueBg[0], $this->valueBg[1], $this->valueBg[2]);
+        $fpdf->MultiCell(0, $h, utf8_decode($value ?: 'No especificado'), 1, 'L', true);
+    }
+
+    // ---------------------------------------------------------------
+    //  HELPER: Generate QR code PNG and return temp path
+    // ---------------------------------------------------------------
+    private function generarQrCode(Pastor $pastor): string
+    {
+        $url = route('admin.pastores.show', $pastor->id);
+
+        $qr = new QrCode(
+            data: $url,
+            errorCorrectionLevel: ErrorCorrectionLevel::Medium,
+            size: 200,
+            margin: 5
+        );
+
+        $path = storage_path('app/temp/qr_pastor_' . $pastor->id . '_' . time() . '.png');
+        (new PngWriter())->write($qr)->saveToFile($path);
+        $this->tempFiles[] = $path;
+
+        return $path;
+    }
+
+    private function cleanupTempFiles(): void
+    {
+        foreach ($this->tempFiles as $f) {
+            if (file_exists($f)) {
+                @unlink($f);
+            }
+        }
+        $this->tempFiles = [];
+    }
+
+    // ---------------------------------------------------------------
+    //  HELPER: Split string into first / second parts
+    // ---------------------------------------------------------------
+    private function splitName(?string $full): array
+    {
+        $parts = preg_split('/\s+/', trim($full ?? ''), 2);
+        return [$parts[0] ?? '', $parts[1] ?? ''];
+    }
+
+    // ---------------------------------------------------------------
+    //  HELPER: Build full address string
+    // ---------------------------------------------------------------
+    public function construirDireccionCompleta($pastor): string
+    {
+        $parts = [];
+        if ($pastor->edificio_casa_quinta) $parts[] = $pastor->edificio_casa_quinta;
+        if ($pastor->piso)                 $parts[] = 'Piso ' . $pastor->piso;
+        if ($pastor->apartamento)          $parts[] = 'Apto ' . $pastor->apartamento;
+        if ($pastor->calle_avenida)        $parts[] = $pastor->calle_avenida;
+        if ($pastor->urbanizacion)         $parts[] = $pastor->urbanizacion;
+        return $parts ? implode(', ', $parts) : 'No especificada';
+    }
+
+    // ---------------------------------------------------------------
+    //  HELPER: Deduplicate array values (case-insensitive)
+    // ---------------------------------------------------------------
+    private function dedupeImplode(array $items): string
+    {
+        $filtered = array_filter($items);
+        if (empty($filtered)) return '';
+        return implode(', ', array_intersect_key($filtered, array_unique(array_map('mb_strtolower', $filtered))));
+    }
+
+    // ===============================================================
+    //  MAIN: Generate PDF
+    // ===============================================================
+    public function generarPdfParaPastor(Pastor $pastor, $fpdf = null)
+    {
+        if (!$fpdf) {
+            $fpdf = app('fpdf');
+        }
+
+        // Load iglesias (include principal's churches if pastor is spouse)
         $iglesias = $pastor->iglesias;
         if ($pastor->esConyuge() && $pastor->pastorPrincipal) {
             $iglesias = $iglesias->merge($pastor->pastorPrincipal->iglesias);
         }
 
-        // Crear el PDF
+        // Generate QR code
+        $qrPath = $this->generarQrCode($pastor);
+
+        // Split names
+        [$primerNombre, $segundoNombre]   = $this->splitName($pastor->nombres);
+        [$primerApellido, $segundoApellido] = $this->splitName($pastor->apellidos);
+
+        // ==============================================================
+        //  PAGE SETUP
+        // ==============================================================
         $fpdf->AddPage();
         $fpdf->SetAutoPageBreak(true, 10);
+        $fpdf->SetMargins(10, 10, 10);
+        $fpdf->SetTextColor($this->textColor[0], $this->textColor[1], $this->textColor[2]);
 
-        // Configuración inicial
-        $fpdf->SetFont('Arial', 'B', 16);
-        $fpdf->SetTextColor(0, 0, 0);
+        // ==============================================================
+        //  HEADER - SAIME STYLE
+        // ==============================================================
+        $headerTop = 10;
 
-        // Colores para las celdas
-        $headerColor = array(52, 73, 94); // Azul oscuro
-        $cellColor1 = array(236, 240, 241); // Gris muy claro
-        $cellColor2 = array(255, 255, 255); // Blanco
-        $borderColor = array(189, 195, 199); // Gris medio
+        // Logo (upper left)
+        $logoPath = public_path('logo/1719430882.png');
+        if (file_exists($logoPath)) {
+            $fpdf->Image($logoPath, 10, $headerTop, 22, 15);
+        }
 
-        // ENCABEZADO PROFESIONAL MEJORADO
-
-        // Título principal con fondo azul oscuro
-        $fpdf->SetFillColor(41, 128, 185); // Azul más profesional
-        $fpdf->SetTextColor(255, 255, 255);
+        // Organization text (centered, offset for logo)
+        $fpdf->SetXY(34, $headerTop);
         $fpdf->SetFont('Arial', 'B', 9);
-        $fpdf->Cell(0, 12, utf8_decode('IGLESIA CRISTIANA PENTECOSTÉS DE VENEZUELA DEL MOVIMIENTO MISIONERO MUNDIAL'), 0, 1, 'C', true);
+        $fpdf->MultiCell(130, 4.5, utf8_decode("IGLESIA CRISTIANA PENTECOSTÉS DE VENEZUELA\nDEL MOVIMIENTO MISIONERO MUNDIAL"), 0, 'C');
 
-        // Subtítulo
-        $fpdf->SetFont('Arial', 'I', 11);
-        $fpdf->Cell(0, 6, utf8_decode('Registro de Datos de Obreros'), 0, 1, 'C', true);
-        $fpdf->Ln(3);
+        $fpdf->SetXY(34, $fpdf->GetY() + 1);
+        $fpdf->SetFont('Arial', '', 7.5);
+        $fpdf->Cell(130, 3.5, utf8_decode('RIF: J-301874463  |  Tel: 0212-8600173'), 0, 1, 'C');
+        $fpdf->SetX(34);
+        $fpdf->Cell(130, 3.5, utf8_decode('Sede Central: Av. Sucre de Catia, cruce con Calle El Carmen, Local 5B, Caracas'), 0, 1, 'C');
 
-        // Línea decorativa
-        $fpdf->SetDrawColor(41, 128, 185);
+        // QR Code (upper right)
+        if (file_exists($qrPath)) {
+            $fpdf->Image($qrPath, 170, $headerTop, 20, 20);
+        }
+
+        // Separator line
+        $fpdf->SetDrawColor($this->sectionBg[0], $this->sectionBg[1], $this->sectionBg[2]);
         $fpdf->SetLineWidth(0.5);
-        $fpdf->Line(10, $fpdf->GetY(), 200, $fpdf->GetY());
-        $fpdf->Ln(3);
+        $lineY = $headerTop + 27;
+        $fpdf->Line(10, $lineY, 200, $lineY);
 
-        // Sección de datos de la empresa en formato horizontal
-        $fpdf->SetFont('Arial', 'B', 10);
-        $fpdf->SetTextColor(41, 128, 185);
-        $fpdf->Cell(30, 6, utf8_decode('Razón Social:'), 0, 0, 'L');
-        $fpdf->SetFont('Arial', 'B', 10);
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->Cell(80, 6, utf8_decode('IGLESIA CRISTIANA PENTECOSTÉS DE VENEZUELA DEL MOVIMIENTO MISIONERO MUNDIAL'), 0, 0, 'L');
+        // ==============================================================
+        //  TITLE BAR
+        // ==============================================================
+        $fpdf->SetY($lineY + 2);
+        $fpdf->SetFillColor($this->sectionBg[0], $this->sectionBg[1], $this->sectionBg[2]);
+        $fpdf->SetTextColor($this->sectionTx[0], $this->sectionTx[1], $this->sectionTx[2]);
+        $fpdf->SetFont('Arial', 'B', 12);
+        //$fpdf->Cell(0, 9, utf8_decode('PLANILLA DE REGISTRO DE DATOS DEL OBRERO'), 1, 1, 'C', true);
 
-        $fpdf->SetFont('Arial', 'B', 10);
-        $fpdf->SetTextColor(41, 128, 185);
-        $fpdf->Cell(20, 6, utf8_decode(''), 0, 0, 'L');
-        $fpdf->SetFont('Arial', '', 10);
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->Cell(50, 6, utf8_decode(''), 0, 1, 'L');
+        // ==============================================================
+        //  PHOTO (right side, overlapping with first data section)
+        // ==============================================================
+        $photoX = 170;
+        $photoY = $fpdf->GetY() - 35;
+        $photoW = 28;
+        $photoH = 29;
 
-        $fpdf->SetFont('Arial', 'B', 10);
-        $fpdf->SetTextColor(41, 128, 185);
-        $fpdf->Cell(30, 6, utf8_decode('Teléfono:'), 0, 0, 'L');
-        $fpdf->SetFont('Arial', '', 10);
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->Cell(80, 6, utf8_decode('0212-8600173'), 0, 0, 'L');
+        // Draw photo placeholder
+        $fpdf->SetFillColor($this->labelBg[0], $this->labelBg[1], $this->labelBg[2]);
+        $fpdf->Rect($photoX, $photoY, $photoW, $photoH, 'D');
 
-        $fpdf->SetFont('Arial', 'B', 10);
-        $fpdf->SetTextColor(41, 128, 185);
-        $fpdf->Cell(20, 6, utf8_decode('RIF:'), 0, 0, 'L');
-        $fpdf->SetFont('Arial', '', 10);
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->Cell(50, 6, utf8_decode('J-301874463'), 0, 1, 'L');
-
-        $fpdf->SetFont('Arial', 'B', 10);
-        $fpdf->SetTextColor(41, 128, 185);
-        $fpdf->Cell(30, 6, utf8_decode('Sede Central:'), 0, 0, 'L');
-        $fpdf->SetFont('Arial', '', 10);
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->MultiCell(150, 6, utf8_decode('Av. Sucre de Catia, cruce con Calle El Carmen, Local 5B, Caracas - Venezuela'), 0, 'L');
-
-        $fpdf->Ln(5);
-
-        // Línea decorativa inferior
-        $fpdf->SetDrawColor(41, 128, 185);
-        $fpdf->SetLineWidth(0.5);
-        $fpdf->Line(10, $fpdf->GetY(), 200, $fpdf->GetY());
-        $fpdf->Ln(5);
-
-        // Reset posición
-        $fpdf->SetXY(165, 60);
-           // Recuadro para la foto del pastor
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->SetFont('Arial', 'B', 10);
-        $fpdf->Cell(35, 40, utf8_decode('FOTO DEL OBREO'), 1, 0, 'C', true);
-
-
-        // Foto del pastor (si existe)
-        if ($pastor->foto && (file_exists(public_path('pastores/'.str_replace(' ', '',$pastor->foto))))) {
-            $imagePath = public_path('pastores/'.str_replace(' ', '',$pastor->foto));
-            $fpdf->Image($imagePath, 165, 60, 35, 40);
+        if ($pastor->foto && file_exists(public_path('pastores/' . str_replace(' ', '', $pastor->foto)))) {
+            $fpdf->Image(public_path('pastores/' . str_replace(' ', '', $pastor->foto)), $photoX, $photoY, $photoW, $photoH);
         } else {
-            // Si no hay foto, mostrar texto
-            $fpdf->SetFont('Arial', 'I', 8);
-            $fpdf->SetXY(11, 110);
-            $fpdf->MultiCell(33, 4, utf8_decode('Sin foto disponible'), 0, 'C');
+            $fpdf->SetXY($photoX, $photoY + ($photoH / 2) - 3);
+            $fpdf->SetFont('Arial', 'I', 7);
+            $fpdf->Cell($photoW, 6, utf8_decode('Sin foto'), 0, 0, 'C');
         }
-        // Reset posición
-        $fpdf->SetXY(10, 110);
 
-        // Reset colores
-        $fpdf->SetTextColor(0, 0, 0);
+        // Reset for data sections
+        $fpdf->SetTextColor($this->textColor[0], $this->textColor[1], $this->textColor[2]);
+        $fpdf->SetFont('Arial', '', 9);
 
-        // DATOS PERSONALES
-        $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-        $fpdf->SetTextColor(255, 255, 255);
-        $fpdf->SetFont('Arial', 'B', 12);
-        $fpdf->Cell(0, 10, utf8_decode('PLANILLA DE DATOS DEL PASTOR'), 0, 1, 'C', true);
+        // ==============================================================
+        //  DATOS PERSONALES
+        // ==============================================================
+        $fpdf->SetY($fpdf->GetY() + 2);
+        $this->sectionHeader($fpdf, 'DATOS PERSONALES');
 
-        // Reset colores para contenido
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->SetFont('Arial', '', 10);
-
-        // Primera fila de datos personales (después del recuadro de foto)
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Código:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->codigo ?? 'No especificado'), 1, 0, 'L', true);
-
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Documento:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->documento ?? 'No especificado'), 1, 1, 'L', true);
-
-        // Segunda fila
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Nombre:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(80, 7, utf8_decode($pastor->nombres . ' ' . $pastor->apellidos ?? 'No especificado'), 1, 0, 'L', true);
-
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Edad:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(40, 7, utf8_decode($pastor->edad ?? 'No especificada'), 1, 1, 'L', true);
-
-        // Tercera fila
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Fecha Nac.:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fecha_nac = $pastor->fe_nacimiento ? date('d/m/Y', strtotime($pastor->fe_nacimiento)) : 'No especificada';
-        $fpdf->Cell(55, 7, utf8_decode($fecha_nac), 1, 0, 'L', true);
-
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Género:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->genero ?? 'No especificado'), 1, 1, 'L', true);
-
-        // Cuarta fila
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Estado Civil:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->estado_civil ?? 'No especificado'), 1, 0, 'L', true);
-
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Teléfono:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
+        $fechaNac = $pastor->fe_nacimiento ? date('d/m/Y', strtotime($pastor->fe_nacimiento)) : 'No especificada';
         $telefono = $pastor->telefono_hab ?? $pastor->telefono_tlf ?? $pastor->telefono_otro ?? 'No especificado';
-        $fpdf->Cell(65, 7, utf8_decode($telefono), 1, 1, 'L', true);
+        $email    = $pastor->email ?? 'No especificado';
 
-        // Quinta fila
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Email:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(155, 7, utf8_decode($pastor->user->email ?? 'No especificado'), 1, 1, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Código:',           'value' => $pastor->codigo,           'lw' => 25, 'vw' => 70],
+            ['label' => 'Documento:',         'value' => $pastor->documento,         'lw' => 25, 'vw' => 70],
+        ]);
 
-        // Sexta fila
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Grado Instrucción:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->grado_instruccion ?? 'No especificado'), 1, 0, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Primer Nombre:',     'value' => $primerNombre,              'lw' => 30, 'vw' => 65],
+            ['label' => 'Segundo Nombre:',     'value' => $segundoNombre ?: '-',      'lw' => 30, 'vw' => 65],
+        ]);
 
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Título Obtenido:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->titulo_obtenido ?? 'No especificado'), 1, 1, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Primer Apellido:',   'value' => $primerApellido,            'lw' => 30, 'vw' => 65],
+            ['label' => 'Segundo Apellido:',  'value' => $segundoApellido ?: '-',    'lw' => 30, 'vw' => 65],
+        ]);
 
-        // Séptima fila
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Batizado Espíritu:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->batizado_espiritu_santo ? 'Sí' : 'No'), 1, 0, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Sexo:',              'value' => $pastor->genero,            'lw' => 25, 'vw' => 70],
+            ['label' => 'Fecha Nacimiento:',   'value' => $fechaNac,                  'lw' => 30, 'vw' => 65],
+        ]);
 
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('En Ministerio:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->pertenece_ministerio ? 'Sí' : 'No'), 1, 1, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Estado Civil:',      'value' => $pastor->estado_civil,      'lw' => 25, 'vw' => 70],
+            ['label' => 'Edad:',              'value' => $pastor->edad ? $pastor->edad . ' años' : null, 'lw' => 25, 'vw' => 70],
+        ]);
 
-        $fpdf->Ln(8);
+        $this->dataRow($fpdf, [
+            ['label' => 'Teléfono:',          'value' => $telefono,                  'lw' => 25, 'vw' => 70],
+            ['label' => 'Email:',             'value' => $email,                     'lw' => 25, 'vw' => 70],
+        ]);
 
-        // DATOS DE UBICACIÓN
-        $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-        $fpdf->SetTextColor(255, 255, 255);
-        $fpdf->SetFont('Arial', 'B', 12);
-        $fpdf->Cell(0, 8, utf8_decode('DATOS DE UBICACIÓN'), 1, 1, 'C', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Grado Instrucción:', 'value' => $pastor->grado_instruccion, 'lw' => 30, 'vw' => 65],
+            ['label' => 'Título Obtenido:',   'value' => $pastor->titulo_obtenido,   'lw' => 30, 'vw' => 65],
+        ]);
 
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->SetFont('Arial', '', 10);
+        $this->dataRow($fpdf, [
+            ['label' => 'Bautizado E.S.:',    'value' => $pastor->batizado_espiritu_santo ? 'Sí' : 'No',  'lw' => 25, 'vw' => 70],
+            ['label' => 'En Ministerio:',     'value' => $pastor->pertenece_ministerio ? 'Sí' : 'No',     'lw' => 25, 'vw' => 70],
+        ]);
 
-        // Fila de ubicación
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Estado:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->estado->nombre ?? 'No especificado'), 1, 0, 'L', true);
+        $fpdf->Ln(4);
 
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Ciudad:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->ciudad->nombre ?? 'No especificado'), 1, 1, 'L', true);
+        // ==============================================================
+        //  DATOS DE UBICACIÓN
+        // ==============================================================
+        $this->sectionHeader($fpdf, 'DATOS DE UBICACIÓN');
 
-        // Segunda fila de ubicación
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Municipio:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->municipio->nombre ?? 'No especificado'), 1, 0, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Estado:',    'value' => $pastor->estado->nombre ?? null,    'lw' => 25, 'vw' => 70],
+            ['label' => 'Ciudad:',    'value' => $pastor->ciudad->nombre ?? null,    'lw' => 25, 'vw' => 70],
+        ]);
 
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Parroquia:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->parroquia->nombre ?? 'No especificada'), 1, 1, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Municipio:', 'value' => $pastor->municipio->nombre ?? null, 'lw' => 25, 'vw' => 70],
+            ['label' => 'Parroquia:', 'value' => $pastor->parroquia->nombre ?? null, 'lw' => 25, 'vw' => 70],
+        ]);
 
-        // Dirección completa
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Dirección:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->MultiCell(155, 7, utf8_decode($this->construirDireccionCompleta($pastor)), 1, 'L', true);
+        $this->dataRowFull($fpdf, 'Dirección:', $this->construirDireccionCompleta($pastor));
 
-        $fpdf->Ln(8);
+        $fpdf->Ln(4);
 
-        // DATOS MINISTERIALES
-        $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-        $fpdf->SetTextColor(255, 255, 255);
-        $fpdf->SetFont('Arial', 'B', 12);
-        $fpdf->Cell(0, 8, utf8_decode('DATOS MINISTERIALES'), 1, 1, 'C', true);
+        // ==============================================================
+        //  DATOS MINISTERIALES
+        // ==============================================================
+        $this->sectionHeader($fpdf, 'DATOS MINISTERIALES');
 
-        $fpdf->SetTextColor(0, 0, 0);
-        $fpdf->SetFont('Arial', '', 10);
+        $this->dataRow($fpdf, [
+            ['label' => 'Nivel Ministerial:', 'value' => $pastor->nivel_ministerial, 'lw' => 30, 'vw' => 65],
+            ['label' => 'Año Promoción:',     'value' => $pastor->ano_promocion,     'lw' => 30, 'vw' => 65],
+        ]);
 
-        // Primera fila ministerial
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Nivel Ministerial:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->nivel_ministerial ?? 'No especificado'), 1, 0, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'T. Ministerial:',    'value' => $pastor->tiempo_colaborando, 'lw' => 30, 'vw' => 65],
+            ['label' => 'Cargo Nacional:',    'value' => $pastor->cargo_nacional,     'lw' => 30, 'vw' => 65],
+        ]);
 
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Año Promoción:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->ano_promocion ?? 'No especificado'), 1, 1, 'L', true);
+        $this->dataRow($fpdf, [
+            ['label' => 'Estado:',            'value' => $pastor->status ? 'Activo' : 'Inactivo',       'lw' => 25, 'vw' => 70],
+            ['label' => 'Estudios Teológicos:','value' => $pastor->estudio_teologico ? 'Sí' : 'No',     'lw' => 30, 'vw' => 65],
+        ]);
 
-        // Segunda fila ministerial
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('T. Ministerial:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->tiempo_colaborando ?? 'No especificado'), 1, 0, 'L', true);
+        if ($pastor->estudio_teologico) {
+            $this->dataRowFull($fpdf, 'Título Teológico:', $pastor->titulo_teologico ?? 'No especificado');
 
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Cargo Nacional:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->cargo_nacional ?? 'No especificado'), 1, 1, 'L', true);
-
-        // Tercera fila ministerial
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Estado:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(55, 7, utf8_decode($pastor->status ? 'Activo' : 'Inactivo'), 1, 0, 'L', true);
-
-        $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-        $fpdf->Cell(35, 7, utf8_decode('Estudios Teológicos:'), 1, 0, 'L', true);
-        $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-        $fpdf->Cell(65, 7, utf8_decode($pastor->estudio_teologico ? 'Sí' : 'No'), 1, 1, 'L', true);
-
-        // Si tiene estudios teológicos
-        if($pastor->estudio_teologico) {
-            // Cuarta fila ministerial
-            $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-            $fpdf->Cell(35, 7, utf8_decode('Título Teológico:'), 1, 0, 'L', true);
-            $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-            $fpdf->Cell(155, 7, utf8_decode($pastor->titulo_teologico ?? 'No especificado'), 1, 1, 'L', true);
-
-            // Quinta fila ministerial
-            $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-            $fpdf->Cell(35, 7, utf8_decode('Tiempo de Estudio:'), 1, 0, 'L', true);
-            $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-            $fpdf->Cell(55, 7, utf8_decode($pastor->tiempo_de_estudio_teologico ?? 'No especificado'), 1, 0, 'L', true);
-
-            $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-            $fpdf->Cell(35, 7, utf8_decode('Instituto Teológico:'), 1, 0, 'L', true);
-            $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-            $fpdf->Cell(65, 7, utf8_decode($pastor->instituto_teologico ?? 'No especificado'), 1, 1, 'L', true);
+            $this->dataRow($fpdf, [
+                ['label' => 'Tiempo de Estudio:', 'value' => $pastor->tiempo_de_estudio_teologico, 'lw' => 30, 'vw' => 65],
+                ['label' => 'Instituto Teológico:', 'value' => $pastor->instituto_teologico,       'lw' => 30, 'vw' => 65],
+            ]);
         }
 
-        $fpdf->Ln(8);
+        $fpdf->Ln(4);
 
-        // Datos del cónyuge (si existe)
+        // ==============================================================
+        //  DATOS DEL CÓNYUGE (conditional)
+        // ==============================================================
         if ($pastor->nombre_conyuge) {
-            $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-            $fpdf->SetTextColor(255, 255, 255);
-            $fpdf->SetFont('Arial', 'B', 12);
-            $fpdf->Cell(0, 8, utf8_decode('DATOS DEL CÓNYUGE'), 1, 1, 'C', true);
+            $this->sectionHeader($fpdf, 'DATOS DEL CÓNYUGE');
 
-            $fpdf->SetTextColor(0, 0, 0);
-            $fpdf->SetFont('Arial', '', 10);
-
-            // Primera fila del cónyuge
-            $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-            $fpdf->Cell(35, 7, utf8_decode('Nombre:'), 1, 0, 'L', true);
-            $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-            $fpdf->Cell(155, 7, utf8_decode($pastor->nombre_conyuge), 1, 1, 'L', true);
+            $this->dataRowFull($fpdf, 'Nombre:', $pastor->nombre_conyuge);
 
             if ($pastor->conyuge) {
-                // Segunda fila del cónyuge
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Documento:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($pastor->conyuge->documento ?? 'No especificado'), 1, 0, 'L', true);
+                $telConyuge = $pastor->conyuge->telefono_hab ?? $pastor->conyuge->telefono_tlf ?? $pastor->conyuge->telefono_otro ?? 'No especificado';
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Teléfono:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $telefono_conyuge = $pastor->conyuge->telefono_hab ?? $pastor->conyuge->telefono_tlf ?? $pastor->conyuge->telefono_otro ?? 'No especificado';
-                $fpdf->Cell(65, 7, utf8_decode($telefono_conyuge), 1, 1, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Documento:', 'value' => $pastor->conyuge->documento, 'lw' => 25, 'vw' => 70],
+                    ['label' => 'Teléfono:',  'value' => $telConyuge,                 'lw' => 25, 'vw' => 70],
+                ]);
             }
 
-            $fpdf->Ln(38);
+            $fpdf->Ln(4);
         }
-         $fpdf->Ln(16);
-        // Iglesias asociadas
+
+        // ==============================================================
+        //  EXTENSIONES ASOCIADAS
+        // ==============================================================
         if ($iglesias->count() > 0) {
-            $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-            $fpdf->SetTextColor(255, 255, 255);
-            $fpdf->SetFont('Arial', 'B', 12);
-            $fpdf->Cell(0, 8, utf8_decode('EXTENSIONES ASOCIADAS'), 1, 1, 'C', true);
+            $this->sectionHeader($fpdf, 'EXTENSIONES ASOCIADAS');
 
             foreach ($iglesias as $index => $iglesia) {
-                // Nombre de la iglesia como subheader
-                $fpdf->SetFillColor(52, 152, 219); // Azul más claro
-                $fpdf->SetTextColor(255, 255, 255);
-                $fpdf->SetFont('Arial', 'B', 11);
+                // Church name sub-header
+                $fpdf->SetFillColor($this->sectionBg[0], $this->sectionBg[1], $this->sectionBg[2]);
+                $fpdf->SetTextColor($this->sectionTx[0], $this->sectionTx[1], $this->sectionTx[2]);
+                $fpdf->SetFont('Arial', 'B', 10);
                 $fpdf->Cell(0, 7, utf8_decode('Iglesia #' . ($index + 1) . ': ' . ($iglesia->nombre ?? 'Sin nombre')), 1, 1, 'L', true);
+                $fpdf->SetTextColor($this->textColor[0], $this->textColor[1], $this->textColor[2]);
+                $fpdf->SetFont('Arial', '', 9);
 
-                $fpdf->SetTextColor(0, 0, 0);
-                $fpdf->SetFont('Arial', '', 10);
+                // --- INFORMACIÓN BÁSICA ---
+                $this->subHeader($fpdf, 'INFORMACIÓN BÁSICA');
 
-                // INFORMACIÓN BÁSICA
-                $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-                $fpdf->SetTextColor(255, 255, 255);
-                $fpdf->SetFont('Arial', 'B', 10);
-                $fpdf->Cell(0, 6, utf8_decode('INFORMACIÓN BÁSICA'), 1, 1, 'C', true);
+                $fechaFund = $iglesia->fecha_fundacion ? date('d/m/Y', strtotime($iglesia->fecha_fundacion)) : 'No especificada';
 
-                $fpdf->SetTextColor(0, 0, 0);
-                $fpdf->SetFont('Arial', '', 10);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Tipo Local:',      'value' => $iglesia->tipoLocal->nombre ?? null, 'lw' => 28, 'vw' => 67],
+                    ['label' => 'Fecha Fundación:', 'value' => $fechaFund,                          'lw' => 28, 'vw' => 67],
+                ]);
 
-                // Primera fila - Tipo de local y fecha de fundación
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Tipo Local:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->tipoLocal->nombre ?? 'No especificado'), 1, 0, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Años Activa:', 'value' => ($iglesia->anios_activa ?? '0') . ' años', 'lw' => 28, 'vw' => 67],
+                    ['label' => 'Estado:',       'value' => $iglesia->activa ? 'Activa' : 'Inactiva', 'lw' => 28, 'vw' => 67],
+                ]);
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Fecha Fundación:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fecha_fundacion = $iglesia->fecha_fundacion ? date('d/m/Y', strtotime($iglesia->fecha_fundacion)) : 'No especificada';
-                $fpdf->Cell(65, 7, utf8_decode($fecha_fundacion), 1, 1, 'L', true);
+                $this->dataRowFull($fpdf, 'Descripción:', $iglesia->descripcion ?? 'No especificada');
 
-                // Segunda fila - Años activa y estado
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Años Activa:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->anios_activa ?? '0') . utf8_decode(' años'), 1, 0, 'L', true);
+                // --- CONTACTO ---
+                $this->subHeader($fpdf, 'INFORMACIÓN DE CONTACTO');
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Estado:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->activa ? 'Activa' : 'Inactiva'), 1, 1, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Teléfono:', 'value' => $iglesia->telefono, 'lw' => 28, 'vw' => 67],
+                    ['label' => 'Email:',    'value' => $iglesia->email,    'lw' => 28, 'vw' => 67],
+                ]);
 
-                // Tercera fila - Descripción
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Descripción:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->MultiCell(155, 7, utf8_decode($iglesia->descripcion ?? 'No especificada'), 1, 'L', true);
+                // --- UBICACIÓN ---
+                $this->subHeader($fpdf, 'INFORMACIÓN DE UBICACIÓN');
 
-                // INFORMACIÓN DE CONTACTO
-                $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-                $fpdf->SetTextColor(255, 255, 255);
-                $fpdf->SetFont('Arial', 'B', 10);
-                $fpdf->Cell(0, 6, utf8_decode('INFORMACIÓN DE CONTACTO'), 1, 1, 'C', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Estado:',    'value' => $iglesia->estado->nombre ?? null,    'lw' => 28, 'vw' => 67],
+                    ['label' => 'Ciudad:',    'value' => $iglesia->ciudad->nombre ?? null,    'lw' => 28, 'vw' => 67],
+                ]);
 
-                $fpdf->SetTextColor(0, 0, 0);
-                $fpdf->SetFont('Arial', '', 10);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Municipio:', 'value' => $iglesia->municipio->nombre ?? null, 'lw' => 28, 'vw' => 67],
+                    ['label' => 'Parroquia:', 'value' => $iglesia->parroquia->nombre ?? null, 'lw' => 28, 'vw' => 67],
+                ]);
 
-                // Primera fila - Teléfono y Email
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Teléfono:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->telefono ?? 'No especificado'), 1, 0, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Zona:',     'value' => $iglesia->zona,     'lw' => 28, 'vw' => 67],
+                    ['label' => 'Distrito:', 'value' => $iglesia->distrito, 'lw' => 28, 'vw' => 67],
+                ]);
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Email:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->email ?? 'No especificado'), 1, 1, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Sector:',  'value' => $iglesia->sector,  'lw' => 28, 'vw' => 67],
+                    ['label' => 'Calle:',   'value' => $iglesia->calle,   'lw' => 28, 'vw' => 67],
+                ]);
 
-                // INFORMACIÓN DE UBICACIÓN
-                $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-                $fpdf->SetTextColor(255, 255, 255);
-                $fpdf->SetFont('Arial', 'B', 10);
-                $fpdf->Cell(0, 6, utf8_decode('INFORMACIÓN DE UBICACIÓN'), 1, 1, 'C', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Avenida:', 'value' => $iglesia->avenida, 'lw' => 28, 'vw' => 162],
+                ]);
 
-                $fpdf->SetTextColor(0, 0, 0);
-                $fpdf->SetFont('Arial', '', 10);
+                $this->dataRowFull($fpdf, 'Dirección:', $iglesia->direccion ?? 'No especificada');
 
-                // Primera fila - Estado y Ciudad
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Estado:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->estado->nombre ?? 'No especificado'), 1, 0, 'L', true);
+                $coordenadas = ($iglesia->latitud && $iglesia->longitud)
+                    ? $iglesia->latitud . ', ' . $iglesia->longitud
+                    : 'No especificadas';
+                $this->dataRow($fpdf, [
+                    ['label' => 'Coordenadas:', 'value' => $coordenadas, 'lw' => 28, 'vw' => 162],
+                ]);
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Ciudad:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->ciudad->nombre ?? 'No especificado'), 1, 1, 'L', true);
+                // --- ESTADÍSTICAS ---
+                $this->subHeader($fpdf, 'ESTADÍSTICAS DE LA IGLESIA');
 
-                // Segunda fila - Municipio y Parroquia
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Municipio:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->municipio->nombre ?? 'No especificado'), 1, 0, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Miembros Activos:', 'value' => ($iglesia->miembros_activos ?? '0') . ' miembros', 'lw' => 32, 'vw' => 63],
+                    ['label' => 'Campos Blancos:',   'value' => ($iglesia->cantidad_campos_blancos ?? '0') . ' campos', 'lw' => 32, 'vw' => 63],
+                ]);
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Parroquia:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->parroquia->nombre ?? 'No especificada'), 1, 1, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Miembro Probante:', 'value' => ($iglesia->miembro_probante ?? '0') . ' miembros', 'lw' => 32, 'vw' => 63],
+                    ['label' => 'Tiempo Trabajo:',   'value' => $iglesia->tiempo_trabajo,                         'lw' => 32, 'vw' => 63],
+                ]);
 
-                // Tercera fila - Zona y Distrito
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Zona:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->zona ?? 'No especificada'), 1, 0, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Iglesias Fundadas:',    'value' => ($iglesia->iglesias_fundadas ?? '0') . ' iglesias',  'lw' => 32, 'vw' => 63],
+                    ['label' => 'Pastores Ministerio:',  'value' => ($iglesia->pastores_ministerio ?? '0') . ' pastores', 'lw' => 32, 'vw' => 63],
+                ]);
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Distrito:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->distrito ?? 'No especificado'), 1, 1, 'L', true);
+                $this->dataRowFull($fpdf, 'Logros Obtenidos:', $iglesia->logros_obtenidos ?? 'No especificados');
 
-                // Cuarta fila - Sector, Calle y Avenida
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Sector:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->sector ?? 'No especificado'), 1, 0, 'L', true);
+                // --- MEDIOS DE COMUNICACIÓN ---
+                $this->subHeader($fpdf, 'MEDIOS DE COMUNICACIÓN');
 
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Calle:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->calle ?? 'No especificada'), 1, 1, 'L', true);
-
-                // Quinta fila - Avenida y Dirección completa
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Avenida:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(155, 7, utf8_decode($iglesia->avenida ?? 'No especificada'), 1, 0, 'L', true);
-                $fpdf->Ln(7);
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(190, 7, utf8_decode('Dirección:'), 1, 0, 'L', true);
-                $fpdf->Ln(7);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->MultiCell(190, 7, utf8_decode($iglesia->direccion ?? 'No especificada'), 1, 'L', true);
-
-                // Sexta fila - Coordenadas
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Coordenadas:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $coordenadas = ($iglesia->latitud && $iglesia->longitud) ?
-                    $iglesia->latitud . ', ' . $iglesia->longitud : 'No especificadas';
-                $fpdf->Cell(155, 7, utf8_decode($coordenadas), 1, 1, 'L', true);
-
-                // ESTADÍSTICAS DE LA IGLESIA
-                $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-                $fpdf->SetTextColor(255, 255, 255);
-                $fpdf->SetFont('Arial', 'B', 10);
-                $fpdf->Cell(0, 6, utf8_decode('ESTADÍSTICAS DE LA IGLESIA'), 1, 1, 'C', true);
-
-                $fpdf->SetTextColor(0, 0, 0);
-                $fpdf->SetFont('Arial', '', 10);
-
-                // Primera fila - Miembros activos y campos blancos
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Miembros Activos:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->miembros_activos ?? '0') . ' miembros', 1, 0, 'L', true);
-
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Campos Blancos:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->cantidad_campos_blancos ?? '0') . ' campos', 1, 1, 'L', true);
-
-                // Segunda fila - Miembro probante y logros
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Miembro Probante:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->miembro_probante ?? '0') . ' miembros', 1, 0, 'L', true);
-
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Tiempo Trabajo:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->tiempo_trabajo ?? 'No especificado'), 1, 1, 'L', true);
-
-                // Tercera fila - Iglesias fundadas y pastores en ministerio
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Iglesias Fundadas:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->iglesias_fundadas ?? '0') . ' iglesias', 1, 0, 'L', true);
-
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Pastores Ministerio:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(65, 7, utf8_decode($iglesia->pastores_ministerio ?? '0') . ' pastores', 1, 1, 'L', true);
-
-                // Cuarta fila - Logros obtenidos
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(190, 7, utf8_decode('Logros Obtenidos:'), 1, 0, 'L', true);
-                $fpdf->Ln(7);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->MultiCell(190, 7, utf8_decode($iglesia->logros_obtenidos ?? 'No especificados'), 1, 'L', true);
-
-                // MEDIOS DE COMUNICACIÓN
-                $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-                $fpdf->SetTextColor(255, 255, 255);
-                $fpdf->SetFont('Arial', 'B', 10);
-                $fpdf->Cell(0, 6, utf8_decode('MEDIOS DE COMUNICACIÓN'), 1, 1, 'C', true);
-
-                $fpdf->SetTextColor(0, 0, 0);
-                $fpdf->SetFont('Arial', '', 10);
-
-                // Posee medio de comunicación
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Tiene Medio Com.:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $fpdf->Cell(55, 7, utf8_decode($iglesia->posee_medio_comunicacion ? 'Sí' : 'No'), 1, 0, 'L', true);
+                $this->dataRow($fpdf, [
+                    ['label' => 'Tiene Medio Com.:', 'value' => $iglesia->posee_medio_comunicacion ? 'Sí' : 'No', 'lw' => 32, 'vw' => 63],
+                ]);
 
                 if ($iglesia->posee_medio_comunicacion) {
+                    $medioComunicacion = $iglesia->medio_comunicacion;
+
                     // Tipo de medio
-                    $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                    $fpdf->Cell(35, 7, utf8_decode('Tipo Medio:'), 1, 0, 'L', true);
-                    $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                    $fpdf->Cell(65, 7, utf8_decode($iglesia->medio_comunicacion ?? 'No especificado'), 1, 1, 'L', true);
+                    if (is_array($medioComunicacion) && !empty($medioComunicacion)) {
+                        $tipos = array_map(function ($m) {
+                            return (is_array($m) && isset($m['tipo'])) ? $m['tipo'] : (is_string($m) ? $m : '');
+                        }, $medioComunicacion);
+                        $tipoTexto = $this->dedupeImplode($tipos) ?: 'No especificado';
+                    } else {
+                        $tipoTexto = is_string($medioComunicacion) ? $medioComunicacion : 'No especificado';
+                    }
+                    $this->dataRow($fpdf, [
+                        ['label' => 'Tipo Medio:', 'value' => $tipoTexto, 'lw' => 28, 'vw' => 67],
+                    ]);
 
                     // Nombre del medio
-                    $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                    $fpdf->Cell(35, 7, utf8_decode('Nombre Medio:'), 1, 0, 'L', true);
-                    $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                    $fpdf->Cell(155, 7, utf8_decode($iglesia->nombre_medio_comunicacion ?? 'No especificado'), 1, 0, 'L', true);
+                    $nombreTexto = $iglesia->nombre_medio_comunicacion;
+                    if (empty($nombreTexto) && is_array($medioComunicacion) && !empty($medioComunicacion)) {
+                        $nombres = array_map(function ($m) {
+                            return (is_array($m) && isset($m['nombre'])) ? $m['nombre'] : '';
+                        }, $medioComunicacion);
+                        $nombreTexto = $this->dedupeImplode($nombres);
+                    }
+                    $this->dataRow($fpdf, [
+                        ['label' => 'Nombre Medio:', 'value' => $nombreTexto ?: 'No especificado', 'lw' => 28, 'vw' => 162],
+                    ]);
 
-                    // Dónde está el medio
-                    $fpdf->Ln(7);
-                    $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                    $fpdf->Cell(35, 7, utf8_decode('Ubicación:'), 1, 0, 'L', true);
-                    $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                    $fpdf->Cell(155, 7, utf8_decode($iglesia->donde_medio_comunicacion ?? 'No especificada'), 1, 1, 'L', true);
-                } else {
-                    // Relleno si no tiene medio de comunicación
-                    $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                    $fpdf->Cell(35, 7, utf8_decode(''), 1, 0, 'L', true);
-                    $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                    $fpdf->Cell(65, 7, utf8_decode(''), 1, 1, 'L', true);
+                    // Ubicación del medio
+                    $ubicTexto = $iglesia->donde_medio_comunicacion;
+                    if (empty($ubicTexto) && is_array($medioComunicacion) && !empty($medioComunicacion)) {
+                        $ubicaciones = array_map(function ($m) {
+                            return (is_array($m) && isset($m['ubicacion'])) ? $m['ubicacion'] : '';
+                        }, $medioComunicacion);
+                        $ubicTexto = $this->dedupeImplode($ubicaciones);
+                    }
+                    $this->dataRow($fpdf, [
+                        ['label' => 'Ubicación:', 'value' => $ubicTexto ?: 'No especificada', 'lw' => 28, 'vw' => 162],
+                    ]);
                 }
 
-                // REGISTRO
-                $fpdf->SetFillColor($headerColor[0], $headerColor[1], $headerColor[2]);
-                $fpdf->SetTextColor(255, 255, 255);
-                $fpdf->SetFont('Arial', 'B', 10);
-                $fpdf->Cell(0, 6, utf8_decode('INFORMACIÓN DE REGISTRO'), 1, 1, 'C', true);
+                // --- REGISTRO ---
+                $this->subHeader($fpdf, 'INFORMACIÓN DE REGISTRO');
 
-                $fpdf->SetTextColor(0, 0, 0);
-                $fpdf->SetFont('Arial', '', 10);
+                $usuarioRegistro = $iglesia->usuarioRegistro
+                    ? $iglesia->usuarioRegistro->name
+                    : 'No especificado';
+                $this->dataRow($fpdf, [
+                    ['label' => 'Registrado Por:', 'value' => $usuarioRegistro, 'lw' => 28, 'vw' => 162],
+                ]);
 
-                // Usuario que registró
-                $fpdf->SetFillColor($cellColor1[0], $cellColor1[1], $cellColor1[2]);
-                $fpdf->Cell(35, 7, utf8_decode('Registrado Por:'), 1, 0, 'L', true);
-                $fpdf->SetFillColor($cellColor2[0], $cellColor2[1], $cellColor2[2]);
-                $usuario_registro = $iglesia->usuarioRegistro ?
-                    $iglesia->usuarioRegistro->name : 'No especificado';
-                $fpdf->Cell(155, 7, utf8_decode($usuario_registro), 1, 1, 'L', true);
-
-                if ($index < $pastor->iglesias->count() - 1) {
-                    $fpdf->Ln(8);
+                if ($index < $iglesias->count() - 1) {
+                    $fpdf->Ln(4);
                 }
             }
         }
 
-        // Pie de página
-        $fpdf->Ln(10);
-        $fpdf->SetFont('Arial', 'I', 8);
-        $fpdf->Cell(0, 5, utf8_decode('Planilla generada el ' . date('d/m/Y H:i:s')), 0, 1, 'C');
+        // ==============================================================
+        //  FOOTER
+        // ==============================================================
+        $fpdf->Ln(8);
+        $fpdf->SetDrawColor($this->sectionBg[0], $this->sectionBg[1], $this->sectionBg[2]);
+        $fpdf->SetLineWidth(0.3);
+        $fpdf->Line(10, $fpdf->GetY(), 200, $fpdf->GetY());
+        $fpdf->Ln(3);
+         if (file_exists($qrPath)) {
+            $fpdf->Image($qrPath, 10, $fpdf->GetY(), 40, 40);
+        }
+        $fpdf->SetFont('Arial', 'B', 8);
+        $fpdf->Cell(0, 5, utf8_decode('Serial: ' . ($pastor->codigo ?? 'N/A')), 0, 1, 'C');
+        $fpdf->SetFont('Arial', 'I', 7);
+        $fpdf->Cell(0, 4, utf8_decode('Planilla generada el ' . date('d/m/Y H:i:s')), 0, 1, 'C');
+
+        // Cleanup temp files
+        $this->cleanupTempFiles();
     }
 }
