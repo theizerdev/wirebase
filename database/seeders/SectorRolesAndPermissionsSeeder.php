@@ -84,6 +84,17 @@ class SectorRolesAndPermissionsSeeder extends Seeder
                         'delete finanzas iglesias',
                     ],
                 ],
+                // Actividades
+                'actividades' => [
+                    'name' => 'Actividades',
+                    'permissions' => [
+                        'access actividades',
+                        'create actividades',
+                        'edit actividades',
+                        'show actividades',
+                        'delete actividades',
+                    ],
+                ],
           
 
             
@@ -340,6 +351,12 @@ class SectorRolesAndPermissionsSeeder extends Seeder
             'edit finanzas iglesias',
             'show finanzas iglesias',
             'delete finanzas iglesias',
+            // Actividades
+            'access actividades',
+            'create actividades',
+            'edit actividades',
+            'show actividades',
+            'delete actividades',
             // Contabilidad
             'access contabilidad',
             'view contabilidad',
@@ -400,6 +417,12 @@ class SectorRolesAndPermissionsSeeder extends Seeder
             'edit finanzas iglesias',
             'show finanzas iglesias',
             'delete finanzas iglesias',
+            // Actividades
+            'access actividades',
+            'create actividades',
+            'edit actividades',
+            'show actividades',
+            'delete actividades',
             // Contabilidad
             'access contabilidad',
             'view contabilidad',
@@ -438,6 +461,12 @@ class SectorRolesAndPermissionsSeeder extends Seeder
             'edit finanzas iglesias',
             'show finanzas iglesias',
             'delete finanzas iglesias',
+            // Actividades
+            'access actividades',
+            'create actividades',
+            'edit actividades',
+            'show actividades',
+            'delete actividades',
             // Contabilidad
             'access contabilidad',
             'view contabilidad',

@@ -6,10 +6,10 @@ if (!function_exists('getPermissionSectors')) {
         return [
             'pastores' => [
                 'name' => '👥 Pastores',
-                'description' => 'Gestión de pastores, iglesias y solicitudes de modificación',
+                'description' => 'Gestión de pastores, iglesias, actividades y solicitudes de modificación',
                 'color' => 'blue',
                 'icon' => 'ri-user-line',
-                'modules' => ['pastores', 'iglesias', 'inventario iglesias', 'finanzas iglesias', 'solicitudes']
+                'modules' => ['pastores', 'iglesias', 'inventario iglesias', 'finanzas iglesias','solicitudes']
             ],
             'configuracion' => [
                 'name' => '⚙️ Configuración',
@@ -145,6 +145,7 @@ if (!function_exists('getSectorMenuItems')) {
                             ['label' => 'Listado general', 'permission' => 'access pastores', 'route' => 'admin.pastores.index', 'active' => 'admin.pastores.index'],
                             ['label' => 'Nuevo registro', 'permission' => 'access pastores', 'route' => 'admin.pastores.create', 'active' => 'admin.pastores.create'],
                            
+                           
                         ]
                     ],
                     [
@@ -202,6 +203,7 @@ if (!function_exists('getSectorMenuItems')) {
                         'route' => 'admin.exchange-rates',
                         'active' => 'admin.exchange-rates',
                     ],
+                     ['label' => 'Actividades', 'permission' => 'access actividades', 'route' => 'admin.actividades.index', 'active' => 'admin.actividades.index'],
                     [
                         'label' => 'Contabilidad',
                         'icon' => 'ri-calculator-line',

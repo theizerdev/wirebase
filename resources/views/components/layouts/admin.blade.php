@@ -1,36 +1,30 @@
+@props(['title' => 'Auth'])
+
 <!DOCTYPE html>
 <html
   lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-  class="layout-navbar-fixed layout-menu-fixed{{ isset($templateSettings) && $templateSettings->menu_collapsed ? ' layout-menu-collapsed' : '' }}{{ isset($templateSettings) ? ($templateSettings->content_layout === 'wide' ? ' layout-wide' : ' layout-compact') : ' layout-compact' }}{{ isset($templateSettings) && $templateSettings->footer_fixed ? ' layout-footer-fixed' : '' }}"
+  class="layout-menu-fixed layout-navbar-fixed {{ isset($templateSettings) ? ($templateSettings->content_layout === 'wide' ? 'layout-wide' : 'layout-compact') : 'layout-compact' }}{{ isset($templateSettings) && $templateSettings->footer_fixed ? ' layout-footer-fixed' : '' }}"
   dir="{{ isset($templateSettings) ? $templateSettings->text_direction : 'ltr' }}"
   data-skin="{{ isset($templateSettings) ? ($templateSettings->skin == 1 ? 'bordered' : 'default') : 'default' }}"
   data-bs-theme="{{ isset($templateSettings) ? $templateSettings->theme : 'light' }}"
   data-assets-path="{{ asset('materialize/assets/') }}/"
-  data-template="{{ isset($templateSettings) && $templateSettings->layout_type === 'horizontal' ? 'horizontal-menu-template' : 'vertical-menu-template' }}">
+  data-template="horizontal-menu-template">
   <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-
-    <title>{{  'PUPILAINC' }}</title>
-    <meta name="description" content="{{ config('app.name') }} - {{ config('app.description') }}" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $title ?? config('app.name') }}</title>
+    <meta name="description" content="{{ config('app.name') }} - {{ config('app.description') }}">
+    <meta name="keywords" content="admin dashboard, admin template, administration, analytics, bootstrap, bootstrap 5, bootstrap admin template, charts, crm, laravel, laravel admin panel, laravel template, performance, php, responsive, saas, sass">
+    <meta name="author" content="ThemeSelection">
+    <meta name="robots" content="noindex, nofollow" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    
+
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#8B5CF6">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="PUPILAINC">
-    <link rel="apple-touch-icon" href="/pwa-icons/icon-192x192.png">
-    <link rel="manifest" href="/manifest.json">
+    
 
     <!-- Favicon -->
-      <link rel="icon" type="image/x-icon" href="/logo/1719430882.png" height="200px" />
+    <link rel="icon" type="image/x-icon" href="/logo/1719430882.png" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -42,8 +36,6 @@
 
     <!-- Core CSS -->
     <!-- build:css assets/vendor/css/theme.css -->
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <link rel="stylesheet" href="/materialize/assets/vendor/libs/node-waves/node-waves.css" />
 
@@ -60,11 +52,12 @@
 
     <!-- endbuild -->
 
-    <link rel="stylesheet" href="/materialize/assets/vendor/libs/apex-charts/apex-charts.css" />
-    <link rel="stylesheet" href="/materialize/assets/vendor/libs/swiper/swiper.css" />
+    <!-- Vendor -->
+    <link rel="stylesheet" href="/materialize/assets/vendor/libs/@form-validation/form-validation.css" />
 
     <!-- Page CSS -->
-    <link rel="stylesheet" href="/materialize/assets/vendor/css/pages/cards-statistics.css" />
+    <!-- Page -->
+    <link rel="stylesheet" href="/materialize/assets/vendor/css/pages/page-auth.css" />
 
     <!-- Helpers -->
     <script src="/materialize/assets/vendor/js/helpers.js"></script>
@@ -73,176 +66,29 @@
     <!--? Template customizer: To hide customizer set displayCustomizer value false in config.js. -->
     <script src="/materialize/assets/vendor/js/template-customizer.js"></script>
 
-    <!--? Config: Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file. -->
-
     <script src="/materialize/assets/js/config.js"></script>
 
-    @include('components.template-config')
+    <!--? Config: Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file. -->
 
-     <!-- Cropper.js CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
-
-    <!-- SweetAlert2 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-
-    <!-- Chat y Biblioteca CSS -->
-    <link rel="stylesheet" href="{{ asset('css/chat-biblioteca.css') }}">
-
-    @if(isset($templateSettings) && $templateSettings->primary_color)
-    <style>
-      :root {
-        --bs-primary: {{ $templateSettings->primary_color }};
-        --bs-primary-rgb: {{ implode(',', sscanf($templateSettings->primary_color, '#%02x%02x%02x')) }};
-      }
-    </style>
-    @endif
-
-  <style>
-    .photo-preview-card {
-      transition: transform 0.2s;
-    }
-
-    .photo-preview-card:hover {
-      transform: scale(1.02);
-    }
-
-    .camera-feed {
-      background: #000;
-      border-radius: 0.5rem;
-    }
-
-    .capture-btn {
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-
-    /* Estilos para breadcrumbs */
-    .breadcrumb-style {
-      background-color: transparent;
-      padding: 0.75rem 1rem;
-      margin-bottom: 1rem;
-      border-radius: 0.375rem;
-      font-size: 0.875rem;
-    }
-
-    .breadcrumb-style .breadcrumb-item + .breadcrumb-item::before {
-      content: ">";
-      color: #6c757d;
-    }
-
-    .breadcrumb-style .breadcrumb-item a {
-      color: #007bff;
-      text-decoration: none;
-    }
-
-    .breadcrumb-style .breadcrumb-item a:hover {
-      text-decoration: underline;
-    }
-
-    .breadcrumb-style .breadcrumb-item.active {
-      color: #495057;
-    }
-
-    /* Mejoras de accesibilidad */
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border-width: 0;
-    }
-
-    /* Estilos para notificaciones */
-    .notification-badge {
-      position: absolute;
-      top: 0;
-      right: 0;
-      transform: translate(50%, -50%);
-      padding: 0.25em 0.5em;
-      font-size: 0.75em;
-      border-radius: 50%;
-      min-width: 1.5em;
-      min-height: 1.5em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-    }
-
-    /* Responsive improvements */
-    @media (max-width: 768px) {
-      .breadcrumb-style {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.75rem;
-      }
-
-      .container-fluid {
-        padding-left: 1rem;
-        padding-right: 1rem;
-      }
-    }
-  </style>
+    <!-- Livewire Styles -->
     @livewireStyles
+
+    <!-- Page custom styles -->
     @stack('styles')
+
   </head>
 
   <body>
-    <!-- Layout wrapper -->
-    <div class="layout-wrapper layout-content-navbar">
-      <div class="layout-container">
-        <!-- Menu -->
-        @include('components.partials.menu')
-
-        <!-- Layout container -->
-        <div class="layout-page">
-          <!-- Navbar -->
-          @include('components.partials.navbar')
-
-          <!-- Content wrapper -->
-          <div class="content-wrapper">
-
-            <!-- Content -->
-            <div class="container-fluid flex-grow-1 container-p-y">
-
-              <!-- Componente de notificaciones global -->
-              <x-notifications />
-
-              {{ $slot }}
-            </div>
-            <!-- /Content -->
-
-            <!-- Footer -->
-            @include('components.partials.footer')
-
-            <div class="content-backdrop fade"></div>
+    <!-- Content -->
+       <div class="layout-wrapper layout-navbar-full layout-horizontal layout-without-menu">
+         <div class="layout-container">
+          <div class="container-fluid flex-grow-1 container-p-y">
+            @yield('content')
           </div>
-          <!-- /Content wrapper -->
         </div>
-        <!-- /Layout page -->
       </div>
-
-      <!-- Overlay -->
-      <div class="layout-overlay layout-menu-toggle"></div>
-
-      <!-- Drag Target Area To SlideIn Menu On Small Screens -->
-      <div class="drag-target"></div>
-    </div>
-    <!-- /Layout wrapper -->
-
-    <!-- Toast Container -->
-    @include('components.toast-container')
-
-    <!-- Widget de Chat Flotante Global -->
-    @livewire('floating-chat-widget')
-
-    <!-- Core JS -->
-     <script src="/materialize/assets/vendor/libs/jquery/jquery.js"></script>
-
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Core JS -->  
+    <script src="/materialize/assets/vendor/libs/jquery/jquery.js"></script>
 
     <script src="/materialize/assets/vendor/libs/popper/popper.js"></script>
     <script src="/materialize/assets/vendor/js/bootstrap.js"></script>
@@ -263,112 +109,23 @@
     <!-- endbuild -->
 
     <!-- Vendors JS -->
-    <script src="/materialize/assets/vendor/libs/apex-charts/apexcharts.js"></script>
-    <script src="/materialize/assets/vendor/libs/swiper/swiper.js"></script>
+    <script src="/materialize/assets/vendor/libs/@form-validation/popular.js"></script>
+    <script src="/materialize/assets/vendor/libs/@form-validation/bootstrap5.js"></script>
+    <script src="/materialize/assets/vendor/libs/@form-validation/auto-focus.js"></script>
 
     <!-- Main JS -->
 
     <script src="/materialize/assets/js/main.js"></script>
 
+    <!-- Page JS -->
+    <script src="/materialize/assets/js/pages-auth.js"></script>
 
-   <!-- Cropper.js JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
+    <!-- Custom Scripts -->
     @stack('scripts')
 
-    <!-- Configuración de Livewire para manejar CSRF automáticamente -->
-    <script>
-        // Configurar Livewire para auto-refresh cuando el token CSRF expira
-        // en lugar de mostrar el modal de "Page Expired"
-        window.addEventListener('DOMContentLoaded', function() {
-            if (typeof Livewire !== 'undefined') {
-                Livewire.on('csrf-token-mismatch', function() {
-                    // Auto-refresh silencioso sin mostrar modal
-                    window.location.reload();
-                });
-            }
-        });
-    </script>
-
+    <!-- Livewire -->
     @livewireScripts
-    <!-- Accessibility improvements -->
-    <script>
-      // Mejorar la navegaciÃƒÂ³n por teclado
-      document.addEventListener('DOMContentLoaded', function() {
-        // AÃƒÂ±adir skip links para usuarios de teclado
-        const skipLink = document.createElement('a');
-        skipLink.href = '#main-content';
-        skipLink.className = 'sr-only sr-only-focusable';
-        skipLink.textContent = 'Saltar al contenido principal';
-        skipLink.style.cssText = `
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          background: #000;
-          color: #fff;
-          padding: 10px;
-          z-index: 10000;
-        `;
-
-        skipLink.addEventListener('focus', function() {
-          this.style.top = '10px';
-        });
-
-        skipLink.addEventListener('blur', function() {
-          this.style.top = '-40px';
-        });
-
-        document.body.insertBefore(skipLink, document.body.firstChild);
-
-        // Asegurar que todos los elementos interactivos tengan focus visible
-        const focusableElements = document.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        focusableElements.forEach(element => {
-          if (!element.hasAttribute('aria-label') && !element.hasAttribute('aria-labelledby') && element.title) {
-            element.setAttribute('aria-label', element.title);
-          }
-        });
-      });
-    </script>
-
-    <!-- Sistema de Notificaciones Global -->
-    <x-notifications />
-    <!-- Timer Global de Dilatación -->
-    
-    <!-- PWA - Registro del Service Worker y Botón de Instalación -->
-    <script>
-      // Registrar Service Worker
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('[PWA] Service Worker registrado con éxito:', registration.scope);
-            })
-            .catch(error => {
-              console.log('[PWA] Error al registrar Service Worker:', error);
-            });
-        });
-      }
-
-      // Manejo de la instalación PWA
-      let deferredPrompt;
-      let installButton = null;
-
-      window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevenir el prompt automático del navegador
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // Crear botón flotante de instalación
-        createInstallButton();
-        
-        console.log('[PWA] beforeinstallprompt event fired');
-      });
-
-     </script>
-
+     @include('components.toast-container')
 
   </body>
 </html>

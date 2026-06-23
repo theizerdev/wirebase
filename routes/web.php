@@ -8,7 +8,9 @@ use App\Livewire\SuperAdmin\Dashboard as SuperAdminDashboard;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
 
-
+ Route::get('/asistencias', function () {
+        return view('admin.actividades.asistencia');
+    })->name('actividades.asistencia');
 
 Route::get('/', function () {
         if (auth()->check()) {

@@ -59,3 +59,4 @@ require_once __DIR__ . '/admin/iglesias.php';
 require_once __DIR__ . '/admin/inventario.php';
 require_once __DIR__ . '/admin/finanzas.php';
 require_once __DIR__ . '/admin/solicitudes.php';
+require_once __DIR__ . '/admin/actividades.php';
