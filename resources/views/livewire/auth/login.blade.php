@@ -11,8 +11,8 @@
     <!-- /Left Section -->
 
     <!-- Login Form -->
-    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-12 px-12 py-6">
-      <div class="w-px-400 mx-auto pt-12 pt-lg-0">
+    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-12 px-4 px-sm-12 py-6">
+      <div class="w-100 mx-auto pt-12 pt-lg-0" style="max-width: 400px;">
         <!-- Logo -->
         <div class="mb-5 text-center">
           @include('auth.header.logo')
@@ -90,12 +90,12 @@
             </div>
           </div>
 
-          <div class="mb-5 d-flex justify-content-between mt-5">
+          <div class="mb-5 d-flex justify-content-between flex-wrap mt-5 gap-2">
             <div class="form-check mt-2">
               <input class="form-check-input" type="checkbox" id="remember-me" wire:model="remember" />
               <label class="form-check-label" for="remember-me"> {{ __('auth_ui.remember_me') }} </label>
             </div>
-            <a href="{{ route('password.request') }}" class="float-end mb-1 mt-2">
+            <a href="{{ route('password.request') }}" class="mt-2">
               <span>{{ __('auth_ui.forgot_password') }}</span>
             </a>
           </div>
