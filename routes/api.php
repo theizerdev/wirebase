@@ -20,3 +20,4 @@ use App\Http\Controllers\WhatsAppController;
 Route::get('actividades/activas', [\App\Http\Controllers\Api\AsistenciaController::class, 'activas']);
 Route::get('asistencias/estadisticas', [\App\Http\Controllers\Api\AsistenciaController::class, 'estadisticas']);
 Route::post('asistencias/registrar', [\App\Http\Controllers\Api\AsistenciaController::class, 'registrar']);
+Route::post('asistencias/registrar-nuevo-pastor', [\App\Http\Controllers\Api\AsistenciaController::class, 'registrarNuevoPastor']);

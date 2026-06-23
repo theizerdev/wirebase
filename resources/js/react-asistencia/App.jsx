@@ -12,19 +12,43 @@ export default function App() {
     const [isLoadingActividades, setIsLoadingActividades] = useState(true);
     const [estadisticas, setEstadisticas] = useState({ total: 0, recientes: [] });
 
-    // Sound reference
+    // Fallback Registration Form States
+    const isDedicatedCreateMode = window.location.pathname === '/pastor/create';
+    const [showRegisterForm, setShowRegisterForm] = useState(window.location.pathname === '/pastor/create');
+    const [searchDocumento, setSearchDocumento] = useState('');
+    const [registerError, setRegisterError] = useState('');
+    const [registerIsSaving, setRegisterIsSaving] = useState(false);
+
+    // Form inputs
+    const [registerNombres, setRegisterNombres] = useState('');
+    const [registerApellidos, setRegisterApellidos] = useState('');
+    const [registerDocumento, setRegisterDocumento] = useState('');
+    const [registerNivelMinisterial, setRegisterNivelMinisterial] = useState('');
+    const [registerZona, setRegisterZona] = useState('');
+    const [registerDistrito, setRegisterDistrito] = useState('');
+    const [registerGenero, setRegisterGenero] = useState('');
+    const [registerEdad, setRegisterEdad] = useState('');
+    const [registerFeNacimiento, setRegisterFeNacimiento] = useState('');
+    const [registerTelefono, setRegisterTelefono] = useState('');
+
+    // Webcam capture states
+    const [cameraStream, setCameraStream] = useState(null);
+    const [capturedPhoto, setCapturedPhoto] = useState(null);
+
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
     const successAudio = useRef(null);
 
     useEffect(() => {
         // Pre-load audio
         successAudio.current = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-        
+
         const fetchActividades = async () => {
             try {
                 const response = await axios.get('/api/actividades/activas');
                 if (response.data && response.data.actividades) {
                     setActividades(response.data.actividades);
-                    
+
                     const params = new URLSearchParams(window.location.search);
                     const paramId = params.get('actividad_id');
                     if (paramId && response.data.actividades.some(a => a.id == paramId)) {
@@ -52,6 +76,45 @@ export default function App() {
         }
     }, [actividadId]);
 
+    // Handle Camera stream activation/deactivation
+    useEffect(() => {
+        let activeStream = null;
+
+        if (showRegisterForm) {
+            navigator.mediaDevices.getUserMedia({
+                video: { width: 350, height: 350, facingMode: 'user' }
+            })
+                .then(stream => {
+                    activeStream = stream;
+                    setCameraStream(stream);
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        videoRef.current.play().catch(err => console.error("Video play error:", err));
+                    }
+                })
+                .catch(err => {
+                    console.error("Camera access error:", err);
+                    setCameraStream(null);
+                });
+        }
+
+        return () => {
+            if (activeStream) {
+                activeStream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [showRegisterForm]);
+
+    // Ensure camera stream is bound to the video element when it mounts/renders
+    useEffect(() => {
+        if (cameraStream && !capturedPhoto && videoRef.current) {
+            if (videoRef.current.srcObject !== cameraStream) {
+                videoRef.current.srcObject = cameraStream;
+            }
+            videoRef.current.play().catch(err => console.error("Video play error:", err));
+        }
+    }, [cameraStream, capturedPhoto]);
+
     const playSuccessSound = () => {
         if (successAudio.current) {
             successAudio.current.currentTime = 0;
@@ -61,35 +124,138 @@ export default function App() {
 
     const handleRegister = async (data) => {
         if (!actividadId || isLoading) return;
-        
+
         setIsLoading(true);
         setStatusMessage(null);
 
+        // Cache the query term for pre-filling registration document
+        if (data.cedula) {
+            setSearchDocumento(data.cedula);
+        } else {
+            setSearchDocumento('');
+        }
+
         try {
             const response = await axios.post(`/api/asistencias/registrar`, { ...data, actividad_id: actividadId });
-            
+
             playSuccessSound();
-            
+
             setStatusMessage({ type: 'success', data: response.data });
-            
+
             if (response.data.estadisticas) {
                 setEstadisticas(response.data.estadisticas);
             }
-            
+
             setTimeout(() => {
                 setStatusMessage(null);
             }, 3000);
         } catch (error) {
-            setStatusMessage({ 
-                type: 'error', 
-                data: error.response?.data || { message: 'Error de red o servidor.' } 
+            setStatusMessage({
+                type: 'error',
+                data: error.response?.data || { message: 'Error de red o servidor.' }
             });
-            
-            setTimeout(() => {
-                setStatusMessage(null);
-            }, 5000);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // Camera Capture Logic
+    const capturePhoto = () => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (video && canvas) {
+            const context = canvas.getContext('2d');
+            canvas.width = 400;
+            canvas.height = 400;
+            context.drawImage(video, 0, 0, 400, 400);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            setCapturedPhoto(dataUrl);
+        }
+    };
+
+    const retakePhoto = () => {
+        setCapturedPhoto(null);
+        if (cameraStream && videoRef.current) {
+            videoRef.current.srcObject = cameraStream;
+        }
+    };
+
+    const handleBirthdateChange = (e) => {
+        const val = e.target.value;
+        setRegisterFeNacimiento(val);
+        if (val) {
+            const birth = new Date(val);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            setRegisterEdad(age > 0 ? age.toString() : '0');
+        }
+    };
+
+    const resetRegisterForm = () => {
+        setRegisterNombres('');
+        setRegisterApellidos('');
+        setRegisterDocumento('');
+        setRegisterNivelMinisterial('');
+        setRegisterZona('');
+        setRegisterDistrito('');
+        setRegisterGenero('');
+        setRegisterEdad('');
+        setRegisterFeNacimiento('');
+        setRegisterTelefono('');
+        setCapturedPhoto(null);
+        setRegisterError('');
+    };
+
+    const handleRegisterNewPastor = async (e) => {
+        e.preventDefault();
+        if (registerIsSaving) return;
+
+        setRegisterIsSaving(true);
+        setRegisterError('');
+
+        const payload = {
+            actividad_id: actividadId,
+            nombres: registerNombres,
+            apellidos: registerApellidos,
+            documento: registerDocumento,
+            nivel_ministerial: registerNivelMinisterial || null,
+            zona: registerZona || null,
+            distrito: registerDistrito || null,
+            genero: registerGenero || null,
+            edad: registerEdad ? parseInt(registerEdad) : null,
+            fe_nacimiento: registerFeNacimiento || null,
+            telefono_tlf: registerTelefono || null,
+            foto_base64: capturedPhoto || null
+        };
+
+        try {
+            const response = await axios.post('/api/asistencias/registrar-nuevo-pastor', payload);
+
+            playSuccessSound();
+
+            setStatusMessage({ type: 'success', data: response.data });
+
+            if (response.data.estadisticas) {
+                setEstadisticas(response.data.estadisticas);
+            }
+
+            // Close form and clean up
+            if (!isDedicatedCreateMode) {
+                setShowRegisterForm(false);
+            }
+            resetRegisterForm();
+
+            setTimeout(() => {
+                setStatusMessage(null);
+            }, 3000);
+        } catch (error) {
+            setRegisterError(error.response?.data?.message || 'Ocurrió un error al registrar al pastor. Intente nuevamente.');
+        } finally {
+            setRegisterIsSaving(false);
         }
     };
 
@@ -97,7 +263,7 @@ export default function App() {
         <div className="asistencia-kiosk-wrapper">
             <div className="ambient-glow glow-1"></div>
             <div className="ambient-glow glow-2"></div>
-            
+
             {/* Custom Embedded CSS Stylesheet */}
             <style>{`
                 .asistencia-kiosk-wrapper {
@@ -634,6 +800,82 @@ export default function App() {
                     line-height: 1.5;
                     margin-top: 10px;
                 }
+
+                /* Focus frame corners for Camera capture */
+                .scanner-corner {
+                    position: absolute;
+                    width: 20px;
+                    height: 20px;
+                    border: 3px solid transparent;
+                    z-index: 10;
+                    pointer-events: none;
+                }
+                .corner-tl {
+                    top: 15px;
+                    left: 15px;
+                    border-top-color: #6366f1;
+                    border-left-color: #6366f1;
+                    border-top-left-radius: 6px;
+                }
+                .corner-tr {
+                    top: 15px;
+                    right: 15px;
+                    border-top-color: #6366f1;
+                    border-right-color: #6366f1;
+                    border-top-right-radius: 6px;
+                }
+                .corner-bl {
+                    bottom: 15px;
+                    left: 15px;
+                    border-bottom-color: #6366f1;
+                    border-left-color: #6366f1;
+                    border-bottom-left-radius: 6px;
+                }
+                .corner-br {
+                    bottom: 15px;
+                    right: 15px;
+                    border-bottom-color: #6366f1;
+                    border-right-color: #6366f1;
+                    border-bottom-right-radius: 6px;
+                }
+
+                /* Floating custom input styling */
+                .input-group-custom {
+                    position: relative;
+                    margin-bottom: 15px;
+                    width: 100%;
+                }
+                .input-custom {
+                    width: 100%;
+                    padding: 12px 16px;
+                    background: rgba(15, 23, 42, 0.45);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 12px;
+                    color: #ffffff;
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    transition: all 0.3s ease;
+                }
+                .input-custom:focus {
+                    outline: none;
+                    border-color: #6366f1;
+                    box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+                    background: rgba(15, 23, 42, 0.6);
+                }
+                .input-label {
+                    position: absolute;
+                    left: 12px;
+                    top: -10px;
+                    background: #0d1222;
+                    padding: 0 6px;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    color: #818cf8;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                    border-radius: 4px;
+                    border: 1px solid rgba(255, 255, 255, 0.03);
+                }
             `}</style>
 
             <header className="kiosk-header">
@@ -649,7 +891,7 @@ export default function App() {
                         </div>
                     )}
                 </div>
-                
+
                 <div className="header-center">
                     <h1>Control de Asistencias</h1>
                 </div>
@@ -658,10 +900,11 @@ export default function App() {
                     {!isLoadingActividades && actividades.length > 0 && (
                         <div className="event-selector-wrapper">
                             <i className="ri-calendar-event-line event-selector-icon"></i>
-                            <select 
-                                className="event-select" 
-                                value={actividadId} 
+                            <select
+                                className="event-select"
+                                value={actividadId}
                                 onChange={(e) => setActividadId(e.target.value)}
+                                disabled={showRegisterForm && !isDedicatedCreateMode}
                             >
                                 <option value="">-- Seleccionar Actividad --</option>
                                 {actividades.map(act => (
@@ -676,7 +919,7 @@ export default function App() {
                 </div>
             </header>
 
-            <main className="kiosk-main">
+            <main className="kiosk-main" style={showRegisterForm ? { gridTemplateColumns: '1fr' } : {}}>
                 {isLoadingActividades ? (
                     <div className="col-span-2 d-flex flex-column align-items-center justify-content-center w-100" style={{ gridColumn: '1 / -1' }}>
                         <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}></div>
@@ -698,18 +941,273 @@ export default function App() {
                             <p className="empty-state-text">Por favor, elija el evento o actividad correspondiente en el selector superior para habilitar el escáner.</p>
                         </div>
                     </div>
+                ) : showRegisterForm ? (
+                    /* Left/Right Split Express Registration Panel */
+                    <div className="kiosk-panel registration-panel p-4" style={{ height: '100%', overflowY: 'auto' }}>
+                        <div className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary border-opacity-25 pb-3">
+                            <h4 className="text-white fw-bold m-0 d-flex align-items-center">
+                                <i className="ri-user-add-line text-primary me-2 fs-4"></i> Registrar Nuevo Pastor y Asistencia
+                            </h4>
+                            {!isDedicatedCreateMode && (
+                                <button
+                                    type="button"
+                                    className="btn-back"
+                                    onClick={() => { setShowRegisterForm(false); resetRegisterForm(); }}
+                                >
+                                    <i className="ri-close-line"></i> Cancelar
+                                </button>
+                            )}
+                        </div>
+
+                        {registerError && (
+                            <div className="alert alert-danger mb-4 p-3 border-0 bg-danger bg-opacity-10 text-danger rounded-3">
+                                <i className="ri-error-warning-line me-2"></i> {registerError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleRegisterNewPastor} className="row g-4">
+                            {/* Left column: form controls (7/12) */}
+                            <div className="col-12 col-lg-7">
+                                <div className="row g-3">
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Nombres</span>
+                                            <input
+                                                type="text"
+                                                className="input-custom text-white"
+                                                required
+                                                value={registerNombres}
+                                                onChange={e => setRegisterNombres(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Apellidos</span>
+                                            <input
+                                                type="text"
+                                                className="input-custom text-white"
+                                                required
+                                                value={registerApellidos}
+                                                onChange={e => setRegisterApellidos(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Documento</span>
+                                            <input
+                                                type="text"
+                                                className="input-custom text-white"
+                                                required
+                                                value={registerDocumento}
+                                                onChange={e => setRegisterDocumento(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Nivel Ministerial</span>
+                                            <select
+                                                className="input-custom text-white bg-dark"
+                                                value={registerNivelMinisterial}
+                                                onChange={e => setRegisterNivelMinisterial(e.target.value)}
+                                            >
+                                                <option value="">Seleccione Nivel</option>
+                                                <option value="Colaborador">Colaborador</option>
+                                                <option value="Laico">Laico</option>
+                                                <option value="Licenciado">Licenciado</option>
+                                                <option value="Ministro Ordenado">Ministro Ordenado</option>
+
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Zona</span>
+                                            <input
+                                                type="text"
+                                                className="input-custom text-white"
+                                                value={registerZona}
+                                                onChange={e => setRegisterZona(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Distrito</span>
+                                            <input
+                                                type="text"
+                                                className="input-custom text-white"
+                                                value={registerDistrito}
+                                                onChange={e => setRegisterDistrito(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Género</span>
+                                            <select
+                                                className="input-custom text-white bg-dark"
+                                                value={registerGenero}
+                                                onChange={e => setRegisterGenero(e.target.value)}
+                                            >
+                                                <option value="">Seleccione Género</option>
+                                                <option value="Masculino">Masculino</option>
+                                                <option value="Femenino">Femenino</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Teléfono Celular</span>
+                                            <input
+                                                type="text"
+                                                className="input-custom text-white"
+                                                placeholder="04121234567"
+                                                value={registerTelefono}
+                                                onChange={e => setRegisterTelefono(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Fecha Nacimiento</span>
+                                            <input
+                                                type="date"
+                                                className="input-custom text-white"
+                                                value={registerFeNacimiento}
+                                                onChange={handleBirthdateChange}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="input-group-custom">
+                                            <span className="input-label">Edad</span>
+                                            <input
+                                                type="number"
+                                                className="input-custom text-white"
+                                                value={registerEdad}
+                                                onChange={e => setRegisterEdad(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right column: webcam capture tool (5/12) */}
+                            <div className="col-12 col-lg-5 d-flex flex-column align-items-center justify-content-center border-start border-secondary border-opacity-25 ps-lg-4">
+                                <span className="text-white small fw-bold mb-3 text-uppercase tracking-wider">
+                                    Fotografía Tipo Carnet
+                                </span>
+
+                                <div className="camera-box-wrapper mb-3" style={{
+                                    width: '240px',
+                                    height: '240px',
+                                    borderRadius: '20px',
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                    border: '2px solid rgba(255,255,255,0.08)',
+                                    background: '#000'
+                                }}>
+                                    <div className="scanner-corner corner-tl"></div>
+                                    <div className="scanner-corner corner-tr"></div>
+                                    <div className="scanner-corner corner-bl"></div>
+                                    <div className="scanner-corner corner-br"></div>
+
+                                    {capturedPhoto ? (
+                                        <img
+                                            src={capturedPhoto}
+                                            alt="Foto capturada"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : cameraStream ? (
+                                        <video
+                                            ref={(node) => {
+                                                videoRef.current = node;
+                                                if (node && cameraStream && node.srcObject !== cameraStream) {
+                                                    node.srcObject = cameraStream;
+                                                    node.play().catch(err => console.error("Video play error:", err));
+                                                }
+                                            }}
+                                            autoPlay
+                                            playsInline
+                                            muted
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted p-3 text-center">
+                                            <i className="ri-camera-off-line fs-2 mb-2 text-secondary"></i>
+                                            <small className="small opacity-75" style={{ fontSize: '0.75rem' }}>Cámara no conectada o sin permisos de acceso</small>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+
+                                {capturedPhoto ? (
+                                    <button type="button" className="btn btn-outline-info btn-sm px-4" onClick={retakePhoto}>
+                                        <i className="ri-restart-line me-1"></i> Tomar Otra Foto
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary btn-sm px-4"
+                                        onClick={capturePhoto}
+                                        disabled={!cameraStream}
+                                    >
+                                        <i className="ri-camera-line me-1"></i> Capturar Foto
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Actions block */}
+                            <div className="col-12 border-top border-secondary border-opacity-25 pt-4 d-flex justify-content-end gap-3">
+                                {!isDedicatedCreateMode && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-light"
+                                        onClick={() => { setShowRegisterForm(false); resetRegisterForm(); }}
+                                        disabled={registerIsSaving}
+                                    >
+                                        Cancelar
+                                    </button>
+                                )}
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={registerIsSaving}
+                                >
+                                    {registerIsSaving ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            Guardando Registro...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="ri-save-line me-1"></i> Registrar y Tomar Asistencia
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 ) : (
                     <>
                         {/* Left column: Scanner card */}
                         <div className="kiosk-panel scanner-panel">
                             <div className="kiosk-tabs">
-                                <button 
+                                <button
                                     className={`kiosk-tab-btn ${activeTab === 'qr' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('qr')}
                                 >
                                     <i className="ri-qr-code-line"></i> Escáner QR
                                 </button>
-                                <button 
+                                <button
                                     className={`kiosk-tab-btn ${activeTab === 'manual' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('manual')}
                                 >
@@ -719,12 +1217,12 @@ export default function App() {
 
                             <div className="w-100 d-flex justify-content-center align-items-center" style={{ minHeight: '380px' }}>
                                 {activeTab === 'qr' ? (
-                                    <ScannerQR 
-                                        onScan={(qr_data) => handleRegister({ metodo: 'QR', qr_data })} 
+                                    <ScannerQR
+                                        onScan={(qr_data) => handleRegister({ metodo: 'QR', qr_data })}
                                         isPaused={isLoading || statusMessage?.type === 'success'}
                                     />
                                 ) : (
-                                    <BuscadorCedula 
+                                    <BuscadorCedula
                                         onSubmit={(cedula) => handleRegister({ metodo: 'Manual', cedula })}
                                         isLoading={isLoading}
                                     />
@@ -739,14 +1237,14 @@ export default function App() {
                                             <i className={`ri-${statusMessage.type === 'success' ? 'checkbox-circle-fill' : 'error-warning-fill'}`} style={{ fontSize: '3rem' }}></i>
                                         </div>
                                         <h3 className="overlay-msg">{statusMessage.data.message}</h3>
-                                        
+
                                         {statusMessage.data.pastor && (
                                             <div className="overlay-card">
                                                 {statusMessage.data.pastor.foto ? (
-                                                    <img 
-                                                        src={statusMessage.data.pastor.foto} 
-                                                        alt="Foto Pastor" 
-                                                        className={`overlay-avatar ${statusMessage.type === 'success' ? 'success' : 'error'}`} 
+                                                    <img
+                                                        src={statusMessage.data.pastor.foto}
+                                                        alt="Foto Pastor"
+                                                        className={`overlay-avatar ${statusMessage.type === 'success' ? 'success' : 'error'}`}
                                                     />
                                                 ) : (
                                                     <div className={`overlay-avatar-placeholder ${statusMessage.type === 'success' ? 'success' : 'error'}`}>
@@ -757,6 +1255,40 @@ export default function App() {
                                                 <span className="overlay-doc">{statusMessage.data.pastor.documento}</span>
                                             </div>
                                         )}
+
+                                        {/* Dynamic Fallback Action Button when Pastor is not found (404) */}
+                                        {statusMessage.type === 'error' && statusMessage.data.message.includes('not found') || statusMessage.data.message.includes('encontrado') ? (
+                                            <div className="mt-4 d-flex justify-content-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-primary"
+                                                    onClick={() => {
+                                                        setRegisterDocumento(searchDocumento || '');
+                                                        setShowRegisterForm(true);
+                                                        setStatusMessage(null);
+                                                    }}
+                                                >
+                                                    <i className="ri-user-add-line me-1"></i> Registrar Pastor
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-light"
+                                                    onClick={() => setStatusMessage(null)}
+                                                >
+                                                    Cerrar
+                                                </button>
+                                            </div>
+                                        ) : statusMessage.type === 'error' ? (
+                                            <div className="mt-4">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-light btn-sm"
+                                                    onClick={() => setStatusMessage(null)}
+                                                >
+                                                    Cerrar
+                                                </button>
+                                            </div>
+                                        ) : null}
                                     </div>
                                 </div>
                             )}

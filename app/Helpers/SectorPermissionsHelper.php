@@ -204,6 +204,13 @@ if (!function_exists('getSectorMenuItems')) {
                         'active' => 'admin.exchange-rates',
                     ],
                      ['label' => 'Actividades', 'permission' => 'access actividades', 'route' => 'admin.actividades.index', 'active' => 'admin.actividades.index'],
+                     [
+                         'label' => 'Asistencias',
+                         'icon' => 'ri-user-follow-line',
+                         'permission' => 'access actividades',
+                         'route' => 'admin.asistencias.index',
+                         'active' => 'admin.asistencias.index',
+                     ],
                     [
                         'label' => 'Contabilidad',
                         'icon' => 'ri-calculator-line',

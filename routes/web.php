@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Session;
         return view('admin.actividades.asistencia');
     })->name('actividades.asistencia');
 
+ Route::get('/pastor/create', function () {
+        return view('admin.actividades.asistencia');
+    })->name('pastor.create');
+
 Route::get('/', function () {
         if (auth()->check()) {
            return redirect()->route('admin.dashboard'); // Changed from redirect()->to('admin/dashboard') to redirect()->route('admin.dashboard')
