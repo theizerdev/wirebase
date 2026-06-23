@@ -90,6 +90,11 @@ class PlanillaService
             margin: 5
         );
 
+         $dir = dirname($path);
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
         $path = storage_path('app/temp/qr_pastor_' . $pastor->id . '_' . time() . '.png');
         (new PngWriter())->write($qr)->saveToFile($path);
         $this->tempFiles[] = $path;
