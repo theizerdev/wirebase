@@ -90,10 +90,7 @@ class PlanillaService
             margin: 5
         );
 
-         $dir = dirname($path);
-        if (! is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
+        
 
         $path = storage_path('app/temp/qr_pastor_' . $pastor->id . '_' . time() . '.png');
         (new PngWriter())->write($qr)->saveToFile($path);
@@ -198,9 +195,9 @@ class PlanillaService
         $fpdf->Cell(130, 3.5, utf8_decode('Sede Central: Av. Sucre de Catia, cruce con Calle El Carmen, Local 5B, Caracas'), 0, 1, 'C');
 
         // QR Code (upper right)
-        if (file_exists($qrPath)) {
-            $fpdf->Image($qrPath, 170, $headerTop, 20, 20);
-        }
+       // if (file_exists($qrPath)) {
+       //     $fpdf->Image($qrPath, 170, $headerTop, 20, 20);
+       // }
 
         // Separator line
         $fpdf->SetDrawColor($this->sectionBg[0], $this->sectionBg[1], $this->sectionBg[2]);
@@ -232,9 +229,7 @@ class PlanillaService
         if ($pastor->foto && file_exists(public_path('pastores/' . str_replace(' ', '', $pastor->foto)))) {
             $fpdf->Image(public_path('pastores/' . str_replace(' ', '', $pastor->foto)), $photoX, $photoY, $photoW, $photoH);
         } else {
-            $fpdf->SetXY($photoX, $photoY + ($photoH / 2) - 3);
-            $fpdf->SetFont('Arial', 'I', 7);
-            $fpdf->Cell($photoW, 6, utf8_decode('Sin foto'), 0, 0, 'C');
+            $fpdf->Image(public_path('pastores/sin-foto.jpg'), $photoX, $photoY, $photoW, $photoH);
         }
 
         // Reset for data sections

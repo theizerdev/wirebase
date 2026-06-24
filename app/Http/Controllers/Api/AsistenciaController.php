@@ -222,6 +222,7 @@ class AsistenciaController extends Controller
             'foto' => $fotoFilename,
             'status' => true,
             'empresa_id' => $empresaId,
+            'sucursal_id' => 1,
         ]);
 
         // Generar y actualizar código único del pastor
